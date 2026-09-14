@@ -30,9 +30,9 @@ namespace FallingWizard.EditorTools
 
         static readonly Clip[] Clips =
         {
-            new Clip { State = "Idle",       Sheet = "Assets/Assets/Mage 2.png",     Fps = 1,  Loops = true },
+            new Clip { State = "Idle",       Sheet = "",                             Fps = 1,  Loops = true },
             new Clip { State = "Walk",       Sheet = "",                             Fps = 12, Loops = true },
-            new Clip { State = "Run",        Sheet = "Assets/Assets/PJ Run 1.png",   Fps = 12, Loops = true },
+            new Clip { State = "Run",        Sheet = "",                             Fps = 12, Loops = true },
             new Clip { State = "Falling",    Sheet = "",                             Fps = 12, Loops = true },
             new Clip { State = "Climb Up",   Sheet = "",                             Fps = 12, Loops = false },
             new Clip { State = "Climb Down", Sheet = "",                             Fps = 12, Loops = false },

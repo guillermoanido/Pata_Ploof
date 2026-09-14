@@ -11,6 +11,15 @@ namespace FallingWizard.Player
         Bridge,
     }
 
+    public enum StaffAim
+    {
+        Neutral,
+
+        Raised,
+
+        LookingDown,
+    }
+
     public enum StaffHold
     {
         Holding,
@@ -33,12 +42,10 @@ namespace FallingWizard.Player
                  "staff is a bridge. Empty means the bridge spell has nothing to stand on.")]
         public Collider2D bridgeCollider;
 
-        [Header("Defaults For New Staves")]
-        [Tooltip("Height Reset gives a fresh hitbox, in boxes.")]
-        [Min(0.01f)] public float defaultLength = 1.0625f;
-
-        [Tooltip("Width Reset gives a fresh hitbox, in boxes.")]
-        [Min(0.01f)] public float defaultWidth = 0.4375f;
+        [Tooltip("The hook at the top of the staff - the small box the climb looks with. When it " +
+                 "overlaps a tile that has room above it, the staff can be raised against that " +
+                 "tile and climbed. Its size and place are yours: the code only reads where it is.")]
+        public Collider2D climbCheck;
 
         [Header("Behaviour")]
         public Pole pole = new Pole();
@@ -56,25 +63,7 @@ namespace FallingWizard.Player
 
         public float Length => hitbox != null ? Pole.LocalSpan(hitbox).y : 0f;
 
-        void Reset()
-        {
-            var box = GetComponent<BoxCollider2D>();
-            box.isTrigger = true;
-            box.size = new Vector2(defaultWidth, defaultLength);
-
-            box.offset = new Vector2(0f, defaultLength / 2f);
-
-            hitbox = box;
-            visual = GetComponentInChildren<SpriteRenderer>();
-        }
-
-        void OnValidate()
-        {
-            if (hitbox == null)
-                hitbox = GetComponent<Collider2D>();
-
-            pole.Validate();
-        }
+        void OnValidate() => pole.Validate();
 
         void Awake()
         {
@@ -92,6 +81,12 @@ namespace FallingWizard.Player
             {
                 Gizmos.color = new Color(0.4f, 0.8f, 1f);
                 Gizmos.DrawWireCube(hitbox.bounds.center, hitbox.bounds.size);
+            }
+
+            if (climbCheck != null)
+            {
+                Gizmos.color = new Color(0.4f, 1f, 0.5f);
+                Gizmos.DrawWireCube(climbCheck.bounds.center, climbCheck.bounds.size);
             }
 
             if (bridgeCollider != null && bridgeCollider.enabled)
@@ -120,8 +115,7 @@ namespace FallingWizard.Player
                 return;
             }
 
-            hitbox.isTrigger = true;
-            pole.BindPole(hitbox, visual, bridgeCollider);
+            pole.BindPole(hitbox, visual, bridgeCollider, climbCheck);
         }
 
         [Serializable]
@@ -131,12 +125,13 @@ namespace FallingWizard.Player
 
             const float MinScale = 0.0001f;
             const float MinSlideSpeed = 0.01f;
-            const float MinLengthScale = 0.1f;
             const float TipMarkerRadius = 0.12f;
 
             const float QuarterTurn = 90f;
 
             const float LandingSlack = 0.06f;
+
+            const float CeilingSlack = 0.02f;
 
             static readonly List<Collider2D> Overlaps = new List<Collider2D>(4);
             static readonly List<RaycastHit2D> Rays = new List<RaycastHit2D>(4);
@@ -159,16 +154,21 @@ namespace FallingWizard.Player
             [Tooltip("Seconds after the staff is released before it can be planted again.")]
             [Min(0f)] public float cooldown = 0.5f;
 
-            [Tooltip("How far above the wizard's feet the staff can get them, in boxes. This is " +
-                     "the reach itself: the pole is stretched to whatever length produces it, so " +
-                     "the hitbox and the art always agree with this number instead of being " +
-                     "tuned until they happen to add up to it. A rank multiplies it.")]
-            [Min(0.1f)] public float reachAboveFeet = 2f;
+            [Tooltip("How far the staff dips below where it normally rides while it is looking " +
+                     "down, in boxes. It is purely a tell: it is how the player sees at a glance " +
+                     "that the next ledge is going to be taken.")]
+            [Min(0f)] public float dipHeight = 0.25f;
 
             [Tooltip("How far the staff is lifted overhead, in boxes. It is part of the reach " +
                      "above rather than added to it, so lifting it higher makes the pole itself " +
                      "shorter and the wizard still ends up in the same place.")]
             [Min(0f)] public float raiseHeight = 0.6f;
+
+            [Tooltip("How fast the staff slides between where it normally rides and where it is " +
+                     "raised to, in boxes per second. The same travel serves both ways, so a low " +
+                     "number makes lifting it and dropping it back both feel heavy. 0 snaps it " +
+                     "there in one step, which is how it behaved before.")]
+            [Min(0f)] public float aimSpeed = 8f;
 
             [Tooltip("Seconds spent stepping over the lip at the top of a climb. The wizard rises " +
                      "clear of the edge before sliding across it, so they arc over the corner " +
@@ -213,7 +213,7 @@ namespace FallingWizard.Player
 
             [NonSerialized] float readyAt;
 
-            [NonSerialized] bool raised;
+            [NonSerialized] StaffAim aim;
 
             [NonSerialized] bool climbing;
             [NonSerialized] Vector2 climbLanding;
@@ -222,13 +222,9 @@ namespace FallingWizard.Player
 
             [NonSerialized] int facing = 1;
 
-            [NonSerialized] Vector2 authoredHitbox;
-            [NonSerialized] Vector2 authoredBridge;
-            [NonSerialized] Vector3 authoredVisualPosition;
-            [NonSerialized] Vector3 authoredVisualScale = Vector3.one;
-            [NonSerialized] Vector2 authoredVisualSize = Vector2.one;
-            [NonSerialized] float lengthScale = 1f;
-            [NonSerialized] float fittedScale = 1f;
+            [NonSerialized] Collider2D hook;
+            [NonSerialized] float hookSideOffset;
+            [NonSerialized] float ridingOffset;
 
             public bool IsPlanted { get; private set; }
 
@@ -266,11 +262,13 @@ namespace FallingWizard.Player
                 useTriggers = false,
             };
 
-            public void BindPole(Collider2D poleHitbox, SpriteRenderer poleVisual, Collider2D bridgeCollider)
+            public void BindPole(Collider2D poleHitbox, SpriteRenderer poleVisual,
+                Collider2D bridgeCollider, Collider2D hookCollider)
             {
                 hitbox = poleHitbox;
                 visual = poleVisual;
                 bridge = bridgeCollider;
+                hook = hookCollider;
                 pole = poleHitbox != null ? poleHitbox.transform : null;
 
                 if (pole == null)
@@ -280,18 +278,9 @@ namespace FallingWizard.Player
                 carriedParent = pole.parent;
                 sideOffset = Mathf.Abs(restPosition.x);
 
-                authoredHitbox = LocalSpan(hitbox);
-                authoredBridge = LocalSpan(bridge);
+                if (hook is BoxCollider2D hookBox)
+                    hookSideOffset = Mathf.Abs(hookBox.offset.x);
 
-                if (visual != null)
-                {
-                    authoredVisualPosition = visual.transform.localPosition;
-                    authoredVisualScale = visual.transform.localScale;
-                    authoredVisualSize = visual.size;
-                }
-
-                lengthScale = 1f;
-                fittedScale = 1f;
             }
 
             public void BindWielder(Rigidbody2D body, Collider2D bodyHitbox)
@@ -305,14 +294,21 @@ namespace FallingWizard.Player
                 readyAt = 0f;
             }
 
-            public void Raise(bool up)
+            public void Aim(StaffAim next)
             {
-                if (IsPlanted || raised == up)
+                if (IsPlanted || aim == next)
                     return;
 
-                raised = up;
+                aim = next;
                 ShoulderPole();
             }
+
+            public StaffAim Aiming => aim;
+
+            float AimTarget =>
+                aim == StaffAim.Raised ? RaiseThatFits()
+                : aim == StaffAim.LookingDown ? -dipHeight
+                : 0f;
 
             public void Face(int wielderFacing)
             {
@@ -323,86 +319,14 @@ namespace FallingWizard.Player
                 ShoulderPole();
             }
 
-            public float LengthScale => lengthScale;
+            public bool HasHook => hook != null;
 
-            public void SetLengthScale(float scale)
-            {
-                lengthScale = Mathf.Max(MinLengthScale, scale);
+            public Bounds HookBounds => hook != null ? hook.bounds : default;
 
-                if (pole == null)
-                    return;
-
-                float poleScale = PoleScaleForReach();
-
-                if (Mathf.Approximately(poleScale, fittedScale))
-                    return;
-
-                fittedScale = poleScale;
-
-                Stretch(hitbox as BoxCollider2D, authoredHitbox, poleScale);
-                Stretch(bridge as BoxCollider2D, authoredBridge, poleScale);
-                StretchVisual(poleScale);
-            }
-
-            float PoleScaleForReach()
-            {
-                if (authoredHitbox.y <= Epsilon)
-                    return 1f;
-
-                return Mathf.Max(MinLengthScale, (ClimbHeight - HangBelowTip) / authoredHitbox.y);
-            }
-
-            static void Stretch(BoxCollider2D box, Vector2 authored, float scale)
-            {
-                if (box == null || authored.y <= Epsilon)
-                    return;
-
-                float length = authored.y * scale;
-
-                box.size = new Vector2(box.size.x, length);
-                box.offset = new Vector2(box.offset.x, authored.x + (length - authored.y) * 0.5f);
-            }
-
-            void StretchVisual(float scale)
-            {
-                if (visual == null)
-                    return;
-
-                float growth = authoredHitbox.y * (scale - 1f);
-
-                if (visual.drawMode != SpriteDrawMode.Simple)
-                {
-                    visual.transform.localScale = authoredVisualScale;
-                    visual.size = new Vector2(authoredVisualSize.x, authoredVisualSize.y + growth);
-
-                    visual.transform.localPosition =
-                        authoredVisualPosition + Vector3.up * (growth * FractionOfArtBelowPivot);
-
-                    return;
-                }
-
-                visual.transform.localScale = new Vector3(authoredVisualScale.x,
-                    authoredVisualScale.y * scale, authoredVisualScale.z);
-
-                visual.transform.localPosition = new Vector3(authoredVisualPosition.x,
-                    authoredVisualPosition.y * scale, authoredVisualPosition.z);
-            }
-
-            float FractionOfArtBelowPivot
-            {
-                get
-                {
-                    Sprite art = visual != null ? visual.sprite : null;
-
-                    return art != null && art.rect.height > 0f
-                        ? art.pivot.y / art.rect.height
-                        : 0f;
-                }
-            }
-
-            public float ClimbUpHeight => reachAboveFeet * lengthScale;
-
-            public float ClimbHeight => ClimbUpHeight - raiseHeight;
+            public float ClimbUpHeight =>
+                hook != null && wielderHitbox != null
+                    ? hook.bounds.max.y - wielderHitbox.bounds.min.y
+                    : 0f;
 
             public float MeasureReach()
             {
@@ -423,7 +347,28 @@ namespace FallingWizard.Player
 
             public void DrawGizmos()
             {
-                if (!IsPlanted || Mode != StaffMode.Ladder)
+                if (pole == null)
+                    return;
+
+                if (!IsPlanted)
+                {
+                    if (hook == null)
+                        return;
+
+                    HookAtRest(out Vector2 centre, out Vector2 size);
+
+                    Gizmos.color = Color.grey;
+                    Gizmos.DrawWireCube(centre, size);
+
+                    Gizmos.color = Color.yellow;
+                    Gizmos.DrawWireCube(centre + Vector2.up * raiseHeight, size);
+
+                    Gizmos.color = Color.red;
+                    Gizmos.DrawWireCube(centre + Vector2.up * RaiseThatFits(), size);
+                    return;
+                }
+
+                if (Mode != StaffMode.Ladder)
                     return;
 
                 Gizmos.color = Color.green;
@@ -475,13 +420,58 @@ namespace FallingWizard.Player
                 if (pole == null)
                     return;
 
+                float wanted = AimTarget;
+
+                ridingOffset = aimSpeed <= 0f
+                    ? wanted
+                    : Mathf.MoveTowards(ridingOffset, wanted, aimSpeed * Time.fixedDeltaTime);
+
                 pole.localPosition = new Vector3(
                     sideOffset * facing,
-                    restPosition.y + (raised ? raiseHeight : 0f),
+                    restPosition.y + ridingOffset,
                     restPosition.z);
 
                 if (visual != null)
                     visual.flipX = facing < 0;
+
+                if (hook is BoxCollider2D hookBox && hookBox.offset.x != hookSideOffset * facing)
+                    hookBox.offset = new Vector2(hookSideOffset * facing, hookBox.offset.y);
+            }
+
+            void HookAtRest(out Vector2 centre, out Vector2 size)
+            {
+                LocalBox(hook, out Vector2 localCentre, out Vector2 localSize);
+
+                Transform on = hook.transform;
+                var shoulder = new Vector3(sideOffset * facing, restPosition.y, restPosition.z);
+
+                if (pole.parent != null)
+                    shoulder = pole.parent.TransformPoint(shoulder);
+
+                centre = (Vector2)(on.TransformPoint(localCentre) + shoulder - pole.position);
+                size = new Vector2(
+                    localSize.x * Mathf.Abs(on.lossyScale.x),
+                    localSize.y * Mathf.Abs(on.lossyScale.y));
+            }
+
+            float RaiseThatFits()
+            {
+                if (pole == null || hook == null || raiseHeight <= Epsilon)
+                    return raiseHeight;
+
+                HookAtRest(out Vector2 centre, out Vector2 size);
+
+                var from = new Vector2(centre.x, centre.y + size.y * 0.5f - CeilingSlack * 0.5f);
+                var probe = new Vector2(size.x, CeilingSlack);
+
+                if (Physics2D.BoxCast(from, probe, 0f, Vector2.up, GroundFilter, Rays,
+                        raiseHeight + CeilingSlack) == 0)
+                    return raiseHeight;
+
+                if (Rays[0].distance <= 0f)
+                    return raiseHeight;
+
+                return Mathf.Clamp(Rays[0].distance - CeilingSlack, 0f, raiseHeight);
             }
 
             public bool Plant(StaffMode mode, int wielderFacing, float edgeX) =>
@@ -687,7 +677,8 @@ namespace FallingWizard.Player
                 IsPlanted = false;
                 climbing = false;
                 mountTimer = -1f;
-                raised = false;
+                aim = StaffAim.Neutral;
+                ridingOffset = 0f;
                 dropTimer = 0f;
 
                 if (bridge != null)

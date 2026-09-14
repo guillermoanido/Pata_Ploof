@@ -33,6 +33,11 @@ namespace FallingWizard.Player
         [Min(0f)] public float damagePerBox = 1f;
 
         [NonSerialized] Staff.Pole pole;
+        [NonSerialized] Staff[] staves;
+        [NonSerialized] Staff carried;
+        [NonSerialized] int staffRank = -1;
+        [NonSerialized] Rigidbody2D wielderBody;
+        [NonSerialized] Collider2D wielderHull;
         [NonSerialized] Intent input;
         [NonSerialized] Vector2 pendingWind;
         [NonSerialized] float pendingRampup;
@@ -59,7 +64,8 @@ namespace FallingWizard.Player
         public bool IsOnStaff => State == PlayerState.OnStaff;
         public bool IsPeeking { get; private set; }
 
-        public void Attach(Rigidbody2D body, SpriteRenderer sprite, Collider2D hitbox, Staff.Pole staffPole)
+        public void Attach(Rigidbody2D body, SpriteRenderer sprite, Collider2D hitbox,
+            Staff[] staffSet)
         {
             movement.Attach(body, sprite, hitbox);
             ragdoll.Attach(body, sprite != null ? sprite.transform : null, hitbox, movement.groundLayers);
@@ -68,8 +74,11 @@ namespace FallingWizard.Player
             health.SetBonus(Progress.BonusHearts);
             health.RestoreToFull();
 
-            pole = staffPole;
-            pole?.BindWielder(body, hitbox);
+            staves = staffSet;
+            wielderBody = body;
+            wielderHull = hitbox;
+
+            SelectStaff(1);
 
             spellbook.Attach(this);
         }
@@ -96,6 +105,7 @@ namespace FallingWizard.Player
             spellbook.TryCast(fixedDeltaTime);
             spellbook.Rebuild();
             ApplyExternalForce(fixedDeltaTime);
+            TakeLedgeWhileLookingDown();
 
             switch (State)
             {
@@ -250,19 +260,29 @@ namespace FallingWizard.Player
             return true;
         }
 
-        public void RaiseStaff() => pole?.Raise(true);
+        public void RaiseStaff() => pole?.Aim(StaffAim.Raised);
 
-        public void LowerStaff() => pole?.Raise(false);
+        public void LowerStaff() => pole?.Aim(StaffAim.Neutral);
+
+        public bool StaffLooksDown { get; private set; }
+
+        public void AimStaffDown(bool down)
+        {
+            StaffLooksDown = down;
+            pole?.Aim(down ? StaffAim.LookingDown : StaffAim.Neutral);
+        }
 
         public bool CanClimbHere =>
-            StaffIsFree && movement.TryFindClimb(pole.ClimbUpHeight, out _, out _);
+            StaffIsFree && pole.HasHook &&
+            movement.TryFindClimbAt(pole.HookBounds, out _, out _);
 
         public bool TryClimbStaff()
         {
-            if (State != PlayerState.Normal || !HasPole || pole.IsPlanted || !pole.IsReady)
+            if (State != PlayerState.Normal || !HasPole || pole.IsPlanted || !pole.IsReady ||
+                !pole.HasHook)
                 return false;
 
-            if (!movement.TryFindClimb(pole.ClimbUpHeight, out Vector2 lip, out Vector2 landing))
+            if (!movement.TryFindClimbAt(pole.HookBounds, out Vector2 lip, out Vector2 landing))
                 return false;
 
             bool caughtInTheAir = !movement.IsGrounded;
@@ -277,7 +297,41 @@ namespace FallingWizard.Player
             return true;
         }
 
-        public void SetStaffLength(float scale) => pole?.SetLengthScale(scale);
+        public Staff CarriedStaff => carried;
+
+        public void SelectStaff(int rank)
+        {
+            if (staves == null || staves.Length == 0 || rank == staffRank ||
+                (HasPole && pole.IsPlanted))
+                return;
+
+            staffRank = rank;
+            carried = staves[Mathf.Clamp(rank - 1, 0, staves.Length - 1)];
+
+            foreach (Staff staff in staves)
+            {
+                if (staff != null)
+                    staff.gameObject.SetActive(staff == carried);
+            }
+
+            Staff.Pole next = carried != null ? carried.Logic : null;
+
+            if (next == pole)
+                return;
+
+            pole = next;
+            pole?.BindWielder(wielderBody, wielderHull);
+            pole?.Face(movement.Facing);
+        }
+
+        void TakeLedgeWhileLookingDown()
+        {
+            if (!StaffLooksDown || !StaffIsFree || !movement.IsAtEdge)
+                return;
+
+            if (TryPlantStaff(StaffMode.Ladder))
+                AimStaffDown(false);
+        }
 
         public void RecoverStaff() => RecoverStaff(false);
 

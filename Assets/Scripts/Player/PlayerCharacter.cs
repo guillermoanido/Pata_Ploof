@@ -34,6 +34,19 @@ namespace FallingWizard.Player
                  "from there, or give the run up and go back to spend what is already banked.")]
         public bool offerChoiceOnDeath = true;
 
+        [Header("Rig")]
+        [Tooltip("The wizard's own sprite - the one the facing flip is applied to. Set it and it " +
+                 "is the one used, whatever else is under here. Empty falls back to the first " +
+                 "SpriteRenderer that is not part of a staff, which is a guess.")]
+        public SpriteRenderer bodyVisual;
+
+        [Header("Staves")]
+        [Tooltip("One staff per rank, weakest first. Only the staff for the current rank is left " +
+                 "switched on - the others are switched off, and nothing else about any of them " +
+                 "is touched. Leave it empty and the Staff objects under this one are used in " +
+                 "hierarchy order.")]
+        public Staff[] staves;
+
         [Header("Behaviour")]
         public PlayerLogic logic = new PlayerLogic();
 
@@ -41,7 +54,7 @@ namespace FallingWizard.Player
 
         public PlayerLogic Logic => logic;
 
-        public Staff Staff { get; private set; }
+        public Staff Staff => logic.CarriedStaff;
 
         public Collider2D Hitbox { get; private set; }
 
@@ -63,12 +76,13 @@ namespace FallingWizard.Player
         protected override void OnAwake()
         {
             Hitbox = GetComponent<Collider2D>();
-            Staff = GetComponentInChildren<Staff>(true);
+            if (staves == null || staves.Length == 0)
+                staves = GetComponentsInChildren<Staff>(true);
             controls = new Controls();
 
             MoveToCheckpoint();
 
-            logic.Attach(GetComponent<Rigidbody2D>(), FindBodySprite(), Hitbox, Staff?.Logic);
+            logic.Attach(GetComponent<Rigidbody2D>(), FindBodySprite(), Hitbox, staves);
             logic.Died += OnDied;
         }
 
@@ -99,6 +113,9 @@ namespace FallingWizard.Player
 
         SpriteRenderer FindBodySprite()
         {
+            if (bodyVisual != null)
+                return bodyVisual;
+
             foreach (SpriteRenderer sprite in GetComponentsInChildren<SpriteRenderer>(true))
             {
                 if (sprite.GetComponentInParent<Staff>() == null)
