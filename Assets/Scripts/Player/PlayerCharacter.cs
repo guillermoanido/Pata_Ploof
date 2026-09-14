@@ -162,6 +162,9 @@ namespace FallingWizard.Player
             readonly InputAction walk = Core.Controls.Player("Walk");
 
             float heldDown;
+            bool walking;
+
+            public bool Walking => walking;
 
             public PlayerLogic.Intent Read(float lookThreshold, float holdSeconds, float deltaTime)
             {
@@ -175,12 +178,15 @@ namespace FallingWizard.Player
 
                 heldDown = stick.y < -lookThreshold ? heldDown + deltaTime : 0f;
 
+                if (walk != null && walk.WasPressedThisFrame())
+                    walking = !walking;
+
                 return new PlayerLogic.Intent
                 {
                     Move = stick,
                     JumpPressed = jump != null && jump.WasPressedThisFrame(),
                     JumpHeld = jump != null && jump.IsPressed(),
-                    Walk = walk != null && walk.IsPressed(),
+                    Walk = walking,
                     LookingDown = heldDown >= holdSeconds && heldDown > 0f,
                 };
             }

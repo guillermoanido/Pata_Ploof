@@ -41,7 +41,9 @@ namespace FallingWizard.Player
             [Tooltip("Top speed at a normal run, in boxes per second. Running off a ledge drops you.")]
             [Min(0f)] public float runSpeed = 6f;
 
-            [Tooltip("Top speed while holding Walk. Walking also refuses to step off a ledge.")]
+            [Tooltip("Top speed while walking. Walk is a toggle - press it once to switch it on and " +
+                     "again to switch it off - and while it is on the wizard also refuses to step " +
+                     "off a ledge, which is what makes it worth switching on near a drop.")]
             [Min(0f)] public float walkSpeed = 2f;
 
             [Tooltip("How fast speed builds up. Lower feels heavier and takes longer to get going.")]

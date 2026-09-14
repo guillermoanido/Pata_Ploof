@@ -42,9 +42,7 @@ namespace FallingWizard.Player
                  "staff is a bridge. Empty means the bridge spell has nothing to stand on.")]
         public Collider2D bridgeCollider;
 
-        [Tooltip("The hook at the top of the staff - the small box the climb looks with. When it " +
-                 "overlaps a tile that has room above it, the staff can be raised against that " +
-                 "tile and climbed. Its size and place are yours: the code only reads where it is.")]
+        [Tooltip("The hook at the top of the staff. The climb looks with it; the code only reads where it is.")]
         public Collider2D climbCheck;
 
         [Header("Behaviour")]
@@ -133,6 +131,8 @@ namespace FallingWizard.Player
 
             const float CeilingSlack = 0.02f;
 
+            const float FloorSlack = 0.05f;
+
             static readonly List<Collider2D> Overlaps = new List<Collider2D>(4);
             static readonly List<RaycastHit2D> Rays = new List<RaycastHit2D>(4);
 
@@ -154,20 +154,13 @@ namespace FallingWizard.Player
             [Tooltip("Seconds after the staff is released before it can be planted again.")]
             [Min(0f)] public float cooldown = 0.5f;
 
-            [Tooltip("How far the staff dips below where it normally rides while it is looking " +
-                     "down, in boxes. It is purely a tell: it is how the player sees at a glance " +
-                     "that the next ledge is going to be taken.")]
+            [Tooltip("How far the staff dips while looking down, in boxes. A tell for the player, nothing more.")]
             [Min(0f)] public float dipHeight = 0.25f;
 
-            [Tooltip("How far the staff is lifted overhead, in boxes. It is part of the reach " +
-                     "above rather than added to it, so lifting it higher makes the pole itself " +
-                     "shorter and the wizard still ends up in the same place.")]
+            [Tooltip("How far the staff is lifted overhead, in boxes. Part of the reach, not added to it.")]
             [Min(0f)] public float raiseHeight = 0.6f;
 
-            [Tooltip("How fast the staff slides between where it normally rides and where it is " +
-                     "raised to, in boxes per second. The same travel serves both ways, so a low " +
-                     "number makes lifting it and dropping it back both feel heavy. 0 snaps it " +
-                     "there in one step, which is how it behaved before.")]
+            [Tooltip("How fast the staff moves between its normal spot and its raised one, in boxes per second. 0 snaps.")]
             [Min(0f)] public float aimSpeed = 8f;
 
             [Tooltip("Seconds spent stepping over the lip at the top of a climb. The wizard rises " +
@@ -224,6 +217,7 @@ namespace FallingWizard.Player
 
             [NonSerialized] Collider2D hook;
             [NonSerialized] float hookSideOffset;
+            [NonSerialized] float poleBoxOffset;
             [NonSerialized] float ridingOffset;
 
             public bool IsPlanted { get; private set; }
@@ -281,6 +275,8 @@ namespace FallingWizard.Player
                 if (hook is BoxCollider2D hookBox)
                     hookSideOffset = Mathf.Abs(hookBox.offset.x);
 
+                if (hitbox is BoxCollider2D carriedBox)
+                    poleBoxOffset = carriedBox.offset.x;
             }
 
             public void BindWielder(Rigidbody2D body, Collider2D bodyHitbox)
@@ -352,6 +348,8 @@ namespace FallingWizard.Player
 
                 if (!IsPlanted)
                 {
+                    DrawCarryGizmos();
+
                     if (hook == null)
                         return;
 
@@ -376,6 +374,31 @@ namespace FallingWizard.Player
 
                 Gizmos.color = Color.red;
                 Gizmos.DrawWireSphere(PositionAt(reach), TipMarkerRadius);
+            }
+
+            void DrawCarryGizmos()
+            {
+                if (hitbox == null || pole.parent == null)
+                    return;
+
+                LocalBox(hitbox, out Vector2 poleBox, out Vector2 poleSize);
+
+                Vector3 authored = pole.parent.TransformPoint(new Vector3(
+                    sideOffset * facing + poleBox.x,
+                    restPosition.y + ridingOffset + poleBox.y,
+                    restPosition.z));
+
+                Vector3 actual = pole.parent.TransformPoint(new Vector3(
+                    pole.localPosition.x + poleBox.x,
+                    pole.localPosition.y + poleBox.y,
+                    restPosition.z));
+
+                Gizmos.color = Color.grey;
+                Gizmos.DrawWireCube(authored, poleSize);
+
+                Gizmos.color = authored == actual ? Color.cyan : Color.red;
+                Gizmos.DrawWireCube(actual, poleSize);
+                Gizmos.DrawLine(authored, actual);
             }
 
             public static Vector2 LocalSpan(Collider2D collider2d)
@@ -426,16 +449,65 @@ namespace FallingWizard.Player
                     ? wanted
                     : Mathf.MoveTowards(ridingOffset, wanted, aimSpeed * Time.fixedDeltaTime);
 
+                CarryPole();
+            }
+
+            void CarryPole()
+            {
+                if (pole == null)
+                    return;
+
+                if (hitbox is BoxCollider2D carriedBox && carriedBox.offset.x != poleBoxOffset * facing)
+                    carriedBox.offset = new Vector2(poleBoxOffset * facing, carriedBox.offset.y);
+
+                float reachOut = CarryReachThatFits();
+
                 pole.localPosition = new Vector3(
-                    sideOffset * facing,
+                    reachOut * facing,
                     restPosition.y + ridingOffset,
                     restPosition.z);
 
                 if (visual != null)
                     visual.flipX = facing < 0;
 
-                if (hook is BoxCollider2D hookBox && hookBox.offset.x != hookSideOffset * facing)
-                    hookBox.offset = new Vector2(hookSideOffset * facing, hookBox.offset.y);
+                float hookOut = (hookSideOffset + (sideOffset - reachOut)) * facing;
+
+                if (hook is BoxCollider2D hookBox && hookBox.offset.x != hookOut)
+                    hookBox.offset = new Vector2(hookOut, hookBox.offset.y);
+            }
+
+            float CarryReachThatFits()
+            {
+                if (pole == null || hitbox == null || wielderHitbox == null)
+                    return sideOffset;
+
+                if (pole.parent == null || wielderHitbox.transform != pole.parent)
+                    return sideOffset;
+
+                LocalBox(hitbox, out Vector2 poleBox, out Vector2 poleSize);
+                LocalBox(wielderHitbox, out Vector2 hullBox, out Vector2 hullSize);
+
+                float boxAhead = poleBox.x * facing;
+                float travel = sideOffset + boxAhead;
+                float soles = hullBox.y - hullSize.y * 0.5f + FloorSlack;
+                float tip = restPosition.y + poleBox.y + poleSize.y * 0.5f;
+
+                if (travel <= Epsilon || tip <= soles + Epsilon)
+                    return sideOffset;
+
+                Vector2 from = pole.parent.TransformPoint(
+                    new Vector3(0f, (soles + tip) * 0.5f, restPosition.z));
+
+                var probe = new Vector2(poleSize.x, tip - soles);
+
+                if (Physics2D.BoxCast(from, probe, 0f, new Vector2(facing, 0f), GroundFilter, Rays,
+                        travel) == 0)
+                    return sideOffset;
+
+                if (Rays[0].distance <= 0f)
+                    return sideOffset;
+
+                return Mathf.Clamp(Rays[0].distance - boxAhead, 0f, sideOffset);
             }
 
             void HookAtRest(out Vector2 centre, out Vector2 size)
@@ -443,7 +515,7 @@ namespace FallingWizard.Player
                 LocalBox(hook, out Vector2 localCentre, out Vector2 localSize);
 
                 Transform on = hook.transform;
-                var shoulder = new Vector3(sideOffset * facing, restPosition.y, restPosition.z);
+                var shoulder = new Vector3(pole.localPosition.x, restPosition.y, restPosition.z);
 
                 if (pole.parent != null)
                     shoulder = pole.parent.TransformPoint(shoulder);
@@ -714,8 +786,16 @@ namespace FallingWizard.Player
 
             public void HoldPolePosition()
             {
-                if (IsPlanted && pole != null)
+                if (pole == null)
+                    return;
+
+                if (IsPlanted)
+                {
                     pole.SetPositionAndRotation(plantedPosition, plantedRotation);
+                    return;
+                }
+
+                CarryPole();
             }
 
             bool LandingIsClear()

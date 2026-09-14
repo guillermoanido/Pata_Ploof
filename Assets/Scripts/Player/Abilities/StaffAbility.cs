@@ -6,13 +6,10 @@ namespace FallingWizard.Player
     public class StaffAbility : Ability
     {
         [Header("Controls")]
-        [Tooltip("Stick tilt that counts as pushing down. Press the staff while pushing down and " +
-                 "it starts looking for a ledge to reach into instead of a wall to climb. Press " +
-                 "it again to come back to neutral.")]
-        [Range(0f, 1f)] public float downThreshold = 0.5f;
+        [Tooltip("A press shorter than this toggles looking down. Hold it longer and the staff raises instead.")]
+        [Min(0.01f)] public float tapSeconds = 0.2f;
 
-        [Tooltip("Shown in the HUD slot while the staff is looking down, so the mode is readable " +
-                 "without watching the staff itself. A down arrow. Empty keeps the normal icon.")]
+        [Tooltip("Shown in the HUD slot while the staff is looking down. Empty keeps the normal icon.")]
         public Sprite lookingDownIcon;
 
         public override Sprite IconFor(PlayerLogic wizard) =>
@@ -32,35 +29,47 @@ namespace FallingWizard.Player
             if (!aim.pressed)
             {
                 aim.pressed = true;
-                Press(wizard);
+                aim.letGoOfTheStaff = wizard.IsOnStaff;
+
+                if (aim.letGoOfTheStaff)
+                    wizard.DropFromStaff();
             }
 
-            if (wizard.StaffLooksDown || wizard.IsOnStaff || !wizard.StaffIsFree)
+            if (aim.letGoOfTheStaff || heldSeconds < tapSeconds || !wizard.StaffIsFree)
                 return;
+
+            if (wizard.StaffLooksDown)
+                wizard.AimStaffDown(false);
 
             wizard.RaiseStaff();
             wizard.TryClimbStaff();
         }
 
-        public override void OnReleased(PlayerLogic wizard, float heldSeconds) => LetGo(wizard);
-
-        public override void OnChargeLost(PlayerLogic wizard) => LetGo(wizard);
-
-        void Press(PlayerLogic wizard)
+        public override void OnReleased(PlayerLogic wizard, float heldSeconds)
         {
-            if (wizard.StaffLooksDown)
+            Aim aim = wizard.spellbook.StateOf<Aim>(this);
+
+            bool tapped = heldSeconds <= tapSeconds && !aim.letGoOfTheStaff;
+
+            aim.pressed = false;
+            aim.letGoOfTheStaff = false;
+
+            if (tapped)
             {
-                wizard.AimStaffDown(false);
+                wizard.AimStaffDown(!wizard.StaffLooksDown);
                 return;
             }
 
-            if (wizard.Steering.Lean < -downThreshold)
-                wizard.AimStaffDown(true);
+            if (!wizard.StaffLooksDown)
+                wizard.LowerStaff();
         }
 
-        void LetGo(PlayerLogic wizard)
+        public override void OnChargeLost(PlayerLogic wizard)
         {
-            wizard.spellbook.StateOf<Aim>(this).pressed = false;
+            Aim aim = wizard.spellbook.StateOf<Aim>(this);
+
+            aim.pressed = false;
+            aim.letGoOfTheStaff = false;
 
             if (!wizard.StaffLooksDown)
                 wizard.LowerStaff();
@@ -124,6 +133,7 @@ namespace FallingWizard.Player
         class Aim
         {
             public bool pressed;
+            public bool letGoOfTheStaff;
         }
     }
 }
