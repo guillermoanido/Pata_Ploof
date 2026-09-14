@@ -697,6 +697,18 @@ namespace FallingWizard.Player
                 return true;
             }
 
+            float FaceUnder(Bounds hull2d, Bounds hook, float lipY)
+            {
+                var from = new Vector2(hull2d.center.x, lipY - ClimbInset);
+                float reach = Mathf.Abs(hook.center.x - from.x) + hook.size.x;
+
+                if (Physics2D.Raycast(from, new Vector2(Facing, 0f), GroundFilter, Rays, reach) > 0 &&
+                    Rays[0].distance > 0f)
+                    return Rays[0].point.x;
+
+                return hook.center.x;
+            }
+
             public bool TryFindClimbAt(Bounds hook, out Vector2 lip, out Vector2 landing)
             {
                 lip = Vector2.zero;
@@ -739,7 +751,7 @@ namespace FallingWizard.Player
                     return false;
                 }
 
-                lip = new Vector2(hook.center.x, Rays[0].point.y);
+                lip = new Vector2(FaceUnder(box, hook, Rays[0].point.y), Rays[0].point.y);
 
                 ClimbRise = lip.y - box.min.y;
                 climbFaceY = lip.y;

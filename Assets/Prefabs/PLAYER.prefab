@@ -1305,7 +1305,7 @@ MonoBehaviour:
   hitbox: {fileID: 6404167657640115031}
   visual: {fileID: 3176094445755729530}
   bridgeCollider: {fileID: 6362489112029314309}
-  climbCheck: {fileID: 0}
+  climbCheck: {fileID: 5468064147359304068}
   pole:
     slideSpeed: 3
     swingDepth: 0.5
@@ -1417,7 +1417,7 @@ MonoBehaviour:
   hitbox: {fileID: 9078432150662265472}
   visual: {fileID: 1933190252189591810}
   bridgeCollider: {fileID: 2223985046782422749}
-  climbCheck: {fileID: 0}
+  climbCheck: {fileID: 4369117266560760005}
   pole:
     slideSpeed: 3
     swingDepth: 0.5
