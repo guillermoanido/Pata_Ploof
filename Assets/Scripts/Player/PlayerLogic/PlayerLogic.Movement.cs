@@ -139,15 +139,11 @@ namespace FallingWizard.Player
             [Min(0.05f)] public float slopeProbeDepth = 0.5f;
 
             [Header("Steps")]
-            [Tooltip("Tallest lip the wizard walks up on their own, in boxes. This is for pixel " +
-                     "problems ONLY - tile seams, the teeth along a ramp, a prop set down half a " +
-                     "pixel proud - and NOT for anything the player would read as a step. A tile " +
-                     "is one box and a half tile is 0.5, so a quarter box is knee-high on a " +
-                     "wizard, twice the 0.125 tread of a 45 degree ramp, and four times the worst " +
-                     "a one-pixel sprite outline can be out by. Under 0.15 the ramps start " +
-                     "stalling; over 0.35 you are eating into real geometry the staff is meant to " +
-                     "be planted against. 0 turns it off.")]
-            [Min(0f)] public float stepHeight = 0.25f;
+            [Tooltip("Tallest lip the wizard walks up on their own, in boxes. A painted tile is " +
+                     "0.5, so at 0.55 every single-tile step is taken for free and the staff is " +
+                     "only needed for walls two tiles and up. Below 0.5 single tiles need the " +
+                     "staff again; at 1.0 or more two-tile walls become free too. 0 turns it off.")]
+            [Min(0f)] public float stepHeight = 0.55f;
 
             [Tooltip("How far PAST THE TOES to look for that lip, in boxes, and how far forward " +
                      "the step carries them. Roughly one physics step of running - keep it small. " +
@@ -157,14 +153,11 @@ namespace FallingWizard.Player
                      "slope.")]
             [Min(0.02f)] public float stepReach = 0.1f;
 
-            [Tooltip("How fast the step assist carries the wizard up a lip, in boxes per " +
-                     "second. It used to be instant - one write to the body's position - and a " +
-                     "quarter of a box in a single frame is exactly what 'the movement " +
-                     "teleports' looks like, because writing a position outright also throws " +
-                     "away the Rigidbody2D's interpolation for that frame. Anything from about " +
-                     "3 upward is quick enough not to feel like wading; under 2 the wizard " +
-                     "visibly crawls up tile seams.")]
-            [Min(0.5f)] public float stepClimbSpeed = 6f;
+            [Tooltip("How far above the lip the hop carries, in boxes. Also the headroom needed before hopping.")]
+            [Min(0.02f)] public float hopClearance = 0.15f;
+
+            [Tooltip("Extra forward speed added on the hop, in boxes per second.")]
+            [Min(0f)] public float hopForward = 1f;
 
             [Header("Climbing")]
             [Tooltip("Let the staff catch a ledge while the wizard is in the air, not just from " +
@@ -220,7 +213,6 @@ namespace FallingWizard.Player
             [NonSerialized] float groundAngle;
             [NonSerialized] bool climbedLastStep;
 
-            [NonSerialized] bool steppedLastStep;
 
             public enum ClimbRefusal
             {
@@ -331,7 +323,7 @@ namespace FallingWizard.Player
                 SenseGround(fixedDeltaTime);
                 Run(command, stats, fixedDeltaTime);
 
-                TryStepUp(command, stats, fixedDeltaTime);
+                StepUp(command, stats);
 
                 TryJump(stats);
                 ApplyShortHop(command.JumpHeld);
@@ -356,7 +348,6 @@ namespace FallingWizard.Player
                 wind = Vector2.zero;
                 grip = 1f;
                 climbedLastStep = false;
-                steppedLastStep = false;
             }
 
             public void BeginFallFrom(float height)
@@ -389,7 +380,6 @@ namespace FallingWizard.Player
                 rising = false;
 
                 climbedLastStep = false;
-                steppedLastStep = false;
 
                 lockout = Mathf.Max(lockout, controlLockout);
             }
@@ -410,7 +400,6 @@ namespace FallingWizard.Player
 
                 rising = false;
                 climbedLastStep = false;
-                steppedLastStep = false;
 
                 if (!resetsFall)
                     return;
@@ -446,9 +435,10 @@ namespace FallingWizard.Player
                                      "wizard will try to stand on their own collider.");
 
                 if (stepHeight >= 1f)
-                    Debug.LogWarning("Movement.stepHeight is a whole box or more, so the wizard " +
-                                     "walks up any one-tile wall without jumping. It is meant " +
-                                     "for tile seams and the teeth along a ramp, not for steps.");
+                    Debug.LogWarning("Movement.stepHeight is a whole box or more, and a painted " +
+                                     "tile is half that, so the wizard now walks up two-tile " +
+                                     "walls on their own and the staff has almost nothing left " +
+                                     "to climb. Keep it under 1.");
 
                 if (stepHeight > 0f && ledgeCheckDepth <= 1f)
                     Debug.LogWarning("Movement.ledgeCheckDepth is one box or less, so the top of " +
@@ -757,7 +747,9 @@ namespace FallingWizard.Player
                     return false;
                 }
 
-                lip = new Vector2(FaceUnder(box, hook, Rays[0].point.y), Rays[0].point.y);
+                float lipY = Rays[0].point.y;
+
+                lip = new Vector2(FaceUnder(box, hook, lipY), lipY);
 
                 ClimbRise = lip.y - box.min.y;
                 climbFaceY = lip.y;
@@ -803,18 +795,7 @@ namespace FallingWizard.Player
                     sprite.flipX = Facing < 0;
             }
 
-            void TryStepUp(Command command, Modifiers stats, float fixedDeltaTime)
-            {
-                bool stepping = StepUp(command, stats, fixedDeltaTime);
-
-                if (steppedLastStep && !stepping && !rising &&
-                    body.linearVelocityY > 0f && body.linearVelocityY <= stepClimbSpeed)
-                    body.linearVelocityY = 0f;
-
-                steppedLastStep = stepping;
-            }
-
-            bool StepUp(Command command, Modifiers stats, float fixedDeltaTime)
+            bool StepUp(Command command, Modifiers stats)
             {
                 if (stepHeight <= 0f || body == null || hull == null)
                     return false;
@@ -822,7 +803,7 @@ namespace FallingWizard.Player
                 if (lockout > 0f || stats.Rooted)
                     return false;
 
-                if (coyoteTimer <= 0f || (body.linearVelocityY > 0f && !steppedLastStep))
+                if (coyoteTimer <= 0f || body.linearVelocityY > 0f)
                     return false;
 
                 float steer = command.Steer;
@@ -841,15 +822,13 @@ namespace FallingWizard.Player
                 if (rise <= StepClearance || rise > stepHeight)
                     return false;
 
-                float sliver = stepClimbSpeed * fixedDeltaTime;
+                var overhead = new Vector2(box.center.x, box.max.y + hopClearance * 0.5f);
+                var overheadSize = new Vector2(box.size.x - StepClearance * 2f, hopClearance);
 
-                var slab = new Vector2(box.center.x, box.max.y + sliver * 0.5f);
-                var slabSize = new Vector2(box.size.x - StepClearance * 2f, sliver);
-
-                if (Physics2D.OverlapBox(slab, slabSize, 0f, GroundFilter, Overlaps) > 0)
+                if (Physics2D.OverlapBox(overhead, overheadSize, 0f, GroundFilter, Overlaps) > 0)
                     return false;
 
-                body.linearVelocityY = stepClimbSpeed;
+                Launch(rise + hopClearance, hopForward * direction, true);
                 return true;
             }
 

@@ -13,8 +13,9 @@ Every number in the game is expressed in boxes or boxes per second:
 
 | | |
 | --- | --- |
-| Run / walk | 6 and 2 boxes per second |
-| Staff climb | 2 boxes of wall - there is no jump |
+| Run / walk | 4 and 2 boxes per second |
+| Step up | one tile (0.5) walked up on foot, no staff needed |
+| Staff climb | walls of two tiles and up, to 2 boxes - there is no jump |
 | Free fall | 3 boxes |
 | Fall damage | 1 heart per box past that — so 8 boxes kills a full-health wizard |
 | Staff reach | 2 boxes above the feet, authored on the staff - the pole is stretched to match |
@@ -838,8 +839,9 @@ than tuned until they happen to add up to it, so the number you type is the numb
 and the number `WhyNot` quotes back at you. Raising `raiseHeight` or `gripHeight` spends part of
 that reach and shortens the pole to pay for it; it does not make the climb taller.
 
-**`Movement.canJump` is off**, and the staff is what replaced it. Nothing else in the game takes
-the wizard upward under their own power.
+**`Movement.canJump` is off**, and the staff is what replaced it for anything tall. What the staff
+no longer has to do is single steps: `Movement.stepHeight` is 0.55 and a painted tile is 0.5, so the
+wizard walks up any one-tile lip on their own. The staff is for walls of two tiles and up.
 
 It is a **held** button and a **tapped** one, and the two mean different directions. A hold is the
 staff reaching for whatever is in front of you, and it asks again every physics step — raise the

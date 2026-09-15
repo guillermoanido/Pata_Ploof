@@ -1,24 +1,18 @@
 {
     "version": 1,
     "wisps": 0,
-    "bonusHearts": 1,
+    "bonusHearts": 0,
     "loadout": [
         "staff",
-        "glide",
+        "",
         "",
         ""
     ],
     "ranks": [
         {
-            "key": "glide",
-            "rank": 1
-        },
-        {
             "key": "staff",
-            "rank": 2
+            "rank": 1
         }
     ],
-    "spent": [
-        "heartLevel 1:59,-13"
-    ]
+    "spent": []
 }

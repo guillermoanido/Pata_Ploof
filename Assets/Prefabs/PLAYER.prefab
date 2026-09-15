@@ -166,9 +166,10 @@ MonoBehaviour:
       maxSlopeAngle: 55
       flatSlopeAngle: 3
       slopeProbeDepth: 0.5
-      stepHeight: 0.25
+      stepHeight: 0.55
       stepReach: 0.1
-      stepClimbSpeed: 6
+      hopClearance: 0.15
+      hopForward: 1
       catchLedgesInTheAir: 1
       surfaceFriction: 0
       windDecay: 24

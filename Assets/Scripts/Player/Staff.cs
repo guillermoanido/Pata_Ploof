@@ -447,7 +447,7 @@ namespace FallingWizard.Player
 
                 ridingOffset = aimSpeed <= 0f
                     ? wanted
-                    : Mathf.MoveTowards(ridingOffset, wanted, aimSpeed * Time.fixedDeltaTime);
+                    : Mathf.MoveTowards(ridingOffset, wanted, aimSpeed * Time.deltaTime);
 
                 CarryPole();
             }
@@ -795,7 +795,7 @@ namespace FallingWizard.Player
                     return;
                 }
 
-                CarryPole();
+                ShoulderPole();
             }
 
             bool LandingIsClear()
