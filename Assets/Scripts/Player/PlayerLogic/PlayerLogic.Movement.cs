@@ -186,6 +186,14 @@ namespace FallingWizard.Player
             [Tooltip("How fast wind fades once you leave the zone, in boxes per second squared.")]
             [Min(0f)] public float windDecay = 24f;
 
+            [Tooltip("How hard an up or down wind grips, in boxes per second squared, ON TOP of " +
+                     "whatever gravity is doing at the time. The wind's own number is the speed " +
+                     "it wants to carry the wizard at; this is how quickly that speed is " +
+                     "reached. It is added to gravity rather than fighting it, so a zone lifts " +
+                     "at the number it says whatever the wizard weighs. Lower it for wind that " +
+                     "takes a moment to catch someone, not for weaker wind.")]
+            [Min(0f)] public float windLift = 30f;
+
             [NonSerialized] Rigidbody2D body;
             [NonSerialized] SpriteRenderer sprite;
             [NonSerialized] Collider2D hull;
@@ -328,10 +336,8 @@ namespace FallingWizard.Player
                 TryJump(stats);
                 ApplyShortHop(command.JumpHeld);
 
-                if (wind.y != 0f)
-                    body.linearVelocityY += wind.y * fixedDeltaTime;
-
                 ApplyFallGravity(stats);
+                ApplyWindLift(fixedDeltaTime);
 
                 approachVelocityX = body.linearVelocityX;
             }
@@ -960,9 +966,23 @@ namespace FallingWizard.Player
                     ? baseGravityScale * fallGravityMultiplier * floatiness
                     : baseGravityScale;
 
-                float terminalSpeed = maxFallSpeed * floatiness;
+                float terminalSpeed = TerminalFall(floatiness);
                 if (body.linearVelocityY < -terminalSpeed)
                     body.linearVelocityY = -terminalSpeed;
+            }
+
+            float TerminalFall(float floatiness) =>
+                Mathf.Max(maxFallSpeed * floatiness, -wind.y);
+
+            float WindGrip => windLift + BaseGravity * fallGravityMultiplier;
+
+            void ApplyWindLift(float fixedDeltaTime)
+            {
+                if (wind.y == 0f || lockout > 0f)
+                    return;
+
+                body.linearVelocityY =
+                    Mathf.MoveTowards(body.linearVelocityY, wind.y, WindGrip * fixedDeltaTime);
             }
 
             public int PredictArc(Vector2 launch, Modifiers stats, in ArcSettings look,
@@ -977,9 +997,10 @@ namespace FallingWizard.Player
                 arcFilter.layerMask = look.Layers;
 
                 float floatiness = stats != null ? stats.FallSpeedMultiplier : 1f;
-                float terminal = maxFallSpeed * floatiness;
+                float terminal = TerminalFall(floatiness);
                 float step = Mathf.Max(0.005f, look.Step);
                 float updraught = wind.y;
+                float windGrip = WindGrip;
 
                 var point = new Vector2(body.position.x, FeetY + ArcClearance);
                 Vector2 velocity = launch;
@@ -998,10 +1019,13 @@ namespace FallingWizard.Player
                         ? BaseGravity * fallGravityMultiplier * floatiness
                         : BaseGravity;
 
-                    velocity.y += (updraught - gravity) * step;
+                    velocity.y -= gravity * step;
 
                     if (velocity.y < -terminal)
                         velocity.y = -terminal;
+
+                    if (updraught != 0f)
+                        velocity.y = Mathf.MoveTowards(velocity.y, updraught, windGrip * step);
 
                     Vector2 next = point + velocity * step;
                     Vector2 leg = next - point;

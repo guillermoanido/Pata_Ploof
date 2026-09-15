@@ -48,11 +48,12 @@ namespace FallingWizard.World
 
         [Header("Blast")]
         [Tooltip("The punch, in boxes per second, landed once on the step the louvres reach " +
-                 "full open. Unlike the sustained push this is a real speed added straight to " +
-                 "the wizard, which is what makes this a launcher rather than a fan: (0,14) " +
-                 "throws them 3.3 boxes up against a jump of 1.5, and (7,0) fires them sideways " +
-                 "at nearly twice a run. It only catches someone who was already inside when it " +
-                 "fired - walk into a running turbine and you get the gale instead.")]
+                 "full open. The push holds the wizard at a speed for as long as they are in " +
+                 "it; this is added to whatever they are already doing and then let go of, " +
+                 "which is what makes this a launcher rather than a fan: (0,14) throws them 3.3 " +
+                 "boxes up against a jump of 1.5, and (7,0) fires them sideways at nearly twice " +
+                 "a run. It only catches someone who was already inside when it fired - walk " +
+                 "into a running turbine and you get the gale instead.")]
         public Vector2 kick = new Vector2(7f, 0f);
 
         [Tooltip("Seconds the wizard cannot steer for after the punch, so the launch is the " +

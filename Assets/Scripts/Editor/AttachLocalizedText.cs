@@ -28,6 +28,7 @@ namespace FallingWizard.EditorTools
             { "Resolution", "settings.resolution" },
             { "Fullscreen", "settings.fullscreen" },
             { "Volume", "settings.volume" },
+            { "Language", "settings.language" },
             { "Back", "settings.back" },
         };
 
@@ -37,8 +38,8 @@ namespace FallingWizard.EditorTools
             int done = AttachInPrefab() + AttachInScene();
 
             Debug.Log($"Localized Text: {done} label(s) wired up. Anything already carrying one " +
-                      "was left alone, so this is safe to run again. The language dropdown row " +
-                      "itself still has to be added by hand - see the Settings Panel component.");
+                      "was left alone, so this is safe to run again. What each label reads is " +
+                      $"set in {TextBook.AssetPath}, not here.");
         }
 
         static int AttachInPrefab()

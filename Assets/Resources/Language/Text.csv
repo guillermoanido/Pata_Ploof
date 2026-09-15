@@ -1,0 +1,79 @@
+﻿key,english,spanish
+menu.title,Falling Wizard,Falling Wizard
+menu.play,Play,Jugar
+menu.settings,Settings,Opciones
+menu.exit,Exit,Salir
+pause.title,Paused,En pausa
+pause.resume,Resume,Continuar
+pause.mainMenu,Main Menu,Menú principal
+pause.quit,Quit,Salir
+settings.title,Settings,Opciones
+settings.resolution,Resolution,Resolución
+settings.fullscreen,Fullscreen,Pantalla completa
+settings.volume,Volume,Volumen
+settings.language,Language,Idioma
+settings.back,Back,Volver
+settings.resetSave,Reset Save,Borrar partida
+settings.resetSave.title,Reset save?,¿Borrar la partida?
+settings.resetSave.blurb,"Every spell, wisp and heart you have earned is erased, and the run starts again from the beginning. This cannot be undone.","Se borran todos los hechizos, fuegos fatuos y corazones que has ganado, y la bajada empieza otra vez desde el principio. Esto no se puede deshacer."
+settings.resetSave.status,You have {0} wisps banked.,Tienes {0} fuegos fatuos a salvo.
+settings.resetSave.confirm,Erase everything,Borrarlo todo
+settings.resetSave.cancel,Keep my save,Conservar mi partida
+language.english,English,English
+language.spanish,Español,Español
+skill.title,What you carry down,Lo que te llevas abajo
+skill.purse,{0} wisps,{0} fuegos fatuos
+skill.price,{0} wisps,{0} fuegos fatuos
+skill.noBook,No spellbook found at Assets/Resources/Spellbook.asset.,No hay grimorio en Assets/Resources/Spellbook.asset.
+skill.dive,Descend,Bajar
+skill.back,Back to the fall,De vuelta a la caída
+skill.hint.pick,"Pick a spell, then press the button you want it on.",Elige un hechizo y presiona el botón donde lo quieres.
+skill.hint.move,{0}: press {1} to move it.,{0}: presiona {1} para moverlo.
+skill.hint.locked,{0} is not learned yet.,Aún no aprendes {0}.
+skill.on,On {0}.,En {0}.
+skill.bench,On the bench.,En la banca.
+skill.next,{0}  Next: {1} - {2},{0}  Sigue: {1} - {2}
+skill.learn,Learn - {0},Aprender - {0}
+skill.mastered,Mastered,Dominado
+skill.learned,Learned,Aprendido
+death.title,You fell,Te caíste
+death.blurb,"The wisps you were carrying went out with you, and are back where you found them.","Los fuegos fatuos que llevabas se apagaron contigo, y volvieron a donde los encontraste."
+death.status,{0} wisps still banked,Aún tienes {0} fuegos fatuos a salvo
+death.continue,Take it from the last rest,Seguir desde el último descanso
+death.giveUp,Give up the run and go back,Abandonar la bajada y volver
+rest.title,A place to rest,Un lugar para descansar
+rest.blurb,"Further down, or back the way you came.","Más abajo, o de vuelta por donde viniste."
+rest.status,Carrying {0} wisps    {1} already banked    {2}/{3} hearts,{0} en mano    {1} a salvo    {2}/{3} corazones
+rest.pressOn,"Rest, then press on",Descansar y seguir bajando
+rest.turnBack,Turn back and bank {0} wisps,Volver y guardar {0} fuegos fatuos
+hud.wisps,{0} carried    {1} banked,{0} en mano    {1} a salvo
+ability.fling.name,Fling,Impulso
+ability.fling.desc,"Hold to wind up and aim, let go to fly. The line shows you where.","Mantén para apuntar, suelta para volar. La línea te dice adónde."
+ability.fling.upgrade.0.title,Harder throw,Tiro más fuerte
+ability.fling.upgrade.0.desc,Winds up faster and throws you further.,Carga más rápido y te lanza más lejos.
+ability.glide.name,Glide,Planeo
+ability.glide.desc,Throw out a canopy. It barely slows the drop - it carries you.,Despliega un dosel. Casi no frena la caída: te lleva.
+ability.glide.upgrade.0.title,Wider wing,Ala más ancha
+ability.glide.upgrade.0.desc,Carries you half again as far across a fall.,Te lleva la mitad más lejos en cada caída.
+ability.haste.name,Haste,Prisa
+ability.haste.desc,Quicken yourself. Everything else in the level wades. Once per level.,Acelérate. El nivel entero se arrastra. Una vez por nivel.
+ability.haste.upgrade.0.title,Deeper haste,Prisa más honda
+ability.haste.upgrade.0.desc,"You move faster still, and the world slows further.",Te mueves aún más rápido y el mundo se frena más.
+ability.vine.name,Mage Hand,Mano de mago
+ability.vine.desc,Reach out a spectral hand and swing from it. Jump to let go.,Saca una mano espectral y colúmpiate. Salta para soltarte.
+ability.vine.upgrade.0.title,Wider swing,Vaivén amplio
+ability.vine.upgrade.0.desc,The hand leans much further either side before it stops.,La mano se inclina mucho más a cada lado.
+ability.vine.upgrade.1.title,Up and down,Subir y bajar
+ability.vine.upgrade.1.desc,Climb the hand as well as swing on it.,"Además de columpiarte, puedes trepar por la mano."
+ability.staff.name,Staff,Bastón
+ability.staff.desc,"Hold it up against a wall and climb, as high as the staff is long. At a ledge it goes over the lip and you climb down instead.","Apóyalo en un muro y trepa, tan alto como largo sea. En un borde lo clavas sobre el filo y bajas."
+ability.staff.upgrade.0.title,Longer staff,Bastón largo
+ability.staff.upgrade.0.desc,"Half again as long, so it climbs walls that used to be too tall and reaches drops that used to be too deep.",La mitad más largo: trepa muros que antes eran demasiado altos y llega a caídas más hondas.
+ability.hand.name,Telekinesis,Telequinesis
+ability.hand.desc,"Take a hazard with you, and set it down where you want it.",Llévate un peligro contigo y déjalo donde tú quieras.
+ability.hand.upgrade.0.title,Longer reach,Mayor alcance
+ability.hand.upgrade.0.desc,Takes hold of things half again as far away.,Agarra cosas la mitad más lejos.
+ability.wall.name,Wall Growth,Muro
+ability.wall.desc,"Grow a block of stone under the lip of a drop, and step down onto it.",Haz crecer piedra bajo el borde de una caída y bájate a ella.
+ability.wall.upgrade.0.title,Longer reach,Mayor alcance
+ability.wall.upgrade.0.desc,"Places a block a tile further out, and it stands for longer.","Pone el bloque una casilla más afuera, y dura más."

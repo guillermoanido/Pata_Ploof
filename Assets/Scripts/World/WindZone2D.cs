@@ -23,13 +23,14 @@ namespace FallingWizard.World
         static readonly Color ArrowColour = new Color(0.55f, 0.85f, 1f, 0.9f);
 
         [Header("Wind")]
-        [Tooltip("Which way this blows, and how hard. THE TWO NUMBERS ARE NOT THE SAME UNIT. " +
-                 "Sideways, x is a target SPEED in boxes per second that you can lean against " +
-                 "and partly win - (-6,0) is a hard leftward gale next to a run of 4. Upward, " +
-                 "y is an ACCELERATION in boxes per second squared fighting gravity, which " +
-                 "falling is about 50 of, so anything under 25 only makes the drop slower and " +
-                 "nothing under 50 will ever lift you. To throw the wizard upward, use a Wind " +
-                 "Trap and put the number in its Kick, which is a real speed.")]
+        [Tooltip("Which way this blows, and how hard, as the SPEED in boxes per second it wants " +
+                 "to carry the wizard at. Both numbers mean the same thing, so (-6,0) is a hard " +
+                 "leftward gale next to a run of 4 and (0,6) lifts just as firmly. Sideways you " +
+                 "can lean against it and partly win, because steering is added on top. Up and " +
+                 "down it beats gravity outright, so (0,6) really does carry them up at 6 and " +
+                 "(0,-6) pins them down at 6 - it does not need to out-number gravity to be " +
+                 "felt. For a shove that lands once rather than a wind that holds, use a Wind " +
+                 "Trap's Kick.")]
         public Vector2 push = new Vector2(-4f, 0f);
 
         [Tooltip("How quickly the wind takes hold once you step in, in boxes per second squared.")]

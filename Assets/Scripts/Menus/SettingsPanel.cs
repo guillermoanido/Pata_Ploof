@@ -67,7 +67,7 @@ namespace FallingWizard.Menus
             if (resetSaveButton != null)
                 return;
 
-            resetSaveButton = UI.Ui.CreateButton(Loc.Text("settings.resetSave", "Reset Save"),
+            resetSaveButton = UI.Ui.CreateButton(Loc.Get(Loc.Keys.SettingsResetSave),
                 backButton.transform.parent, ResetButtonWidth, ResetButtonHeight);
 
             resetSaveButton.transform.SetSiblingIndex(backButton.transform.GetSiblingIndex());
@@ -76,19 +76,15 @@ namespace FallingWizard.Menus
         void AskToResetSave()
         {
             UI.ChoiceScreen screen = UI.ChoiceScreen.Open(
-                Loc.Text("settings.resetSave.title", "Reset save?"),
-                Loc.Text("settings.resetSave.blurb",
-                    "Every spell, wisp and heart you have earned is erased, and the run starts " +
-                    "again from the beginning. This cannot be undone."));
+                Loc.Get(Loc.Keys.SettingsResetSaveTitle),
+                Loc.Get(Loc.Keys.SettingsResetSaveBlurb));
 
-            screen.Status(string.Format(
-                Loc.Text("settings.resetSave.status", "You have {0} wisps banked."),
-                Progress.Wisps));
+            screen.Status(Loc.Format(Loc.Keys.SettingsResetSaveStatus, Progress.Wisps));
 
-            screen.Choice(Loc.Text("settings.resetSave.confirm", "Erase everything"),
+            screen.Choice(Loc.Get(Loc.Keys.SettingsResetSaveConfirm),
                 () => screen.CloseThen(Wipe));
 
-            screen.Choice(Loc.Text("settings.resetSave.cancel", "Keep my save"), screen.Close);
+            screen.Choice(Loc.Get(Loc.Keys.SettingsResetSaveCancel), screen.Close);
         }
 
         static void Wipe()
@@ -99,13 +95,21 @@ namespace FallingWizard.Menus
 
         void OnEnable()
         {
+            Loc.Changed += Retranslate;
+
             ShowCurrentSettings();
 
             if (EventSystem.current != null)
                 EventSystem.current.SetSelectedGameObject(backButton.gameObject);
         }
 
-        void OnDisable() => GameSettings.Save();
+        void OnDisable()
+        {
+            Loc.Changed -= Retranslate;
+            GameSettings.Save();
+        }
+
+        void Retranslate() => UI.Ui.Retext(resetSaveButton, Loc.Get(Loc.Keys.SettingsResetSave));
 
         void FillResolutionDropdown()
         {
@@ -136,6 +140,7 @@ namespace FallingWizard.Menus
             fullscreenToggle.SetIsOnWithoutNotify(GameSettings.Fullscreen);
             volumeSlider.SetValueWithoutNotify(GameSettings.Volume);
             UpdateVolumeLabel(GameSettings.Volume);
+            Retranslate();
 
             if (languageDropdown != null)
                 languageDropdown.SetValueWithoutNotify(Array.IndexOf(Languages, Loc.Language));

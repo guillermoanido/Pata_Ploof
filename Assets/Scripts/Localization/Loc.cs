@@ -13,28 +13,24 @@ namespace FallingWizard.Localization
 
     public static class Loc
     {
-        const string TableFolder = "Language/";
-
         public const string AbilityPrefix = "ability.";
+
+        const string LanguageNamePrefix = "language.";
+
+        const string EnglishCode = "en";
+        const string SpanishCode = "es";
 
         public static event Action Changed;
 
         static readonly HashSet<string> Warned = new HashSet<string>();
 
-        static LanguageTable table;
-
         public static Language Language { get; private set; } = Language.English;
 
-        public static IReadOnlyDictionary<string, string> English => Source;
-
-        public static string NameOf(Language language)
-        {
-            switch (language)
-            {
-                case Language.Spanish: return "Español";
-                default: return "English";
-            }
-        }
+        public static string NameOf(Language language) =>
+            TextBook.TryFind(LanguageNamePrefix + language.ToString().ToLowerInvariant(),
+                             language, out string name)
+                ? name
+                : language.ToString();
 
         public static void Set(Language language)
         {
@@ -42,8 +38,6 @@ namespace FallingWizard.Localization
                 return;
 
             Language = language;
-            table = FindTable(language);
-
             Warned.Clear();
 
             GameSettings.Language = CodeFor(language);
@@ -57,30 +51,22 @@ namespace FallingWizard.Localization
             if (string.IsNullOrEmpty(key))
                 return string.Empty;
 
-            if (table != null && table.TryFind(key, out string translated))
-                return translated;
+            if (Find(key, out string text))
+                return text;
 
-            if (Source.TryGetValue(key, out string english))
-                return english;
-
-            Warn(key, $"Nothing in the game defines the string '{key}', so the key itself is being " +
-                      "shown. Either the key is misspelt where it is asked for, or it needs " +
-                      "adding to the English table in Loc.cs.");
+            Warn(key, $"Nothing in {TextBook.AssetPath} is keyed '{key}', so the key itself is " +
+                      "being shown. Either it is misspelt where it is asked for, or it needs a " +
+                      "line of its own in that file.");
 
             return key;
         }
 
-        public static string Text(string key, string english)
+        public static string Text(string key, string fallback)
         {
-            if (string.IsNullOrEmpty(key))
-                return english;
+            if (!string.IsNullOrEmpty(key) && Find(key, out string text))
+                return text;
 
-            if (table != null && table.TryFind(key, out string translated))
-                return translated;
-
-            return !string.IsNullOrEmpty(english)
-                ? english
-                : Source.TryGetValue(key, out string source) ? source : string.Empty;
+            return fallback;
         }
 
         public static string Format(string key, params object[] values)
@@ -91,10 +77,15 @@ namespace FallingWizard.Localization
             if (filled != null)
                 return filled;
 
-            string source = Source.TryGetValue(key, out string english) ? english : pattern;
+            if (!TextBook.TryFind(key, Language.English, out string english))
+                return pattern;
 
-            return Fill(key, source, values) ?? source;
+            return Fill(key, english, values) ?? english;
         }
+
+        static bool Find(string key, out string text) =>
+            TextBook.TryFind(key, Language, out text) ||
+            TextBook.TryFind(key, Language.English, out text);
 
         static string Fill(string key, string pattern, object[] values)
         {
@@ -117,22 +108,11 @@ namespace FallingWizard.Localization
                 Debug.LogWarning(message);
         }
 
-        static LanguageTable FindTable(Language language)
-        {
-            LanguageTable found = Resources.Load<LanguageTable>(TableFolder + language);
+        static string CodeFor(Language language) =>
+            language == Language.Spanish ? SpanishCode : EnglishCode;
 
-            if (found == null && language != Language.English)
-                Debug.LogWarning($"There is no {language} translation at " +
-                                 $"Assets/Resources/{TableFolder}{language}.asset, so the game " +
-                                 "will read in English. Make one with Assets > Create > Falling " +
-                                 $"Wizard > Language Table and name the file exactly '{language}'.");
-
-            return found;
-        }
-
-        static string CodeFor(Language language) => language == Language.Spanish ? "es" : "en";
-
-        static Language FromCode(string code) => code == "es" ? Language.Spanish : Language.English;
+        static Language FromCode(string code) =>
+            code == SpanishCode ? Language.Spanish : Language.English;
 
         static Language FromSystem() =>
             Application.systemLanguage == SystemLanguage.Spanish
@@ -149,19 +129,25 @@ namespace FallingWizard.Localization
 
             Language = string.IsNullOrEmpty(saved) ? FromSystem() : FromCode(saved);
 
-            table = FindTable(Language);
+            TextBook.Load();
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void Reset()
         {
             Changed = null;
-            table = null;
             Warned.Clear();
         }
 
         public static class Keys
         {
+            public const string SettingsResetSave = "settings.resetSave";
+            public const string SettingsResetSaveTitle = "settings.resetSave.title";
+            public const string SettingsResetSaveBlurb = "settings.resetSave.blurb";
+            public const string SettingsResetSaveStatus = "settings.resetSave.status";
+            public const string SettingsResetSaveConfirm = "settings.resetSave.confirm";
+            public const string SettingsResetSaveCancel = "settings.resetSave.cancel";
+
             public const string SkillTitle = "skill.title";
             public const string SkillPurse = "skill.purse";
             public const string SkillPrice = "skill.price";
@@ -192,56 +178,5 @@ namespace FallingWizard.Localization
 
             public const string HudWisps = "hud.wisps";
         }
-
-        static readonly Dictionary<string, string> Source = new Dictionary<string, string>
-        {
-            { "menu.title", "Falling Wizard" },
-            { "menu.play", "Play" },
-            { "menu.settings", "Settings" },
-            { "menu.exit", "Exit" },
-
-            { "pause.title", "Paused" },
-            { "pause.resume", "Resume" },
-            { "pause.mainMenu", "Main Menu" },
-            { "pause.quit", "Quit" },
-
-            { "settings.title", "Settings" },
-            { "settings.resolution", "Resolution" },
-            { "settings.fullscreen", "Fullscreen" },
-            { "settings.volume", "Volume" },
-            { "settings.language", "Language" },
-            { "settings.back", "Back" },
-
-            { Keys.SkillTitle, "What you carry down" },
-            { Keys.SkillPurse, "{0} wisps" },
-            { Keys.SkillPrice, "{0} wisps" },
-            { Keys.SkillNoBook, "No spellbook found at Assets/Resources/Spellbook.asset." },
-            { Keys.SkillDive, "Descend" },
-            { Keys.SkillBack, "Back to the fall" },
-            { Keys.SkillHintPick, "Pick a spell, then press the button you want it on." },
-            { Keys.SkillHintMove, "{0}: press {1} to move it." },
-            { Keys.SkillHintLocked, "{0} is not learned yet." },
-            { Keys.SkillOn, "On {0}." },
-            { Keys.SkillBench, "On the bench." },
-            { Keys.SkillNext, "{0}  Next: {1} - {2}" },
-            { Keys.SkillLearn, "Learn - {0}" },
-            { Keys.SkillMastered, "Mastered" },
-            { Keys.SkillLearned, "Learned" },
-
-            { Keys.DeathTitle, "You fell" },
-            { Keys.DeathBlurb, "The wisps you were carrying went out with you, and are back " +
-                               "where you found them." },
-            { Keys.DeathStatus, "{0} wisps still banked" },
-            { Keys.DeathContinue, "Take it from the last rest" },
-            { Keys.DeathGiveUp, "Give up the run and go back" },
-
-            { Keys.RestTitle, "A place to rest" },
-            { Keys.RestBlurb, "Further down, or back the way you came." },
-            { Keys.RestStatus, "Carrying {0} wisps    {1} already banked    {2}/{3} hearts" },
-            { Keys.RestPressOn, "Rest, then press on" },
-            { Keys.RestTurnBack, "Turn back and bank {0} wisps" },
-
-            { Keys.HudWisps, "{0} carried    {1} banked" },
-        };
     }
 }
