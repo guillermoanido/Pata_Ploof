@@ -101,7 +101,9 @@ MonoBehaviour:
   affectsOnStaff: 0
   affectsRagdolled: 1
   ignoresWalking: 1
+  aim: 0
   extraKick: 5
+  extraLift: 0
 --- !u!114 &1471028348
 MonoBehaviour:
   m_ObjectHideFlags: 0
