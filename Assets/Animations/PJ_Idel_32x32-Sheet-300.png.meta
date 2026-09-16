@@ -1,0 +1,429 @@
+fileFormatVersion: 2
+guid: 1438023e965181a42a6b6fb3939d9ee4
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 2345585739621952303
+    second: PJ_Idel_32x32-Sheet-300_0
+  - first:
+      213: 7489263574258837159
+    second: PJ_Idel_32x32-Sheet-300_1
+  - first:
+      213: -3221536661080559778
+    second: PJ_Idel_32x32-Sheet-300_2
+  - first:
+      213: 918831184820648697
+    second: PJ_Idel_32x32-Sheet-300_3
+  - first:
+      213: -1017219496911515996
+    second: PJ_Idel_32x32-Sheet-300_4
+  - first:
+      213: 3762250884666878158
+    second: PJ_Idel_32x32-Sheet-300_5
+  - first:
+      213: 2438626744633849493
+    second: PJ_Idel_32x32-Sheet-300_6
+  - first:
+      213: 2369891866446159153
+    second: PJ_Idel_32x32-Sheet-300_7
+  - first:
+      213: 5401242418464018021
+    second: PJ_Idel_32x32-Sheet-300_8
+  - first:
+      213: -891377930957744658
+    second: PJ_Idel_32x32-Sheet-300_9
+  - first:
+      213: -968231783985328439
+    second: PJ_Idel_32x32-Sheet-300_10
+  - first:
+      213: 5988897569050702900
+    second: PJ_Idel_32x32-Sheet-300_11
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: PJ_Idel_32x32-Sheet-300_0
+      rect:
+        serializedVersion: 2
+        x: 8
+        y: 5
+        width: 92
+        height: 98
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f2b63608dc13d8020800000000000000
+      internalID: 2345585739621952303
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PJ_Idel_32x32-Sheet-300_1
+      rect:
+        serializedVersion: 2
+        x: 113
+        y: 5
+        width: 92
+        height: 98
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7a668fc7a853fe760800000000000000
+      internalID: 7489263574258837159
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PJ_Idel_32x32-Sheet-300_2
+      rect:
+        serializedVersion: 2
+        x: 218
+        y: 5
+        width: 92
+        height: 98
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e5f2565a97dca43d0800000000000000
+      internalID: -3221536661080559778
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PJ_Idel_32x32-Sheet-300_3
+      rect:
+        serializedVersion: 2
+        x: 323
+        y: 5
+        width: 92
+        height: 98
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9fa39cb281850cc00800000000000000
+      internalID: 918831184820648697
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PJ_Idel_32x32-Sheet-300_4
+      rect:
+        serializedVersion: 2
+        x: 428
+        y: 5
+        width: 92
+        height: 98
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4aeccfbc14c12e1f0800000000000000
+      internalID: -1017219496911515996
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PJ_Idel_32x32-Sheet-300_5
+      rect:
+        serializedVersion: 2
+        x: 533
+        y: 5
+        width: 95
+        height: 95
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ec8e7701f33363430800000000000000
+      internalID: 3762250884666878158
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PJ_Idel_32x32-Sheet-300_6
+      rect:
+        serializedVersion: 2
+        x: 635
+        y: 5
+        width: 98
+        height: 95
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 596faa59a1eb7d120800000000000000
+      internalID: 2438626744633849493
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PJ_Idel_32x32-Sheet-300_7
+      rect:
+        serializedVersion: 2
+        x: 737
+        y: 5
+        width: 101
+        height: 95
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 13d5c97a81c83e020800000000000000
+      internalID: 2369891866446159153
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PJ_Idel_32x32-Sheet-300_8
+      rect:
+        serializedVersion: 2
+        x: 842
+        y: 5
+        width: 101
+        height: 95
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 56ec152dc5115fa40800000000000000
+      internalID: 5401242418464018021
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PJ_Idel_32x32-Sheet-300_9
+      rect:
+        serializedVersion: 2
+        x: 947
+        y: 5
+        width: 104
+        height: 95
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ee514a89e7031a3f0800000000000000
+      internalID: -891377930957744658
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PJ_Idel_32x32-Sheet-300_10
+      rect:
+        serializedVersion: 2
+        x: 1055
+        y: 5
+        width: 98
+        height: 95
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9cecf4782562092f0800000000000000
+      internalID: -968231783985328439
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: PJ_Idel_32x32-Sheet-300_11
+      rect:
+        serializedVersion: 2
+        x: 1163
+        y: 5
+        width: 95
+        height: 98
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 434b777cb96dc1350800000000000000
+      internalID: 5988897569050702900
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      PJ_Idel_32x32-Sheet-300_0: 2345585739621952303
+      PJ_Idel_32x32-Sheet-300_1: 7489263574258837159
+      PJ_Idel_32x32-Sheet-300_10: -968231783985328439
+      PJ_Idel_32x32-Sheet-300_11: 5988897569050702900
+      PJ_Idel_32x32-Sheet-300_2: -3221536661080559778
+      PJ_Idel_32x32-Sheet-300_3: 918831184820648697
+      PJ_Idel_32x32-Sheet-300_4: -1017219496911515996
+      PJ_Idel_32x32-Sheet-300_5: 3762250884666878158
+      PJ_Idel_32x32-Sheet-300_6: 2438626744633849493
+      PJ_Idel_32x32-Sheet-300_7: 2369891866446159153
+      PJ_Idel_32x32-Sheet-300_8: 5401242418464018021
+      PJ_Idel_32x32-Sheet-300_9: -891377930957744658
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
