@@ -1,0 +1,429 @@
+fileFormatVersion: 2
+guid: 728c7089fbe660c49b4522ea0d280d82
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -5067371011926135607
+    second: Personaje 32x32-idel_Sheet-200t_0
+  - first:
+      213: -3788919789571482754
+    second: Personaje 32x32-idel_Sheet-200t_1
+  - first:
+      213: -2662956164177950533
+    second: Personaje 32x32-idel_Sheet-200t_2
+  - first:
+      213: 3957047960798333706
+    second: Personaje 32x32-idel_Sheet-200t_3
+  - first:
+      213: -3671571597395952902
+    second: Personaje 32x32-idel_Sheet-200t_4
+  - first:
+      213: -3789783553957912586
+    second: Personaje 32x32-idel_Sheet-200t_5
+  - first:
+      213: 2268189898807666168
+    second: Personaje 32x32-idel_Sheet-200t_6
+  - first:
+      213: 8203049456208498185
+    second: Personaje 32x32-idel_Sheet-200t_7
+  - first:
+      213: 1481623891384938007
+    second: Personaje 32x32-idel_Sheet-200t_8
+  - first:
+      213: 2929280645563380408
+    second: Personaje 32x32-idel_Sheet-200t_9
+  - first:
+      213: -3865754161318042391
+    second: Personaje 32x32-idel_Sheet-200t_10
+  - first:
+      213: -765396885483929631
+    second: Personaje 32x32-idel_Sheet-200t_11
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Personaje 32x32-idel_Sheet-200t_0
+      rect:
+        serializedVersion: 2
+        x: 3
+        y: 0
+        width: 62
+        height: 64
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9cce709a9e41da9b0800000000000000
+      internalID: -5067371011926135607
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Personaje 32x32-idel_Sheet-200t_1
+      rect:
+        serializedVersion: 2
+        x: 69
+        y: 0
+        width: 62
+        height: 64
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e7bd424a68d0b6bc0800000000000000
+      internalID: -3788919789571482754
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Personaje 32x32-idel_Sheet-200t_2
+      rect:
+        serializedVersion: 2
+        x: 135
+        y: 0
+        width: 62
+        height: 64
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bb88cb54a774b0bd0800000000000000
+      internalID: -2662956164177950533
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Personaje 32x32-idel_Sheet-200t_3
+      rect:
+        serializedVersion: 2
+        x: 201
+        y: 0
+        width: 62
+        height: 64
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a0b819ea7224ae630800000000000000
+      internalID: 3957047960798333706
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Personaje 32x32-idel_Sheet-200t_4
+      rect:
+        serializedVersion: 2
+        x: 267
+        y: 0
+        width: 62
+        height: 64
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: afafcc1c515fb0dc0800000000000000
+      internalID: -3671571597395952902
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Personaje 32x32-idel_Sheet-200t_5
+      rect:
+        serializedVersion: 2
+        x: 333
+        y: 0
+        width: 64
+        height: 63
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6ff98b2dfebf76bc0800000000000000
+      internalID: -3789783553957912586
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Personaje 32x32-idel_Sheet-200t_6
+      rect:
+        serializedVersion: 2
+        x: 397
+        y: 0
+        width: 66
+        height: 63
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8f56f8112ba3a7f10800000000000000
+      internalID: 2268189898807666168
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Personaje 32x32-idel_Sheet-200t_7
+      rect:
+        serializedVersion: 2
+        x: 461
+        y: 0
+        width: 68
+        height: 63
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 90ec440d40617d170800000000000000
+      internalID: 8203049456208498185
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Personaje 32x32-idel_Sheet-200t_8
+      rect:
+        serializedVersion: 2
+        x: 527
+        y: 0
+        width: 68
+        height: 63
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 71e2bb84419cf8410800000000000000
+      internalID: 1481623891384938007
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Personaje 32x32-idel_Sheet-200t_9
+      rect:
+        serializedVersion: 2
+        x: 593
+        y: 0
+        width: 68
+        height: 63
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8b27b362a35e6a820800000000000000
+      internalID: 2929280645563380408
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Personaje 32x32-idel_Sheet-200t_10
+      rect:
+        serializedVersion: 2
+        x: 661
+        y: 0
+        width: 66
+        height: 63
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9e466a962151a5ac0800000000000000
+      internalID: -3865754161318042391
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Personaje 32x32-idel_Sheet-200t_11
+      rect:
+        serializedVersion: 2
+        x: 729
+        y: 0
+        width: 63
+        height: 64
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1ef3a808693c065f0800000000000000
+      internalID: -765396885483929631
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      Personaje 32x32-idel_Sheet-200t_0: -5067371011926135607
+      Personaje 32x32-idel_Sheet-200t_1: -3788919789571482754
+      Personaje 32x32-idel_Sheet-200t_10: -3865754161318042391
+      Personaje 32x32-idel_Sheet-200t_11: -765396885483929631
+      Personaje 32x32-idel_Sheet-200t_2: -2662956164177950533
+      Personaje 32x32-idel_Sheet-200t_3: 3957047960798333706
+      Personaje 32x32-idel_Sheet-200t_4: -3671571597395952902
+      Personaje 32x32-idel_Sheet-200t_5: -3789783553957912586
+      Personaje 32x32-idel_Sheet-200t_6: 2268189898807666168
+      Personaje 32x32-idel_Sheet-200t_7: 8203049456208498185
+      Personaje 32x32-idel_Sheet-200t_8: 1481623891384938007
+      Personaje 32x32-idel_Sheet-200t_9: 2929280645563380408
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
