@@ -1,43 +1,43 @@
 fileFormatVersion: 2
-guid: 1438023e965181a42a6b6fb3939d9ee4
+guid: 9099fd1233830c84ca59af098646a0b9
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 2345585739621952303
-    second: PJ_Idel_32x32-Sheet-300_0
+      213: -6589420037974588552
+    second: Personaje 32x32-idel_1Margin_Sheet_0
   - first:
-      213: 7489263574258837159
-    second: PJ_Idel_32x32-Sheet-300_1
+      213: 4906549187261449489
+    second: Personaje 32x32-idel_1Margin_Sheet_1
   - first:
-      213: -3221536661080559778
-    second: PJ_Idel_32x32-Sheet-300_2
+      213: 926222260943968649
+    second: Personaje 32x32-idel_1Margin_Sheet_2
   - first:
-      213: 918831184820648697
-    second: PJ_Idel_32x32-Sheet-300_3
+      213: 2687813903241118640
+    second: Personaje 32x32-idel_1Margin_Sheet_3
   - first:
-      213: -1017219496911515996
-    second: PJ_Idel_32x32-Sheet-300_4
+      213: 6384928156149819632
+    second: Personaje 32x32-idel_1Margin_Sheet_4
   - first:
-      213: 3762250884666878158
-    second: PJ_Idel_32x32-Sheet-300_5
+      213: 6126639130604930374
+    second: Personaje 32x32-idel_1Margin_Sheet_5
   - first:
-      213: 2438626744633849493
-    second: PJ_Idel_32x32-Sheet-300_6
+      213: 2482666308313869128
+    second: Personaje 32x32-idel_1Margin_Sheet_6
   - first:
-      213: 2369891866446159153
-    second: PJ_Idel_32x32-Sheet-300_7
+      213: -7796781464197790968
+    second: Personaje 32x32-idel_1Margin_Sheet_7
   - first:
-      213: 5401242418464018021
-    second: PJ_Idel_32x32-Sheet-300_8
+      213: 5015676609138254906
+    second: Personaje 32x32-idel_1Margin_Sheet_8
   - first:
-      213: -891377930957744658
-    second: PJ_Idel_32x32-Sheet-300_9
+      213: 889401414686077252
+    second: Personaje 32x32-idel_1Margin_Sheet_9
   - first:
-      213: -968231783985328439
-    second: PJ_Idel_32x32-Sheet-300_10
+      213: 6405966903212968499
+    second: Personaje 32x32-idel_1Margin_Sheet_10
   - first:
-      213: 5988897569050702900
-    second: PJ_Idel_32x32-Sheet-300_11
+      213: -4010705618258007575
+    second: Personaje 32x32-idel_1Margin_Sheet_11
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -84,7 +84,7 @@ TextureImporter:
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 100
+  spritePixelsToUnits: 32
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -108,7 +108,7 @@ TextureImporter:
     maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 0
+    textureCompression: 1
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -133,13 +133,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: PJ_Idel_32x32-Sheet-300_0
+      name: Personaje 32x32-idel_1Margin_Sheet_0
       rect:
         serializedVersion: 2
-        x: 8
-        y: 5
-        width: 92
-        height: 98
+        x: 1
+        y: 0
+        width: 32
+        height: 34
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -148,20 +148,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: f2b63608dc13d8020800000000000000
-      internalID: 2345585739621952303
+      spriteID: 8730fa0436dad84a0800000000000000
+      internalID: -6589420037974588552
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: PJ_Idel_32x32-Sheet-300_1
+      name: Personaje 32x32-idel_1Margin_Sheet_1
       rect:
         serializedVersion: 2
-        x: 113
-        y: 5
-        width: 92
-        height: 98
+        x: 33
+        y: 0
+        width: 32
+        height: 34
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -170,20 +170,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 7a668fc7a853fe760800000000000000
-      internalID: 7489263574258837159
+      spriteID: 11543b36d70971440800000000000000
+      internalID: 4906549187261449489
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: PJ_Idel_32x32-Sheet-300_2
+      name: Personaje 32x32-idel_1Margin_Sheet_2
       rect:
         serializedVersion: 2
-        x: 218
-        y: 5
-        width: 92
-        height: 98
+        x: 65
+        y: 0
+        width: 32
+        height: 34
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -192,20 +192,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: e5f2565a97dca43d0800000000000000
-      internalID: -3221536661080559778
+      spriteID: 989df9e2d3a9adc00800000000000000
+      internalID: 926222260943968649
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: PJ_Idel_32x32-Sheet-300_3
+      name: Personaje 32x32-idel_1Margin_Sheet_3
       rect:
         serializedVersion: 2
-        x: 323
-        y: 5
-        width: 92
-        height: 98
+        x: 97
+        y: 0
+        width: 32
+        height: 34
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -214,20 +214,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 9fa39cb281850cc00800000000000000
-      internalID: 918831184820648697
+      spriteID: 0b30b0d11880d4520800000000000000
+      internalID: 2687813903241118640
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: PJ_Idel_32x32-Sheet-300_4
+      name: Personaje 32x32-idel_1Margin_Sheet_4
       rect:
         serializedVersion: 2
-        x: 428
-        y: 5
-        width: 92
-        height: 98
+        x: 129
+        y: 0
+        width: 32
+        height: 34
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -236,20 +236,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 4aeccfbc14c12e1f0800000000000000
-      internalID: -1017219496911515996
+      spriteID: 0f823b74452db9850800000000000000
+      internalID: 6384928156149819632
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: PJ_Idel_32x32-Sheet-300_5
+      name: Personaje 32x32-idel_1Margin_Sheet_5
       rect:
         serializedVersion: 2
-        x: 533
-        y: 5
-        width: 95
-        height: 95
+        x: 161
+        y: 0
+        width: 33
+        height: 33
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -258,20 +258,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: ec8e7701f33363430800000000000000
-      internalID: 3762250884666878158
+      spriteID: 64507b634d1360550800000000000000
+      internalID: 6126639130604930374
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: PJ_Idel_32x32-Sheet-300_6
+      name: Personaje 32x32-idel_1Margin_Sheet_6
       rect:
         serializedVersion: 2
-        x: 635
-        y: 5
-        width: 98
-        height: 95
+        x: 192
+        y: 0
+        width: 34
+        height: 33
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -280,20 +280,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 596faa59a1eb7d120800000000000000
-      internalID: 2438626744633849493
+      spriteID: 84be0ea8ad3347220800000000000000
+      internalID: 2482666308313869128
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: PJ_Idel_32x32-Sheet-300_7
+      name: Personaje 32x32-idel_1Margin_Sheet_7
       rect:
         serializedVersion: 2
-        x: 737
-        y: 5
-        width: 101
-        height: 95
+        x: 224
+        y: 0
+        width: 34
+        height: 33
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -302,20 +302,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 13d5c97a81c83e020800000000000000
-      internalID: 2369891866446159153
+      spriteID: 803042341944cc390800000000000000
+      internalID: -7796781464197790968
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: PJ_Idel_32x32-Sheet-300_8
+      name: Personaje 32x32-idel_1Margin_Sheet_8
       rect:
         serializedVersion: 2
-        x: 842
-        y: 5
-        width: 101
-        height: 95
+        x: 256
+        y: 0
+        width: 34
+        height: 33
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -324,20 +324,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 56ec152dc5115fa40800000000000000
-      internalID: 5401242418464018021
+      spriteID: a34ebe34d434b9540800000000000000
+      internalID: 5015676609138254906
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: PJ_Idel_32x32-Sheet-300_9
+      name: Personaje 32x32-idel_1Margin_Sheet_9
       rect:
         serializedVersion: 2
-        x: 947
-        y: 5
-        width: 104
-        height: 95
+        x: 288
+        y: 0
+        width: 34
+        height: 33
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -346,20 +346,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: ee514a89e7031a3f0800000000000000
-      internalID: -891377930957744658
+      spriteID: 441f719dfd9c75c00800000000000000
+      internalID: 889401414686077252
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: PJ_Idel_32x32-Sheet-300_10
+      name: Personaje 32x32-idel_1Margin_Sheet_10
       rect:
         serializedVersion: 2
-        x: 1055
-        y: 5
-        width: 98
-        height: 95
+        x: 320
+        y: 0
+        width: 34
+        height: 33
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -368,20 +368,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 9cecf4782562092f0800000000000000
-      internalID: -968231783985328439
+      spriteID: 33a0bec45f096e850800000000000000
+      internalID: 6405966903212968499
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: PJ_Idel_32x32-Sheet-300_11
+      name: Personaje 32x32-idel_1Margin_Sheet_11
       rect:
         serializedVersion: 2
-        x: 1163
-        y: 5
-        width: 95
-        height: 98
+        x: 353
+        y: 0
+        width: 33
+        height: 34
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -390,8 +390,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 434b777cb96dc1350800000000000000
-      internalID: 5988897569050702900
+      spriteID: 9e961156d7c1758c0800000000000000
+      internalID: -4010705618258007575
       vertices: []
       indices: 
       edges: []
@@ -410,18 +410,18 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      PJ_Idel_32x32-Sheet-300_0: 2345585739621952303
-      PJ_Idel_32x32-Sheet-300_1: 7489263574258837159
-      PJ_Idel_32x32-Sheet-300_10: -968231783985328439
-      PJ_Idel_32x32-Sheet-300_11: 5988897569050702900
-      PJ_Idel_32x32-Sheet-300_2: -3221536661080559778
-      PJ_Idel_32x32-Sheet-300_3: 918831184820648697
-      PJ_Idel_32x32-Sheet-300_4: -1017219496911515996
-      PJ_Idel_32x32-Sheet-300_5: 3762250884666878158
-      PJ_Idel_32x32-Sheet-300_6: 2438626744633849493
-      PJ_Idel_32x32-Sheet-300_7: 2369891866446159153
-      PJ_Idel_32x32-Sheet-300_8: 5401242418464018021
-      PJ_Idel_32x32-Sheet-300_9: -891377930957744658
+      Personaje 32x32-idel_1Margin_Sheet_0: -6589420037974588552
+      Personaje 32x32-idel_1Margin_Sheet_1: 4906549187261449489
+      Personaje 32x32-idel_1Margin_Sheet_10: 6405966903212968499
+      Personaje 32x32-idel_1Margin_Sheet_11: -4010705618258007575
+      Personaje 32x32-idel_1Margin_Sheet_2: 926222260943968649
+      Personaje 32x32-idel_1Margin_Sheet_3: 2687813903241118640
+      Personaje 32x32-idel_1Margin_Sheet_4: 6384928156149819632
+      Personaje 32x32-idel_1Margin_Sheet_5: 6126639130604930374
+      Personaje 32x32-idel_1Margin_Sheet_6: 2482666308313869128
+      Personaje 32x32-idel_1Margin_Sheet_7: -7796781464197790968
+      Personaje 32x32-idel_1Margin_Sheet_8: 5015676609138254906
+      Personaje 32x32-idel_1Margin_Sheet_9: 889401414686077252
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
