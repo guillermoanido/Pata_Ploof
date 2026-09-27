@@ -1,37 +1,25 @@
 fileFormatVersion: 2
-guid: b964379940a45a3478882cf1e5cb7112
+guid: 4c3b28dba9361584ba155c9eb73cfbb7
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 4753734043426544580
-    second: PJ_Idel_32x32-Sheet_0
+      213: 8394801805449089466
+    second: TileS_Mid_3_0
   - first:
-      213: -4660973756076781104
-    second: PJ_Idel_32x32-Sheet_1
+      213: 7623064611991596458
+    second: TileS_Mid_3_1
   - first:
-      213: 2994752692899381663
-    second: PJ_Idel_32x32-Sheet_2
+      213: -8511135548830370623
+    second: TileS_Mid_3_2
   - first:
-      213: 4849472831798654399
-    second: PJ_Idel_32x32-Sheet_3
+      213: -8278570956571440307
+    second: TileS_Mid_3_3
   - first:
-      213: 9026718036446789587
-    second: PJ_Idel_32x32-Sheet_4
+      213: 7722750800913460462
+    second: TileS_Mid_3_4
   - first:
-      213: -184220025378043114
-    second: PJ_Idel_32x32-Sheet_5
-  - first:
-      213: -2312839052275004062
-    second: PJ_Idel_32x32-Sheet_6
-  - first:
-      213: -5007856748914386600
-    second: PJ_Idel_32x32-Sheet_7
-  - first:
-      213: -2230388857365938637
-    second: PJ_Idel_32x32-Sheet_8
-  - first:
-      213: 5119516546143392898
-    second: PJ_Idel_32x32-Sheet_9
+      213: 8567137267376263233
+    second: TileS_Mid_3_5
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -127,12 +115,12 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: PJ_Idel_32x32-Sheet_0
+      name: TileS_Mid_3_0
       rect:
         serializedVersion: 2
-        x: 0
+        x: 95
         y: 0
-        width: 32
+        width: 290
         height: 32
       alignment: 0
       pivot: {x: 0, y: 0}
@@ -142,19 +130,19 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 4cbde171de7a8f140800000000000000
-      internalID: 4753734043426544580
+      spriteID: ab1d995b3c3508470800000000000000
+      internalID: 8394801805449089466
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: PJ_Idel_32x32-Sheet_1
+      name: TileS_Mid_3_1
       rect:
         serializedVersion: 2
-        x: 32
+        x: 415
         y: 0
-        width: 32
+        width: 34
         height: 32
       alignment: 0
       pivot: {x: 0, y: 0}
@@ -164,19 +152,19 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 0d110a15015e05fb0800000000000000
-      internalID: -4660973756076781104
+      spriteID: aad2c9930e09ac960800000000000000
+      internalID: 7623064611991596458
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: PJ_Idel_32x32-Sheet_2
+      name: TileS_Mid_3_2
       rect:
         serializedVersion: 2
-        x: 64
+        x: 479
         y: 0
-        width: 32
+        width: 194
         height: 32
       alignment: 0
       pivot: {x: 0, y: 0}
@@ -186,19 +174,19 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: f91896215bf7f8920800000000000000
-      internalID: 2994752692899381663
+      spriteID: 1c434c0ff4f52e980800000000000000
+      internalID: -8511135548830370623
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: PJ_Idel_32x32-Sheet_3
+      name: TileS_Mid_3_3
       rect:
         serializedVersion: 2
-        x: 96
+        x: 703
         y: 0
-        width: 32
+        width: 130
         height: 32
       alignment: 0
       pivot: {x: 0, y: 0}
@@ -208,19 +196,19 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: fb5344fc8d9cc4340800000000000000
-      internalID: 4849472831798654399
+      spriteID: d4b81b5a39b9c1d80800000000000000
+      internalID: -8278570956571440307
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: PJ_Idel_32x32-Sheet_4
+      name: TileS_Mid_3_4
       rect:
         serializedVersion: 2
-        x: 128
+        x: 863
         y: 0
-        width: 32
+        width: 35
         height: 32
       alignment: 0
       pivot: {x: 0, y: 0}
@@ -230,19 +218,19 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 3dfb5028a38554d70800000000000000
-      internalID: 9026718036446789587
+      spriteID: eec6f41cfe8bc2b60800000000000000
+      internalID: 7722750800913460462
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: PJ_Idel_32x32-Sheet_5
+      name: TileS_Mid_3_5
       rect:
         serializedVersion: 2
-        x: 160
+        x: 927
         y: 0
-        width: 32
+        width: 34
         height: 32
       alignment: 0
       pivot: {x: 0, y: 0}
@@ -252,96 +240,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 61b04daecd4817df0800000000000000
-      internalID: -184220025378043114
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: PJ_Idel_32x32-Sheet_6
-      rect:
-        serializedVersion: 2
-        x: 192
-        y: 0
-        width: 32
-        height: 32
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 26d4f7ac22527efd0800000000000000
-      internalID: -2312839052275004062
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: PJ_Idel_32x32-Sheet_7
-      rect:
-        serializedVersion: 2
-        x: 224
-        y: 0
-        width: 32
-        height: 32
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 8595ae2d1d4808ab0800000000000000
-      internalID: -5007856748914386600
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: PJ_Idel_32x32-Sheet_8
-      rect:
-        serializedVersion: 2
-        x: 256
-        y: 0
-        width: 32
-        height: 32
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 33eb6bdb6211c01e0800000000000000
-      internalID: -2230388857365938637
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: PJ_Idel_32x32-Sheet_9
-      rect:
-        serializedVersion: 2
-        x: 288
-        y: 0
-        width: 32
-        height: 32
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 2849c92ac2d2c0740800000000000000
-      internalID: 5119516546143392898
+      spriteID: 14019fb34f594e670800000000000000
+      internalID: 8567137267376263233
       vertices: []
       indices: 
       edges: []
@@ -360,16 +260,12 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      PJ_Idel_32x32-Sheet_0: 4753734043426544580
-      PJ_Idel_32x32-Sheet_1: -4660973756076781104
-      PJ_Idel_32x32-Sheet_2: 2994752692899381663
-      PJ_Idel_32x32-Sheet_3: 4849472831798654399
-      PJ_Idel_32x32-Sheet_4: 9026718036446789587
-      PJ_Idel_32x32-Sheet_5: -184220025378043114
-      PJ_Idel_32x32-Sheet_6: -2312839052275004062
-      PJ_Idel_32x32-Sheet_7: -5007856748914386600
-      PJ_Idel_32x32-Sheet_8: -2230388857365938637
-      PJ_Idel_32x32-Sheet_9: 5119516546143392898
+      TileS_Mid_3_0: 8394801805449089466
+      TileS_Mid_3_1: 7623064611991596458
+      TileS_Mid_3_2: -8511135548830370623
+      TileS_Mid_3_3: -8278570956571440307
+      TileS_Mid_3_4: 7722750800913460462
+      TileS_Mid_3_5: 8567137267376263233
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
