@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 986ff6fd027d9834d9eba63acb7285e1
+guid: 761f4cdcd36b3d140ae5f1e12e45eaed
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 6283170266760780616
-    second: Personaje 32x32_0
+      213: -901043799587856501
+    second: Staff_32x32_v1_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -100,12 +100,12 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Personaje 32x32_0
+      name: Staff_32x32_v1_0
       rect:
         serializedVersion: 2
-        x: 0
+        x: 7
         y: 0
-        width: 32
+        width: 15
         height: 32
       alignment: 0
       pivot: {x: 0, y: 0}
@@ -115,8 +115,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 84b9295611e423750800000000000000
-      internalID: 6283170266760780616
+      spriteID: b8f5f7e2079de73f0800000000000000
+      internalID: -901043799587856501
       vertices: []
       indices: 
       edges: []
@@ -135,7 +135,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Personaje 32x32_0: 6283170266760780616
+      Staff_32x32_v1_0: -901043799587856501
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
