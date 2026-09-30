@@ -17,7 +17,7 @@ namespace FallingWizard.EditorTools
 
         static readonly Dictionary<string, string> Keys = new Dictionary<string, string>
         {
-            { "Falling Wizard", "menu.title" },
+            { "Pata Ploof", "menu.title" },
             { "Play", "menu.play" },
             { "Exit", "menu.exit" },
             { "Paused", "pause.title" },

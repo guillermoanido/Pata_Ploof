@@ -1,5 +1,5 @@
 ﻿key,english,spanish
-menu.title,Falling Wizard,Falling Wizard
+menu.title,Pata Ploof,Pata Ploof
 menu.play,Play,Jugar
 menu.settings,Settings,Opciones
 menu.exit,Exit,Salir
@@ -84,7 +84,7 @@ controls.controller,Controller,Mando
 controls.playing,Playing,En el juego
 controls.menus,Menus,Menús
 controls.move,Move,Moverse
-controls.walk,Walk (toggle),Andar (alterna)
+controls.walk,Walk (toggle),Caminar (alterna)
 controls.spell,Spell {0},Hechizo {0}
 controls.loadout,Spellbook,Grimorio
 controls.pause,Pause,Pausa
