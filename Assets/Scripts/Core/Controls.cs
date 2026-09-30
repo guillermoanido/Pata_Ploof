@@ -56,14 +56,22 @@ namespace FallingWizard.Core
             return action;
         }
 
-        public static string Glyph(InputAction action)
+        public static string Glyph(InputAction action) => GlyphFor(action, Scheme);
+
+        public static string GlyphFor(InputAction action, string scheme)
         {
             if (action == null)
                 return string.Empty;
 
             return action.GetBindingDisplayString(
-                InputBinding.MaskByGroup(Scheme),
+                InputBinding.MaskByGroup(scheme),
                 InputBinding.DisplayStringOptions.DontIncludeInteractions);
+        }
+
+        public static InputAction Lookup(string path)
+        {
+            InputActionAsset actions = InputSystem.actions;
+            return actions != null ? actions.FindAction(path) : null;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]

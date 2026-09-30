@@ -16,6 +16,9 @@ namespace FallingWizard.Menus
         const float ResetButtonWidth = 260f;
         const float ResetButtonHeight = 56f;
 
+        const float ControlsButtonWidth = 260f;
+        const float ControlsButtonHeight = 56f;
+
         static readonly Language[] Languages = (Language[])Enum.GetValues(typeof(Language));
 
         [SerializeField] TMP_Dropdown resolutionDropdown;
@@ -28,6 +31,11 @@ namespace FallingWizard.Menus
                  "Leave it empty and the panel builds its own beside the Back button, so the " +
                  "Pause Menu prefab and the Main Menu scene both get one without being rewired.")]
         [SerializeField] Button resetSaveButton;
+
+        [Tooltip("Opens a read-only sheet of every button, keyboard down one column and " +
+                 "controller down the other. Leave it empty and the panel builds its own beside " +
+                 "the Back button, so both rigs get one without being rewired.")]
+        [SerializeField] Button controlsButton;
 
         [Tooltip("The language row's dropdown. This rig exists twice - once inside the Pause Menu " +
                  "prefab and once inside the Main Menu scene - so leaving it empty is allowed and " +
@@ -52,6 +60,9 @@ namespace FallingWizard.Menus
             volumeSlider.onValueChanged.AddListener(OnVolumeChanged);
             backButton.onClick.AddListener(() => Closed?.Invoke());
 
+            EnsureControlsButton();
+            controlsButton.onClick.AddListener(ShowControls);
+
             EnsureResetButton();
             resetSaveButton.onClick.AddListener(AskToResetSave);
 
@@ -72,6 +83,19 @@ namespace FallingWizard.Menus
 
             resetSaveButton.transform.SetSiblingIndex(backButton.transform.GetSiblingIndex());
         }
+
+        void EnsureControlsButton()
+        {
+            if (controlsButton != null)
+                return;
+
+            controlsButton = UI.Ui.CreateButton(Loc.Get(Loc.Keys.SettingsControls),
+                backButton.transform.parent, ControlsButtonWidth, ControlsButtonHeight);
+
+            controlsButton.transform.SetSiblingIndex(backButton.transform.GetSiblingIndex());
+        }
+
+        static void ShowControls() => UI.ControlsScreen.Open();
 
         void AskToResetSave()
         {
@@ -109,7 +133,11 @@ namespace FallingWizard.Menus
             GameSettings.Save();
         }
 
-        void Retranslate() => UI.Ui.Retext(resetSaveButton, Loc.Get(Loc.Keys.SettingsResetSave));
+        void Retranslate()
+        {
+            UI.Ui.Retext(controlsButton, Loc.Get(Loc.Keys.SettingsControls));
+            UI.Ui.Retext(resetSaveButton, Loc.Get(Loc.Keys.SettingsResetSave));
+        }
 
         void FillResolutionDropdown()
         {

@@ -141,6 +141,7 @@ namespace FallingWizard.Localization
 
         public static class Keys
         {
+            public const string SettingsControls = "settings.controls";
             public const string SettingsResetSave = "settings.resetSave";
             public const string SettingsResetSaveTitle = "settings.resetSave.title";
             public const string SettingsResetSaveBlurb = "settings.resetSave.blurb";

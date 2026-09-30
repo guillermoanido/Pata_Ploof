@@ -77,3 +77,20 @@ ability.wall.name,Wall Growth,Muro
 ability.wall.desc,"Grow a block of stone under the lip of a drop, and step down onto it.",Haz crecer piedra bajo el borde de una caída y bájate a ella.
 ability.wall.upgrade.0.title,Longer reach,Mayor alcance
 ability.wall.upgrade.0.desc,"Places a block a tile further out, and it stands for longer.","Pone el bloque una casilla más afuera, y dura más."
+settings.controls,Controls,Controles
+controls.title,Controls,Controles
+controls.keyboard,Keyboard,Teclado
+controls.controller,Controller,Mando
+controls.playing,Playing,En el juego
+controls.menus,Menus,Menús
+controls.move,Move,Moverse
+controls.walk,Walk (toggle),Andar (alterna)
+controls.spell,Spell {0},Hechizo {0}
+controls.loadout,Spellbook,Grimorio
+controls.pause,Pause,Pausa
+controls.skip,Skip cutscene,Saltar escena
+controls.menuMove,Navigate,Moverse
+controls.menuPick,Select,Elegir
+controls.menuBack,Back,Atrás
+controls.none,—,—
+controls.close,Back,Volver

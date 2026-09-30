@@ -89,9 +89,22 @@ namespace FallingWizard.World
 
         void OnValidate()
         {
-            FitSheet();
             WarnAboutSpeedGate();
+
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.delayCall += FitSheetLater;
+#endif
         }
+
+#if UNITY_EDITOR
+        void FitSheetLater()
+        {
+            UnityEditor.EditorApplication.delayCall -= FitSheetLater;
+
+            if (this != null)
+                FitSheet();
+        }
+#endif
 
         protected override void Awake()
         {

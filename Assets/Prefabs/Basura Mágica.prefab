@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 2593260545}
   - component: {fileID: 2593260546}
   m_Layer: 0
-  m_Name: Wisp
+  m_Name: "Basura M\xE1gica"
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

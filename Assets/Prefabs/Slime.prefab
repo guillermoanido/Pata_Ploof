@@ -100,7 +100,8 @@ MonoBehaviour:
   damage: 0
   affectsOnStaff: 0
   affectsRagdolled: 1
-  bounceHeight: 3
+  ignoresWalking: 1
+  bounceHeight: 1
   shove: 2
   ragdolls: 1
   resetsFall: 1
