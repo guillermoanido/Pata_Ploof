@@ -1,4 +1,5 @@
 using FallingWizard.Core;
+using FallingWizard.Localization;
 using FallingWizard.Player;
 using UnityEngine;
 
@@ -40,6 +41,21 @@ namespace FallingWizard.World
             if (startsOver)
                 Progress.ClearCheckpoint();
 
+            Offer();
+        }
+
+        void Offer()
+        {
+            UI.ChoiceScreen screen = UI.ChoiceScreen.Open(Loc.Get(Loc.Keys.ExitTitle),
+                                                          Loc.Get(Loc.Keys.ExitBlurb));
+
+            screen.Status(Loc.Format(Loc.Keys.ExitStatus, Progress.Wisps));
+
+            screen.Choice(Loc.Get(Loc.Keys.ExitAgain), () => screen.CloseThen(Leave));
+        }
+
+        void Leave()
+        {
             if (string.IsNullOrEmpty(nextScene))
                 Game.ReloadCurrentScene();
             else

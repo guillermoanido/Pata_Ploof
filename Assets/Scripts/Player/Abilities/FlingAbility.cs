@@ -35,9 +35,11 @@ namespace FallingWizard.Player
                  "little makes the landing read as deliberate; a lot takes the recovery away.")]
         [Min(0f)] public float extraLock = 0.05f;
 
-        [Header("The Line")]
-        [Tooltip("What the arc is allowed to notice. Ground so it knows where you land, Hazard " +
-                 "so it can warn you what you are about to fly through.")]
+        [Header("The Look Ahead")]
+        [Tooltip("What the flight is allowed to notice. Ground so it knows where you land, " +
+                 "Hazard so the arrow can warn you what you are about to fly through. This is " +
+                 "still simulated even though the arrow does not draw the path - it is what " +
+                 "sets the landing and how long steering stays locked.")]
         public LayerMask seen = (1 << 6) | (1 << 8);
 
         [Tooltip("Seconds per simulated step. Smaller is smoother and more accurate.")]
@@ -49,24 +51,32 @@ namespace FallingWizard.Player
         [Tooltip("How far ahead to look, in boxes. The line stops here even if it never lands.")]
         [Min(1f)] public float lookAhead = 16f;
 
-        [Header("Dots")]
-        [Tooltip("Leave empty for a plain square. A ring or a chevron reads better once you have art.")]
-        public Sprite dotArt;
+        [Header("Arrow")]
+        [Tooltip("Leave empty and the arrow is drawn from two boxes, a shaft and a turned square " +
+                 "for the head. Give it a real arrow sprite and that is drawn whole instead - " +
+                 "draw it pointing RIGHT, because it is turned from there.")]
+        public Sprite arrowArt;
 
-        [Min(0.05f)] public float spacing = 0.32f;
-        [Min(0.01f)] public float dotSize = 0.13f;
-        [Range(4, 200)] public int maxDots = 60;
+        [Tooltip("How long the arrow is with no charge, in boxes.")]
+        [Min(0.1f)] public float minLength = 1.1f;
 
-        [Tooltip("Dots shrink toward the far end, so the near ones read as the confident part.")]
-        [Range(0f, 1f)] public float taper = 0.45f;
+        [Tooltip("How long it is at full charge. This is a read on power, not a promise about " +
+                 "distance - a full throw carries much further than the arrow is long.")]
+        [Min(0.1f)] public float maxLength = 3f;
+
+        [Tooltip("How thick the shaft is, in boxes. Ignored when an arrow sprite is given.")]
+        [Min(0.01f)] public float thickness = 0.12f;
+
+        [Tooltip("How big the head is, in boxes, measured along the arrow.")]
+        [Min(0.05f)] public float headSize = 0.45f;
 
         public Color safe = new Color(0.95f, 0.93f, 0.75f, 0.85f);
 
         [Tooltip("Drawn when the flight passes through something that will change where you end " +
-                 "up. The arc carries on - hazards here are things you fly through, not walls.")]
+                 "up - hazards here are things you fly through, not walls.")]
         public Color danger = new Color(0.95f, 0.35f, 0.30f, 0.9f);
 
-        [Tooltip("Sorting order. Above the level, so the line is never drawn inside a wall.")]
+        [Tooltip("Sorting order. Above the level, so the arrow is never drawn inside a wall.")]
         public int sortingOrder = 20;
 
         [Header("Ranks")]
@@ -113,7 +123,7 @@ namespace FallingWizard.Player
                 return;
 
             charge.winding = false;
-            charge.arc?.Hide();
+            charge.arrow?.Hide();
 
             if (wizard.State != PlayerState.Normal || !wizard.spellbook.Fire(this))
                 return;
@@ -140,15 +150,16 @@ namespace FallingWizard.Player
 
             Drop(wizard);
 
-            if (charge.arc != null)
-                Destroy(charge.arc.gameObject);
+            if (charge.arrow != null)
+                Destroy(charge.arrow.gameObject);
 
-            charge.arc = null;
+            charge.arrow = null;
         }
 
         protected override void Validate()
         {
             maxSpeed = Mathf.Max(minSpeed, maxSpeed);
+            maxLength = Mathf.Max(minLength, maxLength);
             maxAngle = Mathf.Max(minAngle, maxAngle);
             restAngle = Mathf.Clamp(restAngle, minAngle, maxAngle);
 
@@ -200,14 +211,22 @@ namespace FallingWizard.Player
 
         void Draw(PlayerLogic wizard, Charge charge)
         {
-            if (charge.arc == null)
-                charge.arc = FlingArc.Make(dotArt, spacing, dotSize, maxDots, taper, safe, danger,
+            if (charge.arrow == null)
+                charge.arrow = FlingArrow.Make(arrowArt, thickness, headSize, safe, danger,
                     sortingOrder);
 
-            wizard.PredictArc(Launch(wizard, charge), Look(wizard), charge.path,
+            Vector2 launch = Launch(wizard, charge);
+
+            wizard.PredictArc(launch, Look(wizard), charge.path,
                 out PlayerLogic.Movement.ArcEnd end);
 
-            charge.arc?.Show(charge.path, end, charge.wound);
+            Vector2 from = charge.path.Count > 0
+                ? charge.path[0]
+                : (Vector2)wizard.Rig.position;
+
+            float length = Mathf.Lerp(minLength, maxLength, Mathf.Clamp01(charge.wound));
+
+            charge.arrow.Show(from, launch, length, end.Hazard, charge.wound);
         }
 
         void Drop(PlayerLogic wizard)
@@ -216,7 +235,7 @@ namespace FallingWizard.Player
 
             charge.winding = false;
             charge.wound = 0f;
-            charge.arc?.Hide();
+            charge.arrow?.Hide();
         }
 
         Tier Of(PlayerLogic wizard) =>
@@ -239,7 +258,7 @@ namespace FallingWizard.Player
         {
             public readonly List<Vector2> path = new List<Vector2>(256);
 
-            public FlingArc arc;
+            public FlingArrow arrow;
             public bool winding;
             public float wound;
             public float angle = 55f;

@@ -43,11 +43,11 @@ MonoBehaviour:
   step: 0.02
   steps: 200
   lookAhead: 16
-  dotArt: {fileID: 0}
-  spacing: 0.32
-  dotSize: 0.13
-  maxDots: 60
-  taper: 0.45
+  arrowArt: {fileID: 0}
+  minLength: 1.1
+  maxLength: 3
+  thickness: 0.12
+  headSize: 0.45
   safe: {r: 0.95, g: 0.93, b: 0.75, a: 0.85}
   danger: {r: 0.95, g: 0.35, b: 0.3, a: 0.9}
   sortingOrder: 20

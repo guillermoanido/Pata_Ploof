@@ -32,7 +32,7 @@ coming back down it can never hurt you.
 | `Player/Abilities/` | `Ability` and the spells, `AbilityBook`, `AbilityShrine` |
 | `Localization/` | `Loc`, `LanguageTable`, `LocalizedText` |
 | `World/` | `PlayerTrigger`, `Hazard` and the seven hazards, `Pickup`, `TileGrid`, `FollowCamera` |
-| `UI/` | `PlayerHud`, `HudSlot`, `FlingArc`, `Ui` and the two runtime screens |
+| `UI/` | `PlayerHud`, `HudSlot`, `FlingArrow`, `Ui` and the runtime screens |
 | `Menus/`, `Cutscenes/` | `MenuScreen` and the three menus; `CutsceneRunner` |
 
 ### The wizard is one class, eight files

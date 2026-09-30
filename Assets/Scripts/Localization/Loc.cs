@@ -171,6 +171,11 @@ namespace FallingWizard.Localization
             public const string DeathContinue = "death.continue";
             public const string DeathGiveUp = "death.giveUp";
 
+            public const string ExitTitle = "exit.title";
+            public const string ExitBlurb = "exit.blurb";
+            public const string ExitStatus = "exit.status";
+            public const string ExitAgain = "exit.again";
+
             public const string RestTitle = "rest.title";
             public const string RestBlurb = "rest.blurb";
             public const string RestStatus = "rest.status";
