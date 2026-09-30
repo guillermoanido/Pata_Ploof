@@ -46,7 +46,7 @@ rest.blurb,"Further down, or back the way you came.","Más abajo, o de vuelta po
 rest.status,Carrying {0} Magic Scrap    {1} already banked    {2}/{3} hearts,{0} en mano    {1} a salvo    {2}/{3} corazones
 rest.pressOn,"Rest, then press on",Descansar y seguir bajando
 rest.turnBack,Turn back and bank {0} Magic Scrap,Volver y guardar {0} Basura Mágica
-hud.Magic Scrap,{0} carried    {1} banked,{0} en mano    {1} a salvo
+hud.wisps,{0} carried    {1} banked,{0} en mano    {1} a salvo
 ability.fling.name,Fling,Impulso
 ability.fling.desc,"Hold to wind up and aim, let go to be flung.","Mantén presionado para apuntar, suelta para ser arrojado."
 ability.fling.upgrade.0.title,Harder throw,Tiro más fuerte
@@ -56,15 +56,15 @@ ability.glide.desc,Throw out your hat to glide around.,Despliega tu sombrero par
 ability.glide.upgrade.0.title,Wider hat gives more control.,El sombrero se agranda otorgando mayor control.
 ability.glide.upgrade.0.desc,Lets you grab wind better.,Permite utilizar mejor el viento.
 ability.haste.name,Haste,Prisa
-ability.haste.desc,Quicken yourself for 10 seconds, everything else in the floor slows down. Can be used only once per floor.,Acelérate por 10 segundos y gana velocidad, el nivel entero se enlentece. Puede ser usado una vez por nivel.
+ability.haste.desc,"Quicken yourself for 10 seconds, everything else in the floor slows down. Can be used only once per floor.","Acelérate por 10 segundos y gana velocidad, el nivel entero se enlentece. Puede ser usado una vez por nivel."
 ability.haste.upgrade.0.title,Deeper haste,Prisa más honda
 ability.haste.upgrade.0.desc,"You move faster still, and the world slows further.",Te mueves aún más rápido y el mundo se frena más.
 ability.vine.name,Mage Hand,Mano de mago
-ability.vine.desc,Reach out a spectral hand and swing from it, press the button to let go.,Saca una mano espectral y colúmpiate, presiona nuevamente el botón para soltarte.
+ability.vine.desc,"Reach out a spectral hand and swing from it, press the button to let go.","Saca una mano espectral y colúmpiate, presiona nuevamente el botón para soltarte."
 ability.vine.upgrade.0.title,Wider swing,Vaivén amplio
 ability.vine.upgrade.0.desc,The hand leans much further either side before it stops.,La mano se inclina mucho más a cada lado.
 ability.vine.upgrade.1.title,Up and down,Subir y bajar
-ability.vine.upgrade.1.desc,Climb the hand as well as swing on it.,Además de columpiarte, puedes trepar por la mano.
+ability.vine.upgrade.1.desc,Climb the hand as well as swing on it.,"Además de columpiarte, puedes trepar por la mano."
 ability.staff.name,Staff,Bastón
 ability.staff.desc,"Hold it up against a wall and climb, as high as the staff is long. At a ledge it goes over the lip and you climb down instead.","Apóyalo en un muro y trepa, tan alto como largo sea. En un borde lo clavas sobre el filo y bajas."
 ability.staff.upgrade.0.title,Longer staff,Bastón largo
