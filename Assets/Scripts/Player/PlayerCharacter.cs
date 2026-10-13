@@ -65,6 +65,7 @@ namespace FallingWizard.Player
             rigidbody2d.gravityScale = gravityScale;
             rigidbody2d.interpolation = RigidbodyInterpolation2D.Interpolate;
             rigidbody2d.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+            rigidbody2d.sleepMode = RigidbodySleepMode2D.NeverSleep;
 
             var collider2d = GetComponent<Collider2D>();
             if (collider2d != null)

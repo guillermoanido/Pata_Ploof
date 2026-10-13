@@ -209,6 +209,8 @@ namespace FallingWizard.Player
 
             [NonSerialized] float grip = 1f;
 
+            [NonSerialized] Vector2 carrier;
+
             [NonSerialized] Vector2 groundNormal = Vector2.up;
             [NonSerialized] float groundAngle;
             [NonSerialized] bool climbedLastStep;
@@ -239,6 +241,8 @@ namespace FallingWizard.Player
             [NonSerialized] bool climbFaceFound;
 
             public bool IsGrounded { get; private set; }
+
+            public Collider2D StandingOn { get; private set; }
 
             public int Airtime { get; private set; }
             public bool IsAtEdge { get; private set; }
@@ -347,6 +351,7 @@ namespace FallingWizard.Player
                 body.linearVelocity = Vector2.zero;
                 wind = Vector2.zero;
                 grip = 1f;
+                carrier = Vector2.zero;
                 climbedLastStep = false;
             }
 
@@ -370,6 +375,8 @@ namespace FallingWizard.Player
             }
 
             public void SetGrip(float value) => grip = Mathf.Clamp01(value);
+
+            public void SetCarrier(Vector2 velocity) => carrier = velocity;
 
             public void AddImpulse(Vector2 velocity, float controlLockout)
             {
@@ -543,6 +550,7 @@ namespace FallingWizard.Player
                     ProbeOrigin, groundCheckSize, 0f, GroundFilter, Overlaps);
 
                 IsGrounded = count > 0;
+                StandingOn = IsGrounded ? Overlaps[0] : null;
 
                 SenseSlope();
 
@@ -862,9 +870,16 @@ namespace FallingWizard.Player
                         rate * fixedDeltaTime))
                     return;
 
-                body.linearVelocityX =
-                    Mathf.MoveTowards(body.linearVelocityX, targetSpeed, rate * fixedDeltaTime);
+                float speedOverTheGround = body.linearVelocityX - carrier.x;
+
+                body.linearVelocityX = carrier.x +
+                    Mathf.MoveTowards(speedOverTheGround, targetSpeed, rate * fixedDeltaTime);
+
+                if (IsGrounded && IsCarried && !rising)
+                    body.linearVelocityY = carrier.y;
             }
+
+            bool IsCarried => carrier != Vector2.zero;
 
             bool TryRunAlongRamp(float targetSpeed, float topSpeed, float change)
             {
