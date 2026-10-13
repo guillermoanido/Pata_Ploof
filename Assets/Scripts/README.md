@@ -326,13 +326,12 @@ and re-parenting; moving one makes it a new pickup. Give two pickups sharing a s
 
 The name is worked out once, in `Awake`, and kept. It has to be: the idle bob would otherwise drag
 the position across a quarter-box boundary and quietly rename the pickup between being seen and
-being touched. For the same reason **only the art bobs** — `Dress` refuses to bob a
+being touched. For the same reason **only the art bobs** — `FindArtToBob` refuses to bob a
 `SpriteRenderer` sitting on the root, because that would walk the trigger around with it.
 
 Drag in `Assets/Prefabs/Wisp` and `Assets/Prefabs/Heart Upgrade` and they work as they land: a
-trigger `CircleCollider2D`, the component, and an `Art` child to drop a sprite onto. Leave that
-sprite empty and a flat tinted block stands in, so a freshly placed pickup is always visible rather
-than invisibly working.
+trigger `CircleCollider2D`, the component, and an `Art` child to drop a sprite onto. The code never
+changes that sprite — what you put there is what is drawn.
 
 `RestSite` is a `Checkpoint` that stops to ask. Reaching one marks the respawn point, then offers
 **rest and press on** (full hearts, charges back, cooldowns cleared) or **turn back** (bank, end
@@ -685,7 +684,7 @@ a sprite of yours.
 | `Hand Hold` | The knot Mage Hand catches. | Default |
 | `Boulder` | What Telekinesis lifts. Solid, so it is also a platform. | **Ground** |
 | `Stone Wall` | What Wall Growth raises. Already wired into the spell. | **Ground** |
-| `Level Exit` | The bottom. Starts the level again for now. | Default |
+| `Level Exit` | The bottom. Marks the level completed and opens the Level Select. | Default |
 
 The two on **Ground** are there because the wizard has to be able to stand on them, and the ground
 check only looks at that layer. The seven on **Hazard** are triggers you pass straight through —
@@ -708,9 +707,23 @@ that floor hunt and grows a wall upward instead.
 narrow and tall is a wall to climb or hide behind. Only the axis it is growing along is animated,
 so the other is right from the first frame and there is something solid underfoot immediately.
 
-`Level Exit` reloads the level and clears the last rest site, so a lap starts from the top rather
-than dropping you back where you sat down. `nextScene` is there for when there is somewhere to go;
-`banksWisps` stays off while this only goes round again, or a lap would pay out forever.
+`Level Exit` marks the level completed (`Progress.CompleteLevel`), clears the last rest site so a
+replay starts from the top, and loads the `Level Select` scene. `banksWisps` banks what is being
+carried on the way out, the way turning back at a rest site does.
+
+## Level Select
+
+A scene of its own, `Assets/Scenes/Level Select.unity`, made once with **Falling Wizard > Build
+Level Select Scene** (it refuses to run if the scene already exists, so it never overwrites your
+art). It is a black screen, a `Tower Map` image for the map art, and three pips on the map — `Top
+Pip`, `Mid Pip` and `Bottom Pip` — each a button whose label carries a `LocalizedText`
+(`levels.top`, `levels.mid`, `levels.bottom`).
+
+`LevelSelectMenu` sits on the canvas with one entry per pip, top of the tower first: the scene it
+loads and the button. The first level is always open; every other one opens once the level above
+it is completed. Completed levels are saved with the permanent tier, so they stay open across runs
+and launches until the save is reset. A pip whose scene is missing from Build Settings stays locked
+and says so in the console. Selection starts on the deepest open pip.
 
 
 ## Checkpoints
@@ -1029,24 +1042,30 @@ Two things worth knowing:
   colliders — their body and the staff's trigger, which shares their rigidbody — so without that
   filter every hazard would fire twice.
 
+## Health and the hat
+
+There is no health bar. **The hat is the health display**: `PlayerAnimator.hatStates` lists one look
+per hat, from the healthiest to the most damaged, and each is worn while `Health.Percent` is at or
+above its `fromHealthPercent`. A look is an Animator Override Controller built on `Player.controller`
+holding that hat's version of every clip. A hit that changes the hat plays the new hat's
+`Hat Change` clip; a hit that does not plays `Take Damage`.
+
 ## HUD
 
 An ordinary screen-space `Canvas` you can open up and restyle:
 
 ```
 HUD              Canvas (Overlay, order 10) + CanvasScaler + PlayerHud
-├── Hearts       top-left, HorizontalLayoutGroup + ContentSizeFitter
-│   └── Heart        TEMPLATE, inactive
-└── Spell Bar    bottom-left, same
+└── Spell Bar    bottom-left, HorizontalLayoutGroup + ContentSizeFitter
     └── Spell Slot   TEMPLATE, inactive - Image + HudSlot
         ├── Icon         the spell's own icon
         ├── Charge       Image, Filled/Radial360 - the running and cooling wipe
         └── Button       TextMeshProUGUI
 ```
 
-Hearts and slots are **copies of the two templates**, made at runtime, one per point of health and
-one per spell. Restyle a template — sprite, size, colour, add a border — and every heart or every
-slot follows. `PlayerHud` only ever fills them in; it never builds layout.
+Slots are **copies of the template**, made at runtime, one per spell. Restyle the template —
+sprite, size, colour, add a border — and every slot follows. `PlayerHud` only ever fills them in;
+it never builds layout. The icon each slot shows is the spell's own `icon`.
 
 Set `CanvasScaler.referencePixelsPerUnit` to **32**, not the default 100, or every icon comes out
 at a third of its size.
@@ -1110,7 +1129,7 @@ ticking a box.
 
 **HUD.** A `Canvas` (Screen Space Overlay, order 10) with a `CanvasScaler` at
 `referencePixelsPerUnit` **32** and **no `GraphicRaycaster`**, laid out as the diagram above. The
-two templates start inactive; `PlayerHud` copies them.
+template starts inactive; `PlayerHud` copies it.
 
 **Background.** One object per sheet, unparented, roughly where the camera starts, each with a
 `ParallaxLayer`. Put them on a sorting layer below `Default` — **and add that layer to the

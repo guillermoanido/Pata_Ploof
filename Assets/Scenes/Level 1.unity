@@ -455,14 +455,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 442a352c561e6e8c70710e73f9342c0b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FallingWizard.UI.PlayerHud
-  heartRow: {fileID: 1636872401}
-  heartTemplate: {fileID: 1102612196}
   spellBar: {fileID: 347286643}
   slotTemplate: {fileID: 958667921}
   wispLabel: {fileID: 0}
   hideWispCount: 0
-  fullHeart: {r: 0.85, g: 0.22, b: 0.3, a: 1}
-  emptyHeart: {r: 0.2, g: 0.16, b: 0.22, a: 1}
   wispFormat: 
   showEmptySlots: 1
   showButtons: 1
@@ -926,6 +922,10 @@ PrefabInstance:
     - target: {fileID: 1400390115, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1400390125, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -2.4999998
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

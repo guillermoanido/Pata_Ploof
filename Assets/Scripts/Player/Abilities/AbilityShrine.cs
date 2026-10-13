@@ -17,16 +17,7 @@ namespace FallingWizard.Player
                  "found. With all four slots full it is learned but left on the bench.")]
         public bool equipOnPickup = true;
 
-        [Tooltip("Wear the spell's own icon in the editor, so a shrine is recognisable at a glance.")]
-        public bool showAbilityIcon = true;
-
-        void Reset()
-        {
-            GetComponent<Collider2D>().isTrigger = true;
-            PullArt();
-        }
-
-        void OnValidate() => PullArt();
+        void Reset() => GetComponent<Collider2D>().isTrigger = true;
 
         void Awake()
         {
@@ -62,17 +53,6 @@ namespace FallingWizard.Player
                 Instantiate(ability.collectedEffect, transform.position, Quaternion.identity);
 
             Destroy(gameObject);
-        }
-
-        void PullArt()
-        {
-            if (!showAbilityIcon || ability == null)
-                return;
-
-            var art = GetComponentInChildren<SpriteRenderer>();
-
-            if (art != null && ability.icon != null)
-                art.sprite = ability.icon;
         }
     }
 }

@@ -8,6 +8,8 @@ namespace FallingWizard.Player
         [Serializable]
         public class Health
         {
+            public const int FullHealthPercent = 100;
+
             [Header("Health")]
             [Tooltip("Hearts a brand new save starts with, before any heart found in a level.")]
             [Min(1)] public int maxHealth = 5;
@@ -28,6 +30,7 @@ namespace FallingWizard.Player
             public int Current { get; private set; }
             public bool IsAlive => Current > 0;
             public bool IsInvulnerable => Time.time < invulnerableUntil;
+            public int Percent => Max > 0 ? Current * FullHealthPercent / Max : 0;
 
             public int Room => Mathf.Max(0, maxBonusHearts - bonus);
             public bool HasRoomToGrow => Room > 0;

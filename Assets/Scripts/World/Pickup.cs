@@ -19,10 +19,6 @@ namespace FallingWizard.World
         public string id = "";
 
         [Header("Look")]
-        [Tooltip("Colour of the stand-in block drawn when there is no sprite anywhere underneath. " +
-                 "Once you give it real art this does nothing.")]
-        public Color tint = Color.white;
-
         [Tooltip("Height of the idle bob, in boxes. 0 holds it still. Only the art bobs - the " +
                  "trigger and the object itself never move, because a pickup that drifts would " +
                  "keep changing the name it is remembered by.")]
@@ -56,7 +52,7 @@ namespace FallingWizard.World
                 return;
             }
 
-            Dress();
+            FindArtToBob();
         }
 
         void Update()
@@ -95,26 +91,11 @@ namespace FallingWizard.World
                    $"{Mathf.RoundToInt(point.y * KeySteps)}";
         }
 
-        void Dress()
+        void FindArtToBob()
         {
             var art = GetComponentInChildren<SpriteRenderer>();
 
-            if (art == null)
-            {
-                var child = new GameObject("Art");
-                child.transform.SetParent(transform, false);
-
-                art = child.AddComponent<SpriteRenderer>();
-                art.sortingOrder = 1;
-            }
-
-            if (art.sprite == null)
-            {
-                art.sprite = Placeholder.Box;
-                art.color = tint;
-            }
-
-            if (art.transform == transform)
+            if (art == null || art.transform == transform)
                 return;
 
             visual = art.transform;

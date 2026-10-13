@@ -4,19 +4,12 @@ using FallingWizard.Localization;
 using FallingWizard.Player;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace FallingWizard.UI
 {
     public class PlayerHud : MonoBehaviour
     {
         [Header("Rig")]
-        [Tooltip("Hearts are laid out under here, left to right.")]
-        public RectTransform heartRow;
-
-        [Tooltip("One heart, copied once per point of health. Restyle this and they all follow.")]
-        public Image heartTemplate;
-
         [Tooltip("Spell slots are laid out under here, in spellbook order.")]
         public RectTransform spellBar;
 
@@ -31,10 +24,6 @@ namespace FallingWizard.UI
         [Tooltip("Do not build that corner label. For a scene that shows the count some other " +
                  "way, or one that would rather not show it at all.")]
         public bool hideWispCount = false;
-
-        [Header("Hearts")]
-        public Color fullHeart = new Color(0.85f, 0.22f, 0.30f);
-        public Color emptyHeart = new Color(0.20f, 0.16f, 0.22f);
 
         [Header("Wisps")]
         [Tooltip("How the counter reads, for a scene that wants its own wording. {0} is what you " +
@@ -74,28 +63,22 @@ namespace FallingWizard.UI
         const float WispFontSize = 26f;
         static readonly Color WispColour = new Color(0.55f, 0.85f, 1f);
 
-        readonly List<Image> hearts = new List<Image>();
         readonly List<HudSlot> slots = new List<HudSlot>();
 
         PlayerCharacter bound;
-        int builtHearts = -1;
         int builtVersion = -1;
 
         void Awake()
         {
-            if (heartTemplate != null)
-                heartTemplate.gameObject.SetActive(false);
-
             if (slotTemplate != null)
                 slotTemplate.gameObject.SetActive(false);
 
             if (wispLabel == null && !hideWispCount)
                 wispLabel = BuildWispLabel();
 
-            if (heartRow == null || heartTemplate == null || spellBar == null || slotTemplate == null)
-                Debug.LogError("The HUD is missing part of its rig. It wants a heart row with one " +
-                               "heart image to copy, and a spell bar with one HudSlot to copy. " +
-                               "Both templates stay switched off.", this);
+            if (spellBar == null || slotTemplate == null)
+                Debug.LogError("The HUD is missing part of its rig. It wants a spell bar with one " +
+                               "HudSlot to copy, which stays switched off.", this);
         }
 
         void OnEnable() => Core.Controls.SchemeChanged += RefreshButtons;
@@ -109,14 +92,10 @@ namespace FallingWizard.UI
             if (wizard != bound)
             {
                 bound = wizard;
-                builtHearts = -1;
                 builtVersion = -1;
             }
 
             bool showing = bound != null;
-
-            if (heartRow != null)
-                heartRow.gameObject.SetActive(showing);
 
             if (spellBar != null)
                 spellBar.gameObject.SetActive(showing);
@@ -141,7 +120,6 @@ namespace FallingWizard.UI
                 RefreshButtons();
             }
 
-            RefreshHearts();
             RefreshSpells();
         }
 
@@ -167,35 +145,6 @@ namespace FallingWizard.UI
             label.raycastTarget = false;
 
             return label;
-        }
-
-        void RefreshHearts()
-        {
-            if (heartRow == null || heartTemplate == null)
-                return;
-
-            PlayerLogic.Health health = bound.Logic.health;
-
-            if (builtHearts != health.Max)
-            {
-                foreach (Image heart in hearts)
-                    Destroy(heart.gameObject);
-
-                hearts.Clear();
-
-                for (int i = 0; i < health.Max; i++)
-                {
-                    Image heart = Instantiate(heartTemplate, heartRow);
-                    heart.gameObject.name = $"Heart {i + 1}";
-                    heart.gameObject.SetActive(true);
-                    hearts.Add(heart);
-                }
-
-                builtHearts = health.Max;
-            }
-
-            for (int i = 0; i < hearts.Count; i++)
-                hearts[i].color = i < health.Current ? fullHeart : emptyHeart;
         }
 
         void BuildSpellBar()

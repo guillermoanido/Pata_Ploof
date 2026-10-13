@@ -264,6 +264,7 @@ MonoBehaviour:
   standStillSpeed: 0.1
   cycleRateRange: {x: 0.5, y: 1.5}
   staffIsDrawnIntoTheArt: 0
+  hatStates: []
 --- !u!1 &341998881807793293
 GameObject:
   m_ObjectHideFlags: 0

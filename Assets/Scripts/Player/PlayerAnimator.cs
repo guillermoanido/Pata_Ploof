@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace FallingWizard.Player
@@ -11,6 +12,8 @@ namespace FallingWizard.Player
         public const int ModeRagdoll = 2;
         public const int ModeDead = 3;
 
+        const int NoHat = -1;
+
         static readonly int ModeId = Animator.StringToHash("Mode");
         static readonly int GroundedId = Animator.StringToHash("Grounded");
         static readonly int MovingId = Animator.StringToHash("Moving");
@@ -21,6 +24,7 @@ namespace FallingWizard.Player
         static readonly int ClimbDownId = Animator.StringToHash("ClimbDown");
         static readonly int RagdollVariantId = Animator.StringToHash("RagdollVariant");
         static readonly int HurtId = Animator.StringToHash("Hurt");
+        static readonly int HatChangedId = Animator.StringToHash("HatChanged");
 
         [Header("Ragdoll")]
         [Tooltip("How many ragdoll reactions to build and cycle through. Rebuild after changing.")]
@@ -37,11 +41,19 @@ namespace FallingWizard.Player
         [Tooltip("Hide the separate staff art while carried, for art that draws it into the character.")]
         public bool staffIsDrawnIntoTheArt = false;
 
+        [Header("Hat")]
+        [Tooltip("The hat shows how much health the wizard has left. One entry per look, listed " +
+                 "from the healthiest hat to the most damaged. Leave it empty and the wizard " +
+                 "looks the same at any health.")]
+        public HatState[] hatStates = new HatState[0];
+
         Animator animator;
+        RuntimeAnimatorController normalAnimations;
         PlayerCharacter character;
         SpriteRenderer staffArt;
 
         int lastHealth;
+        int wornHat = NoHat;
         int variant;
         bool wasOnStaff;
         bool wasRagdolling;
@@ -50,6 +62,7 @@ namespace FallingWizard.Player
         void Awake()
         {
             animator = GetComponent<Animator>();
+            normalAnimations = animator.runtimeAnimatorController;
             character = GetComponent<PlayerCharacter>();
 
             if (character == null)
@@ -64,12 +77,20 @@ namespace FallingWizard.Player
             staffArt = staff != null ? staff.GetComponentInChildren<SpriteRenderer>(true) : null;
         }
 
-        void Start() => lastHealth = character.Logic.health.Current;
+        void Start()
+        {
+            PlayerLogic.Health health = character.Logic.health;
+
+            lastHealth = health.Current;
+            PutOnHat(ChooseHat(health.Percent));
+        }
 
         void Update()
         {
             PlayerLogic wizard = character.Logic;
             PlayerLogic.Movement walk = wizard.movement;
+
+            ShowHealth(wizard.health);
 
             int mode = !wizard.health.IsAlive ? ModeDead
                      : wizard.State == PlayerState.Ragdoll ? ModeRagdoll
@@ -90,7 +111,6 @@ namespace FallingWizard.Player
 
             WatchForAClimbStarting(wizard, mode);
             WatchForATumble(mode, walk);
-            WatchForAHit(wizard);
             ShowTheStaffWhenThePoleOwnsIt(wizard);
         }
 
@@ -149,14 +169,48 @@ namespace FallingWizard.Player
             wasRagdollGrounded = downOnTheFloor;
         }
 
-        void WatchForAHit(PlayerLogic wizard)
+        void ShowHealth(PlayerLogic.Health health)
         {
-            int hearts = wizard.health.Current;
+            bool tookAHit = health.Current < lastHealth && health.IsInvulnerable && health.IsAlive;
+            int hat = ChooseHat(health.Percent);
+            bool hatChanged = hat != wornHat;
 
-            if (hearts < lastHealth && wizard.health.IsInvulnerable && wizard.health.IsAlive)
-                animator.SetTrigger(HurtId);
+            lastHealth = health.Current;
 
-            lastHealth = hearts;
+            if (hatChanged)
+                PutOnHat(hat);
+
+            if (tookAHit)
+                animator.SetTrigger(hatChanged ? HatChangedId : HurtId);
+        }
+
+        int ChooseHat(int healthPercent)
+        {
+            for (int i = 0; i < hatStates.Length; i++)
+            {
+                if (healthPercent >= hatStates[i].fromHealthPercent)
+                    return i;
+            }
+
+            return hatStates.Length > 0 ? hatStates.Length - 1 : NoHat;
+        }
+
+        void PutOnHat(int hat)
+        {
+            wornHat = hat;
+
+            RuntimeAnimatorController animations = AnimationsFor(hat);
+
+            if (animator.runtimeAnimatorController != animations)
+                animator.runtimeAnimatorController = animations;
+        }
+
+        RuntimeAnimatorController AnimationsFor(int hat)
+        {
+            if (hat == NoHat || hatStates[hat].animations == null)
+                return normalAnimations;
+
+            return hatStates[hat].animations;
         }
 
         void ShowTheStaffWhenThePoleOwnsIt(PlayerLogic wizard)
@@ -165,6 +219,22 @@ namespace FallingWizard.Player
                 return;
 
             staffArt.enabled = wizard.HasPole && wizard.Pole.IsPlanted;
+        }
+
+        [Serializable]
+        public class HatState
+        {
+            [Tooltip("A name for you, so the list is easy to read.")]
+            public string name = "Full Hat";
+
+            [Tooltip("This hat is worn while health is at or above this percent of full health.")]
+            [Range(0, PlayerLogic.Health.FullHealthPercent)]
+            public int fromHealthPercent = PlayerLogic.Health.FullHealthPercent;
+
+            [Tooltip("The wizard's animations drawn with this hat: an Animator Override " +
+                     "Controller made from Player.controller. Its Hat Change clip plays when a " +
+                     "hit puts this hat on. Leave it empty to use the normal animations.")]
+            public AnimatorOverrideController animations;
         }
     }
 }

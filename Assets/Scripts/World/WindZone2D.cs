@@ -115,9 +115,6 @@ namespace FallingWizard.World
             if (haze == null)
                 haze = GetComponentInChildren<SpriteRenderer>();
 
-            if (haze != null && haze.sprite == null)
-                haze.sprite = Placeholder.Box;
-
             FitHaze();
             BuildStreaks();
         }

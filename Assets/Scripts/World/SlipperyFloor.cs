@@ -1,5 +1,4 @@
 using System;
-using FallingWizard.Core;
 using FallingWizard.Player;
 using UnityEngine;
 
@@ -112,9 +111,6 @@ namespace FallingWizard.World
 
             if (sheet == null)
                 sheet = GetComponentInChildren<SpriteRenderer>();
-
-            if (sheet != null && sheet.sprite == null)
-                sheet.sprite = Placeholder.Box;
 
             FitSheet();
             WarnAboutSpeedGate();

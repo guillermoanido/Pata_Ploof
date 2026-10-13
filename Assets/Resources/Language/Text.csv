@@ -43,7 +43,7 @@ death.continue,Take it from the last rest,Seguir desde el último descanso
 death.giveUp,Give up the run and go back,Abandonar la bajada y volver
 rest.title,A place to rest,Un lugar para descansar
 rest.blurb,"Further down, or back the way you came.","Más abajo, o de vuelta por donde viniste."
-rest.status,Carrying {0} Magic Scrap    {1} already banked    {2}/{3} hearts,{0} en mano    {1} a salvo    {2}/{3} corazones
+rest.status,Carrying {0} Magic Scrap    {1} already banked,{0} en mano    {1} a salvo
 rest.pressOn,"Rest, then press on",Descansar y seguir bajando
 rest.turnBack,Turn back and bank {0} Magic Scrap,Volver y guardar {0} Basura Mágica
 hud.wisps,{0} carried    {1} banked,{0} en mano    {1} a salvo
@@ -94,7 +94,6 @@ controls.menuPick,Select,Elegir
 controls.menuBack,Back,Atrás
 controls.none,—,—
 controls.close,Back,Volver
-exit.title,Level complete,Nivel completado
-exit.blurb,You made it to the bottom.,Llegaste hasta abajo.
-exit.status,{0} Magic Scrap banked,{0} Basura Mágica a salvo
-exit.again,Search again,Buscar otra vez
+levels.top,Top level,Nivel superior
+levels.mid,Mid section,Sección media
+levels.bottom,Bottom,El fondo

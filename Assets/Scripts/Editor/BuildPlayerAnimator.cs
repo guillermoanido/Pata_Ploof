@@ -38,6 +38,7 @@ namespace FallingWizard.EditorTools
             new Clip { State = "Climb Down", Sheet = "",                             Fps = 12, Loops = false },
             new Clip { State = "Climb",      Sheet = "",                             Fps = 12, Loops = true },
             new Clip { State = "Take Damage",Sheet = "",                             Fps = 12, Loops = false },
+            new Clip { State = "Hat Change", Sheet = "",                             Fps = 12, Loops = false },
             new Clip { State = "Death",      Sheet = "",                             Fps = 12, Loops = false },
         };
 
@@ -145,9 +146,7 @@ namespace FallingWizard.EditorTools
 
         static AnimatorController BuildController(Dictionary<string, AnimationClip> motions, int variants)
         {
-            AssetDatabase.DeleteAsset(ControllerPath);
-
-            AnimatorController controller = AnimatorController.CreateAnimatorControllerAtPath(ControllerPath);
+            AnimatorController controller = LoadEmptyController();
 
             controller.AddParameter("Mode", AnimatorControllerParameterType.Int);
             controller.AddParameter("Grounded", AnimatorControllerParameterType.Bool);
@@ -159,6 +158,7 @@ namespace FallingWizard.EditorTools
             controller.AddParameter("ClimbDown", AnimatorControllerParameterType.Trigger);
             controller.AddParameter("RagdollVariant", AnimatorControllerParameterType.Int);
             controller.AddParameter("Hurt", AnimatorControllerParameterType.Trigger);
+            controller.AddParameter("HatChanged", AnimatorControllerParameterType.Trigger);
 
             AnimatorStateMachine graph = controller.layers[0].stateMachine;
 
@@ -171,6 +171,7 @@ namespace FallingWizard.EditorTools
             AnimatorState climb = AddState(graph, motions, "Climb", new Vector3(180, -100), "ClimbRate");
             AnimatorState hurt = AddState(graph, motions, "Take Damage", new Vector3(300, 300));
             AnimatorState death = AddState(graph, motions, "Death", new Vector3(300, 380));
+            AnimatorState hatChange = AddState(graph, motions, "Hat Change", new Vector3(300, 460));
 
             graph.defaultState = idle;
 
@@ -198,6 +199,7 @@ namespace FallingWizard.EditorTools
             offThePole.AddCondition(AnimatorConditionMode.NotEqual, PlayerAnimator.ModeStaff, "Mode");
 
             OnFinishing(hurt, idle);
+            OnFinishing(hatChange, idle);
 
             Interrupt(graph, death, t =>
                 t.AddCondition(AnimatorConditionMode.Equals, PlayerAnimator.ModeDead, "Mode"));
@@ -229,7 +231,34 @@ namespace FallingWizard.EditorTools
                 t.AddCondition(AnimatorConditionMode.Equals, PlayerAnimator.ModeGround, "Mode");
             });
 
+            Interrupt(graph, hatChange, t =>
+            {
+                t.AddCondition(AnimatorConditionMode.If, 0f, "HatChanged");
+                t.AddCondition(AnimatorConditionMode.Equals, PlayerAnimator.ModeGround, "Mode");
+            });
+
             EditorUtility.SetDirty(controller);
+            return controller;
+        }
+
+        static AnimatorController LoadEmptyController()
+        {
+            var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(ControllerPath);
+
+            if (controller == null)
+                return AnimatorController.CreateAnimatorControllerAtPath(ControllerPath);
+
+            foreach (AnimatorControllerParameter parameter in controller.parameters)
+                controller.RemoveParameter(parameter);
+
+            AnimatorStateMachine graph = controller.layers[0].stateMachine;
+
+            foreach (AnimatorStateTransition transition in graph.anyStateTransitions)
+                graph.RemoveAnyStateTransition(transition);
+
+            foreach (ChildAnimatorState child in graph.states)
+                graph.RemoveState(child.state);
+
             return controller;
         }
 

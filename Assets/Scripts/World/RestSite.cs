@@ -83,13 +83,10 @@ namespace FallingWizard.World
 
         void Offer(PlayerCharacter wizard)
         {
-            PlayerLogic.Health health = wizard.Logic.health;
-
             ChoiceScreen screen = ChoiceScreen.Open(Loc.Text(titleKey, title),
                                                     Loc.Text(blurbKey, blurb));
 
-            screen.Status(Loc.Format(Loc.Keys.RestStatus, Progress.CarriedWisps, Progress.Wisps,
-                                     health.Current, health.Max));
+            screen.Status(Loc.Format(Loc.Keys.RestStatus, Progress.CarriedWisps, Progress.Wisps));
 
             screen.Choice(Loc.Get(Loc.Keys.RestPressOn), () =>
             {

@@ -8,6 +8,7 @@ namespace FallingWizard.Core
         public const string MainMenuScene = "Main Menu";
         public const string CutsceneScene = "Cutscene";
         public const string FirstLevelScene = "Level 1";
+        public const string LevelSelectScene = "Level Select";
 
         public static bool IsPaused { get; private set; }
 
@@ -44,6 +45,8 @@ namespace FallingWizard.Core
         public static void LoadCutscene() => Load(CutsceneScene);
 
         public static void LoadFirstLevel() => Load(FirstLevelScene);
+
+        public static void LoadLevelSelect() => Load(LevelSelectScene);
 
         public static void LoadLevel(string sceneName) => Load(sceneName);
 

@@ -35,6 +35,7 @@ namespace FallingWizard.Core
         static readonly HashSet<string> found = new HashSet<string>();
         static readonly HashSet<string> carrying = new HashSet<string>();
         static readonly HashSet<string> spent = new HashSet<string>();
+        static readonly HashSet<string> completedLevels = new HashSet<string>();
 
         static bool saveIsUnreadable;
         static bool warnedAboutUnreadable;
@@ -256,6 +257,16 @@ namespace FallingWizard.Core
             CheckpointPoint = Vector2.zero;
         }
 
+        public static bool HasCompletedLevel(string sceneName) => completedLevels.Contains(sceneName);
+
+        public static void CompleteLevel(string sceneName)
+        {
+            if (string.IsNullOrEmpty(sceneName) || !completedLevels.Add(sceneName))
+                return;
+
+            Save();
+        }
+
         public static void EndRun()
         {
             BankCarried();
@@ -365,6 +376,9 @@ namespace FallingWizard.Core
             data.spent = new List<string>(spent);
             data.spent.Sort(StringComparer.Ordinal);
 
+            data.completedLevels = new List<string>(completedLevels);
+            data.completedLevels.Sort(StringComparer.Ordinal);
+
             return data;
         }
 
@@ -397,6 +411,13 @@ namespace FallingWizard.Core
                 foreach (string id in data.spent)
                     if (!string.IsNullOrEmpty(id))
                         spent.Add(id);
+
+            completedLevels.Clear();
+
+            if (data.completedLevels != null)
+                foreach (string level in data.completedLevels)
+                    if (!string.IsNullOrEmpty(level))
+                        completedLevels.Add(level);
         }
 
         static bool ImportLegacyPlayerPrefs()
@@ -467,6 +488,7 @@ namespace FallingWizard.Core
             found.Clear();
             carrying.Clear();
             spent.Clear();
+            completedLevels.Clear();
 
             for (int i = 0; i < SlotCount; i++)
                 equipped[i] = string.Empty;
@@ -495,6 +517,7 @@ namespace FallingWizard.Core
             public string[] loadout;
             public List<RankEntry> ranks;
             public List<string> spent;
+            public List<string> completedLevels;
         }
 
         [Serializable]
