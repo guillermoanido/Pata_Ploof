@@ -16,5 +16,8 @@
     ],
     "spent": [
         "heartLevel 1:-4,-105"
+    ],
+    "completedLevels": [
+        "Level 1"
     ]
 }
