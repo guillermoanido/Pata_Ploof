@@ -1,0 +1,663 @@
+fileFormatVersion: 2
+guid: 2c6bfbe9176d0314e948ea223f96fc66
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 3271447480613079026
+    second: tileSet_1_Ventana_Sheet 1_0
+  - first:
+      213: 7215459922911247408
+    second: tileSet_1_Ventana_Sheet 1_1
+  - first:
+      213: -3819162982800977564
+    second: tileSet_1_Ventana_Sheet 1_2
+  - first:
+      213: -6500251090407028214
+    second: tileSet_1_Ventana_Sheet 1_3
+  - first:
+      213: -4131515476128859553
+    second: tileSet_1_Ventana_Sheet 1_4
+  - first:
+      213: 4569248296395740515
+    second: tileSet_1_Ventana_Sheet 1_5
+  - first:
+      213: 238054365149661304
+    second: tileSet_1_Ventana_Sheet 1_6
+  - first:
+      213: 5231659391973068565
+    second: tileSet_1_Ventana_Sheet 1_7
+  - first:
+      213: -6365566090370609476
+    second: tileSet_1_Ventana_Sheet 1_8
+  - first:
+      213: -4255181573034743590
+    second: tileSet_1_Ventana_Sheet 1_9
+  - first:
+      213: -753240042827142883
+    second: tileSet_1_Ventana_Sheet 1_10
+  - first:
+      213: -8785598100180655857
+    second: tileSet_1_Ventana_Sheet 1_11
+  - first:
+      213: 5132237580950047870
+    second: tileSet_1_Ventana_Sheet 1_12
+  - first:
+      213: 8372128905100672771
+    second: tileSet_1_Ventana_Sheet 1_13
+  - first:
+      213: 3837290353546475951
+    second: tileSet_1_Ventana_Sheet 1_14
+  - first:
+      213: -491724465229495388
+    second: tileSet_1_Ventana_Sheet 1_15
+  - first:
+      213: 1473557962971297912
+    second: tileSet_1_Ventana_Sheet 1_16
+  - first:
+      213: 712185972387746944
+    second: tileSet_1_Ventana_Sheet 1_17
+  - first:
+      213: 5660146224927063515
+    second: tileSet_1_Ventana_Sheet 1_18
+  - first:
+      213: -3260193292363301224
+    second: tileSet_1_Ventana_Sheet 1_19
+  - first:
+      213: -8184441873669685602
+    second: tileSet_1_Ventana_Sheet 1_20
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 0
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 32
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: tileSet_1_Ventana_Sheet 1_0
+      rect:
+        serializedVersion: 2
+        x: 17
+        y: 0
+        width: 16
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2f70a479624866d20800000000000000
+      internalID: 3271447480613079026
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tileSet_1_Ventana_Sheet 1_1
+      rect:
+        serializedVersion: 2
+        x: 63
+        y: 2
+        width: 34
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 03c313c1296722460800000000000000
+      internalID: 7215459922911247408
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tileSet_1_Ventana_Sheet 1_2
+      rect:
+        serializedVersion: 2
+        x: 127
+        y: 0
+        width: 16
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 46193de708b9ffac0800000000000000
+      internalID: -3819162982800977564
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tileSet_1_Ventana_Sheet 1_3
+      rect:
+        serializedVersion: 2
+        x: 209
+        y: 0
+        width: 16
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a0a8175b2187ac5a0800000000000000
+      internalID: -6500251090407028214
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tileSet_1_Ventana_Sheet 1_4
+      rect:
+        serializedVersion: 2
+        x: 255
+        y: 2
+        width: 34
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f5a7f4d6098e9a6c0800000000000000
+      internalID: -4131515476128859553
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tileSet_1_Ventana_Sheet 1_5
+      rect:
+        serializedVersion: 2
+        x: 319
+        y: 0
+        width: 16
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3651a3ddd1b396f30800000000000000
+      internalID: 4569248296395740515
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tileSet_1_Ventana_Sheet 1_6
+      rect:
+        serializedVersion: 2
+        x: 383
+        y: 2
+        width: 28
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8780aff0f2dbd4300800000000000000
+      internalID: 238054365149661304
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tileSet_1_Ventana_Sheet 1_7
+      rect:
+        serializedVersion: 2
+        x: 447
+        y: 0
+        width: 16
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 51f046c9f769a9840800000000000000
+      internalID: 5231659391973068565
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tileSet_1_Ventana_Sheet 1_8
+      rect:
+        serializedVersion: 2
+        x: 529
+        y: 15
+        width: 16
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cbe0035fd57f8a7a0800000000000000
+      internalID: -6365566090370609476
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tileSet_1_Ventana_Sheet 1_9
+      rect:
+        serializedVersion: 2
+        x: 575
+        y: 15
+        width: 16
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ad8e97c77ee82f4c0800000000000000
+      internalID: -4255181573034743590
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tileSet_1_Ventana_Sheet 1_10
+      rect:
+        serializedVersion: 2
+        x: 657
+        y: 0
+        width: 16
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d1920b00c24fb85f0800000000000000
+      internalID: -753240042827142883
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tileSet_1_Ventana_Sheet 1_11
+      rect:
+        serializedVersion: 2
+        x: 785
+        y: 0
+        width: 16
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f01a2637319431680800000000000000
+      internalID: -8785598100180655857
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tileSet_1_Ventana_Sheet 1_12
+      rect:
+        serializedVersion: 2
+        x: 831
+        y: 0
+        width: 16
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e7c007b53ee593740800000000000000
+      internalID: 5132237580950047870
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tileSet_1_Ventana_Sheet 1_13
+      rect:
+        serializedVersion: 2
+        x: 898
+        y: 0
+        width: 31
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 30f3e4ab1e6cf2470800000000000000
+      internalID: 8372128905100672771
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tileSet_1_Ventana_Sheet 1_14
+      rect:
+        serializedVersion: 2
+        x: 959
+        y: 0
+        width: 31
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fa9bb27ee3bc04530800000000000000
+      internalID: 3837290353546475951
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tileSet_1_Ventana_Sheet 1_15
+      rect:
+        serializedVersion: 2
+        x: 1023
+        y: 0
+        width: 31
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4a380a2443b0d29f0800000000000000
+      internalID: -491724465229495388
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tileSet_1_Ventana_Sheet 1_16
+      rect:
+        serializedVersion: 2
+        x: 1096
+        y: 17
+        width: 25
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8783adaf821237410800000000000000
+      internalID: 1473557962971297912
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tileSet_1_Ventana_Sheet 1_17
+      rect:
+        serializedVersion: 2
+        x: 1151
+        y: 18
+        width: 34
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 084103a5e5132e900800000000000000
+      internalID: 712185972387746944
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tileSet_1_Ventana_Sheet 1_18
+      rect:
+        serializedVersion: 2
+        x: 1215
+        y: 17
+        width: 25
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bddbb89b001ec8e40800000000000000
+      internalID: 5660146224927063515
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tileSet_1_Ventana_Sheet 1_19
+      rect:
+        serializedVersion: 2
+        x: 529
+        y: 0
+        width: 16
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 89ef29d497771c2d0800000000000000
+      internalID: -3260193292363301224
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: tileSet_1_Ventana_Sheet 1_20
+      rect:
+        serializedVersion: 2
+        x: 703
+        y: 0
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e9ef51b9a750b6e80800000000000000
+      internalID: -8184441873669685602
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      tileSet_1_Ventana_Sheet 1_0: 3271447480613079026
+      tileSet_1_Ventana_Sheet 1_1: 7215459922911247408
+      tileSet_1_Ventana_Sheet 1_10: -753240042827142883
+      tileSet_1_Ventana_Sheet 1_11: -8785598100180655857
+      tileSet_1_Ventana_Sheet 1_12: 5132237580950047870
+      tileSet_1_Ventana_Sheet 1_13: 8372128905100672771
+      tileSet_1_Ventana_Sheet 1_14: 3837290353546475951
+      tileSet_1_Ventana_Sheet 1_15: -491724465229495388
+      tileSet_1_Ventana_Sheet 1_16: 1473557962971297912
+      tileSet_1_Ventana_Sheet 1_17: 712185972387746944
+      tileSet_1_Ventana_Sheet 1_18: 5660146224927063515
+      tileSet_1_Ventana_Sheet 1_19: -3260193292363301224
+      tileSet_1_Ventana_Sheet 1_2: -3819162982800977564
+      tileSet_1_Ventana_Sheet 1_20: -8184441873669685602
+      tileSet_1_Ventana_Sheet 1_3: -6500251090407028214
+      tileSet_1_Ventana_Sheet 1_4: -4131515476128859553
+      tileSet_1_Ventana_Sheet 1_5: 4569248296395740515
+      tileSet_1_Ventana_Sheet 1_6: 238054365149661304
+      tileSet_1_Ventana_Sheet 1_7: 5231659391973068565
+      tileSet_1_Ventana_Sheet 1_8: -6365566090370609476
+      tileSet_1_Ventana_Sheet 1_9: -4255181573034743590
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
