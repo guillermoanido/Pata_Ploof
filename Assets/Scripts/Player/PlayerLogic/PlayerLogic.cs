@@ -45,6 +45,8 @@ namespace FallingWizard.Player
 
         [NonSerialized] float pendingGrip = 1f;
 
+        [NonSerialized] Vector2 pendingCarry;
+
         public event Action Died;
 
         [NonSerialized] public bool Invulnerable;
@@ -179,6 +181,8 @@ namespace FallingWizard.Player
         }
 
         public void Slicken(float grip) => pendingGrip = Mathf.Min(pendingGrip, Mathf.Clamp01(grip));
+
+        public void Carry(Vector2 platformVelocity) => pendingCarry = platformVelocity;
 
         public void Shove(Vector2 velocity, float controlLockout)
         {
@@ -428,6 +432,7 @@ namespace FallingWizard.Player
         void ApplyExternalForce(float fixedDeltaTime)
         {
             movement.SetGrip(pendingGrip);
+            movement.SetCarrier(pendingCarry);
 
             switch (State)
             {
@@ -450,6 +455,7 @@ namespace FallingWizard.Player
             pendingGroundScale = 1f;
 
             pendingGrip = 1f;
+            pendingCarry = Vector2.zero;
         }
 
         void CheckLanding()

@@ -56,6 +56,8 @@ namespace FallingWizard.World
 
         public void Disarm(float seconds) => readyAt = Time.time + Mathf.Max(0f, seconds);
 
+        protected virtual bool IsArmed => true;
+
         protected abstract void Affect(PlayerLogic wizard);
 
         protected virtual void Awake()
@@ -75,7 +77,7 @@ namespace FallingWizard.World
 
         void Catch(PlayerCharacter wizard)
         {
-            if (Time.time < readyAt || !Allowed(wizard))
+            if (Time.time < readyAt || !IsArmed || !Allowed(wizard))
                 return;
 
             if (wizard.Logic.movement.ApproachSpeed < minimumSpeed)
