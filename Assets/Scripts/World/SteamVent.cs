@@ -63,16 +63,16 @@ namespace FallingWizard.World
         public GameObject steamLook;
 
         [NonSerialized] float clock;
-        [NonSerialized] bool showingWarning;
-        [NonSerialized] bool showingSteam;
-
-        public bool IsWarning => TimeIsBetween(quietSeconds, BurstStartsAt);
-
-        public bool IsBursting => TimeIsBetween(BurstStartsAt, BurstStartsAt + burstSeconds);
+        [NonSerialized] bool isShowingWarning;
+        [NonSerialized] bool isShowingSteam;
 
         protected override bool IsDangerousNow => IsBursting;
 
-        protected override bool Continuous => true;
+        protected override bool IsContinuous => true;
+
+        bool IsWarning => IsTimeBetween(quietSeconds, BurstStartsAt);
+
+        bool IsBursting => IsTimeBetween(BurstStartsAt, BurstStartsAt + burstSeconds);
 
         float CycleLength => Mathf.Max(ShortestCycle, quietSeconds + warningSeconds + burstSeconds);
 
@@ -90,7 +90,7 @@ namespace FallingWizard.World
 
         void OnValidate()
         {
-            if (SwitchesTheVentOff(warningLook) || SwitchesTheVentOff(steamLook))
+            if (WouldSwitchTheVentOff(warningLook) || WouldSwitchTheVentOff(steamLook))
                 Debug.LogWarning($"{name}: a SteamVent Look is the vent itself or one of its " +
                                  "parents, so switching that look off would switch the whole " +
                                  "vent off with it. Make the art a child of the vent and drag " +
@@ -115,17 +115,17 @@ namespace FallingWizard.World
         {
             base.OnPlayerInside(wizard, fixedDeltaTime);
 
-            if (IsBursting && push != Vector2.zero && Allowed(wizard))
+            if (IsBursting && push != Vector2.zero && CanAffect(wizard))
                 wizard.Logic.Push(push * Haste.WorldScale, SteamRampup, FullStrengthOnTheGround);
         }
 
-        bool TimeIsBetween(float start, float end)
+        bool IsTimeBetween(float start, float end)
         {
             float now = TimeIntoCycle;
             return now >= start && now < end;
         }
 
-        bool SwitchesTheVentOff(GameObject look) =>
+        bool WouldSwitchTheVentOff(GameObject look) =>
             look != null && transform.IsChildOf(look.transform);
 
         void ShowTheRightLook()
@@ -133,14 +133,14 @@ namespace FallingWizard.World
             bool warning = IsWarning;
             bool bursting = IsBursting;
 
-            if (warning != showingWarning || bursting != showingSteam)
+            if (warning != isShowingWarning || bursting != isShowingSteam)
                 SwitchLooks(warning, bursting);
         }
 
         void SwitchLooks(bool warning, bool bursting)
         {
-            showingWarning = warning;
-            showingSteam = bursting;
+            isShowingWarning = warning;
+            isShowingSteam = bursting;
 
             if (warningLook != null)
                 warningLook.SetActive(warning);

@@ -28,17 +28,15 @@ namespace FallingWizard.World
                  "it switches itself off. Leave it empty and nothing changes when it is reached.")]
         public GameObject litLook;
 
-        public Vector2 RespawnPoint => (Vector2)transform.position + respawnOffset;
+        Vector2 RespawnPoint => (Vector2)transform.position + respawnOffset;
+
+        bool IsLive =>
+            Progress.IsCheckpointHere &&
+            (Progress.CheckpointPoint - RespawnPoint).sqrMagnitude < SamePlace * SamePlace;
 
         void Reset() => GetComponent<Collider2D>().isTrigger = true;
 
         void Awake() => ShowLitLook(IsLive);
-
-        void OnDrawGizmosSelected()
-        {
-            Gizmos.color = MarkerColour;
-            Gizmos.DrawWireSphere(RespawnPoint, MarkerRadius);
-        }
 
         protected override void OnPlayerEntered(PlayerCharacter wizard)
         {
@@ -54,14 +52,16 @@ namespace FallingWizard.World
                 Instantiate(reachedEffect, transform.position, Quaternion.identity);
         }
 
-        bool IsLive =>
-            Progress.CheckpointIsHere &&
-            (Progress.CheckpointPoint - RespawnPoint).sqrMagnitude < SamePlace * SamePlace;
-
         void ShowLitLook(bool lit)
         {
             if (litLook != null)
                 litLook.SetActive(lit);
+        }
+
+        void OnDrawGizmosSelected()
+        {
+            Gizmos.color = MarkerColour;
+            Gizmos.DrawWireSphere(RespawnPoint, MarkerRadius);
         }
     }
 }

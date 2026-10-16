@@ -30,12 +30,13 @@ namespace FallingWizard.World
             float wantedPeek = target.Logic.IsPeeking ? -peekDistance : 0f;
             peekOffset = Mathf.SmoothDamp(peekOffset, wantedPeek, ref peekVelocity, peekSmoothTime);
 
-            Vector3 wanted = new Vector3(
+            Vector3 wantedPosition = new Vector3(
                 target.transform.position.x + offset.x,
                 target.transform.position.y + offset.y + peekOffset,
                 transform.position.z);
 
-            transform.position = Vector3.SmoothDamp(transform.position, wanted, ref followVelocity, smoothTime);
+            transform.position = Vector3.SmoothDamp(transform.position, wantedPosition,
+                ref followVelocity, smoothTime);
         }
     }
 }

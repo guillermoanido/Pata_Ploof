@@ -7,26 +7,26 @@ namespace FallingWizard.Player
         public struct Intent
         {
             public Vector2 Move;
-            public bool JumpPressed;
-            public bool JumpHeld;
-            public bool Walk;
-            public bool LookingDown;
+            public bool WasJumpPressed;
+            public bool IsJumpHeld;
+            public bool IsWalking;
+            public bool IsLookingDown;
 
             public float Lean => Move.y;
 
-            public Command Movement => new Command
+            public Command Command => new Command
             {
                 Steer = Move.x,
-                JumpHeld = JumpHeld,
-                Walk = Walk,
+                IsJumpHeld = IsJumpHeld,
+                IsWalking = IsWalking,
             };
         }
 
         public struct Command
         {
             public float Steer;
-            public bool JumpHeld;
-            public bool Walk;
+            public bool IsJumpHeld;
+            public bool IsWalking;
         }
     }
 }

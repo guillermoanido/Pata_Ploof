@@ -11,12 +11,8 @@ namespace FallingWizard.World
 
         const float OffCentre = 0.05f;
 
-        public enum Aim
-        {
-            Auto,
-            Left,
-            Right,
-        }
+        const int Leftward = -1;
+        const int Rightward = 1;
 
         [Header("Rake")]
         [Tooltip("Which way this rake throws the wizard. Auto reads the prefab's own flip - the " +
@@ -43,9 +39,9 @@ namespace FallingWizard.World
 
         protected override void Affect(PlayerLogic wizard)
         {
-            int way = Aimed();
+            int way = ChooseTheWay();
 
-            if (wizard.Trip(way))
+            if (wizard.TryTrip(way))
             {
                 if (extraKick > 0f || extraLift > 0f)
                     wizard.Shove(new Vector2(way * extraKick, extraLift), 0f);
@@ -62,23 +58,23 @@ namespace FallingWizard.World
             wizard.Shove(new Vector2(target - carried, extraLift), 0f);
         }
 
-        int Aimed()
+        int ChooseTheWay()
         {
             if (aim == Aim.Left)
-                return -1;
+                return Leftward;
 
             if (aim == Aim.Right)
-                return 1;
+                return Rightward;
 
             var hitbox = GetComponent<Collider2D>();
 
             if (hitbox != null && Mathf.Abs(hitbox.offset.x) > OffCentre)
-                return hitbox.offset.x < 0f ? -1 : 1;
+                return hitbox.offset.x < 0f ? Leftward : Rightward;
 
-            return Mirrored() ? -1 : 1;
+            return IsMirrored() ? Leftward : Rightward;
         }
 
-        bool Mirrored()
+        bool IsMirrored()
         {
             if (transform.lossyScale.x < 0f)
                 return true;
@@ -88,6 +84,13 @@ namespace FallingWizard.World
                     return true;
 
             return false;
+        }
+
+        public enum Aim
+        {
+            Auto,
+            Left,
+            Right,
         }
     }
 }

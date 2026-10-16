@@ -1,3 +1,4 @@
+using FallingWizard.Core;
 using FallingWizard.Player;
 using UnityEngine;
 
@@ -13,37 +14,36 @@ namespace FallingWizard.World
 
         const int StepOver = 2;
 
-        static readonly Collider2D[] Room = new Collider2D[4];
-        static readonly RaycastHit2D[] Below = new RaycastHit2D[2];
+        const float HalfCell = 0.5f;
 
-        static ContactFilter2D Solid(LayerMask groundLayers) => new ContactFilter2D
-        {
-            useTriggers = false,
-            useLayerMask = true,
-            layerMask = groundLayers,
-        };
+        const float BothSides = 2f;
 
-        public static Vector2Int CellOf(Vector2 world) =>
-            new Vector2Int(Mathf.FloorToInt(world.x), Mathf.FloorToInt(world.y));
+        const float RayStartHeight = 0.95f;
+
+        const int MaxOverlaps = 4;
+        const int MaxHitsBelow = 2;
+
+        static readonly Collider2D[] Overlaps = new Collider2D[MaxOverlaps];
+        static readonly RaycastHit2D[] HitsBelow = new RaycastHit2D[MaxHitsBelow];
 
         public static Vector2 CentreOf(Vector2Int cell) =>
-            new Vector2(cell.x + 0.5f, cell.y + 0.5f);
+            new Vector2(cell.x + HalfCell, cell.y + HalfCell);
 
-        public static Vector2Int StandingCell(PlayerLogic.Movement walk)
+        public static Vector2Int StandingCell(PlayerLogic.Movement movement)
         {
-            Vector2 soles = walk.Footing;
+            Vector2 footing = movement.Footing;
 
-            return CellOf(new Vector2(soles.x, soles.y + OffTheLine));
+            return FindCellOf(new Vector2(footing.x, footing.y + OffTheLine));
         }
 
         public static bool IsSolid(Vector2Int cell, LayerMask groundLayers) =>
-            Physics2D.OverlapBox(CentreOf(cell), Vector2.one * (Inset * 2f), 0f,
-                Solid(groundLayers), Room) > 0;
+            Physics2D.OverlapBox(CentreOf(cell), Vector2.one * (Inset * BothSides), 0f,
+                Layers.MakeSolidOnlyFilter(groundLayers), Overlaps) > 0;
 
         public static bool IsFree(Vector2Int cell, LayerMask groundLayers) =>
             !IsSolid(cell, groundLayers);
 
-        public static bool FloorRowUnder(Vector2Int from, LayerMask groundLayers, out int row)
+        public static bool TryFindFloorRowUnder(Vector2Int from, LayerMask groundLayers, out int row)
         {
             for (int drop = 0; drop < LookDown; drop++)
             {
@@ -57,7 +57,7 @@ namespace FallingWizard.World
             return false;
         }
 
-        public static bool RestingCell(int column, int fromRow, LayerMask groundLayers,
+        public static bool TryFindRestingCell(int column, int fromRow, LayerMask groundLayers,
             bool mustLand, out Vector2Int cell)
         {
             int row = fromRow;
@@ -71,33 +71,32 @@ namespace FallingWizard.World
             if (IsSolid(cell, groundLayers))
                 return false;
 
-            for (int drop = 0; drop < LookDown; drop++)
+            if (TryFindFloorRowUnder(new Vector2Int(column, row - 1), groundLayers, out int floorRow))
             {
-                if (IsSolid(new Vector2Int(column, row - 1), groundLayers))
-                {
-                    cell = new Vector2Int(column, row);
-                    return true;
-                }
-
-                row--;
+                cell = new Vector2Int(column, floorRow + 1);
+                return true;
             }
 
             cell = new Vector2Int(column, fromRow);
             return !mustLand && IsFree(cell, groundLayers);
         }
 
-        public static bool SurfaceUnder(Vector2Int cell, LayerMask groundLayers, out float top)
+        public static bool TryFindSurfaceUnder(Vector2Int cell, LayerMask groundLayers, out float top)
         {
-            var from = new Vector2(cell.x + 0.5f, cell.y + 0.95f);
+            var rayStart = new Vector2(cell.x + HalfCell, cell.y + RayStartHeight);
 
-            if (Physics2D.Raycast(from, Vector2.down, Solid(groundLayers), Below, LookDown) > 0)
+            if (Physics2D.Raycast(rayStart, Vector2.down,
+                    Layers.MakeSolidOnlyFilter(groundLayers), HitsBelow, LookDown) > 0)
             {
-                top = Below[0].point.y;
+                top = HitsBelow[0].point.y;
                 return true;
             }
 
             top = cell.y;
             return false;
         }
+
+        static Vector2Int FindCellOf(Vector2 worldPoint) =>
+            new Vector2Int(Mathf.FloorToInt(worldPoint.x), Mathf.FloorToInt(worldPoint.y));
     }
 }

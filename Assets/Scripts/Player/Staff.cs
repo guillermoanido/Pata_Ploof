@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using FallingWizard.Core;
 using UnityEngine;
 
 namespace FallingWizard.Player
@@ -30,6 +31,10 @@ namespace FallingWizard.Player
     [RequireComponent(typeof(BoxCollider2D))]
     public class Staff : MonoBehaviour
     {
+        static readonly Color HitboxColour = new Color(0.4f, 0.8f, 1f);
+        static readonly Color ClimbCheckColour = new Color(0.4f, 1f, 0.5f);
+        static readonly Color BridgeColour = new Color(1f, 0.6f, 0.2f);
+
         [Header("Rig")]
         [Tooltip("The pole's hitbox. Its height is the mechanic: it decides how far the wielder " +
                  "travels down or back up. Empty uses the collider on this object.")]
@@ -45,7 +50,7 @@ namespace FallingWizard.Player
         [Header("Behaviour")]
         public Pole pole = new Pole();
 
-        bool bound;
+        bool isBound;
 
         public Pole Logic
         {
@@ -55,8 +60,6 @@ namespace FallingWizard.Player
                 return pole;
             }
         }
-
-        public float Length => hitbox != null ? Pole.LocalSpan(hitbox).y : 0f;
 
         void OnValidate() => pole.Validate();
 
@@ -70,35 +73,12 @@ namespace FallingWizard.Player
 
         void LateUpdate() => pole.HoldPolePosition();
 
-        void OnDrawGizmosSelected()
-        {
-            if (hitbox != null)
-            {
-                Gizmos.color = new Color(0.4f, 0.8f, 1f);
-                Gizmos.DrawWireCube(hitbox.bounds.center, hitbox.bounds.size);
-            }
-
-            if (climbCheck != null)
-            {
-                Gizmos.color = new Color(0.4f, 1f, 0.5f);
-                Gizmos.DrawWireCube(climbCheck.bounds.center, climbCheck.bounds.size);
-            }
-
-            if (bridgeCollider != null && bridgeCollider.enabled)
-            {
-                Gizmos.color = new Color(1f, 0.6f, 0.2f);
-                Gizmos.DrawWireCube(bridgeCollider.bounds.center, bridgeCollider.bounds.size);
-            }
-
-            pole.DrawGizmos();
-        }
-
         void Bind()
         {
-            if (bound)
+            if (isBound)
                 return;
 
-            bound = true;
+            isBound = true;
 
             if (hitbox == null)
                 hitbox = GetComponent<Collider2D>();
@@ -114,10 +94,30 @@ namespace FallingWizard.Player
                 climbCheck);
         }
 
+        void OnDrawGizmosSelected()
+        {
+            DrawOutline(hitbox, HitboxColour);
+            DrawOutline(climbCheck, ClimbCheckColour);
+
+            if (bridgeCollider != null && bridgeCollider.enabled)
+                DrawOutline(bridgeCollider, BridgeColour);
+
+            pole.DrawGizmos();
+        }
+
+        static void DrawOutline(Collider2D shape, Color colour)
+        {
+            if (shape == null)
+                return;
+
+            Gizmos.color = colour;
+            Gizmos.DrawWireCube(shape.bounds.center, shape.bounds.size);
+        }
+
         [Serializable]
         public class Pole
         {
-            public const float Epsilon = 0.01f;
+            const float Epsilon = 0.01f;
 
             const float MinScale = 0.0001f;
             const float MinSlideSpeed = 0.01f;
@@ -131,12 +131,19 @@ namespace FallingWizard.Player
 
             const float FloorSlack = 0.05f;
 
-            static readonly List<Collider2D> Overlaps = new List<Collider2D>(4);
-            static readonly List<RaycastHit2D> Rays = new List<RaycastHit2D>(4);
+            const float Half = 0.5f;
+
+            const float NotMounting = -1f;
+
+            const int FacingLeft = -1;
+            const int FacingRight = 1;
+
+            static readonly List<Collider2D> Overlaps = new List<Collider2D>();
+            static readonly List<RaycastHit2D> Rays = new List<RaycastHit2D>();
 
             [Header("Climbing")]
             [Tooltip("How fast the wielder slides along the pole, in boxes per second.")]
-            [Min(0.01f)] public float slideSpeed = 3f;
+            [Min(MinSlideSpeed)] public float slideSpeed = 3f;
 
             [Tooltip("Depth over which the wielder swings from the ledge onto the pole, so joining " +
                      "it is not a snap. How far out they end up is where the pole was driven in.")]
@@ -179,11 +186,11 @@ namespace FallingWizard.Player
 
             [Tooltip("Which layers the staff can find footing on, so it never lowers into solid " +
                      "ground. Defaults to Ground.")]
-            public LayerMask groundLayers = 1 << 6;
+            public LayerMask groundLayers = Layers.GroundMask;
 
             [NonSerialized] Collider2D hitbox;
             [NonSerialized] Collider2D bridge;
-            [NonSerialized] Transform pole;
+            [NonSerialized] Transform poleTransform;
             [NonSerialized] SpriteRenderer visual;
             [NonSerialized] Transform carriedParent;
             [NonSerialized] Vector3 restPosition;
@@ -199,19 +206,19 @@ namespace FallingWizard.Player
             [NonSerialized] float reach;
             [NonSerialized] float depth;
             [NonSerialized] float dropTimer;
-            [NonSerialized] float mountTimer = -1f;
+            [NonSerialized] float mountTimer = NotMounting;
             [NonSerialized] Vector2 mountFrom;
 
             [NonSerialized] float readyAt;
 
             [NonSerialized] StaffAim aim;
 
-            [NonSerialized] bool climbing;
+            [NonSerialized] bool isClimbingUp;
             [NonSerialized] Vector2 climbLanding;
 
             [NonSerialized] float climbHangX;
 
-            [NonSerialized] int facing = 1;
+            [NonSerialized] int facing = FacingRight;
 
             [NonSerialized] Collider2D hook;
             [NonSerialized] float hookSideOffset;
@@ -224,21 +231,29 @@ namespace FallingWizard.Player
 
             public float CooldownLeft => Mathf.Max(0f, readyAt - Time.time);
 
-            public bool IsClimbing => IsPlanted && climbing;
+            public bool IsClimbing => IsPlanted && isClimbingUp;
 
             public StaffMode Mode { get; private set; } = StaffMode.Ladder;
 
             public bool HasPole => hitbox != null;
-            public bool HasWielder => wielder != null;
 
-            public float Reach => reach;
-            public float Depth => depth;
-            public float Progress => reach <= Epsilon ? 1f : Mathf.Clamp01(depth / reach);
-            public bool AtTop => depth <= Epsilon;
-            public bool AtBottom => depth >= reach - Epsilon;
+            public bool IsAtTop => depth <= Epsilon;
+            public bool IsAtBottom => depth >= reach - Epsilon;
 
-            public Vector2 HangPosition => PositionAt(depth);
-            public Vector2 Anchor => anchor;
+            public Vector2 HangPosition => FindHangPositionAt(depth);
+
+            public bool HasHook => hook != null;
+
+            public Bounds HookBounds => hook != null ? hook.bounds : default;
+
+            bool HasWielder => wielder != null;
+
+            bool IsMounting => mountTimer >= 0f;
+
+            float ClimbUpHeight =>
+                hook != null && wielderHitbox != null
+                    ? hook.bounds.max.y - wielderHitbox.bounds.min.y
+                    : 0f;
 
             float WielderFeetOffset =>
                 wielder != null && wielderHitbox != null
@@ -247,12 +262,7 @@ namespace FallingWizard.Player
 
             float HangBelowTip => WielderFeetOffset + gripHeight;
 
-            ContactFilter2D GroundFilter => new ContactFilter2D
-            {
-                useLayerMask = true,
-                layerMask = groundLayers,
-                useTriggers = false,
-            };
+            ContactFilter2D GroundFilter => Layers.MakeSolidOnlyFilter(groundLayers);
 
             public void BindPole(Collider2D poleHitbox, SpriteRenderer poleVisual,
                 Collider2D bridgeCollider, Collider2D hookCollider)
@@ -261,13 +271,13 @@ namespace FallingWizard.Player
                 visual = poleVisual;
                 bridge = bridgeCollider;
                 hook = hookCollider;
-                pole = poleHitbox != null ? poleHitbox.transform : null;
+                poleTransform = poleHitbox != null ? poleHitbox.transform : null;
 
-                if (pole == null)
+                if (poleTransform == null)
                     return;
 
-                restPosition = pole.localPosition;
-                carriedParent = pole.parent;
+                restPosition = poleTransform.localPosition;
+                carriedParent = poleTransform.parent;
                 sideOffset = Mathf.Abs(restPosition.x);
 
                 if (hook is BoxCollider2D hookBox)
@@ -297,37 +307,13 @@ namespace FallingWizard.Player
                 ShoulderPole();
             }
 
-            public StaffAim Aiming => aim;
-
-            float AimTarget =>
-                aim == StaffAim.Raised ? RaiseThatFits()
-                : aim == StaffAim.LookingDown ? -dipHeight
-                : 0f;
-
             public void Face(int wielderFacing)
             {
                 if (IsPlanted || wielderFacing == 0)
                     return;
 
-                facing = wielderFacing < 0 ? -1 : 1;
+                facing = wielderFacing < 0 ? FacingLeft : FacingRight;
                 ShoulderPole();
-            }
-
-            public bool HasHook => hook != null;
-
-            public Bounds HookBounds => hook != null ? hook.bounds : default;
-
-            public float ClimbUpHeight =>
-                hook != null && wielderHitbox != null
-                    ? hook.bounds.max.y - wielderHitbox.bounds.min.y
-                    : 0f;
-
-            public float MeasureReach()
-            {
-                if (hitbox == null || pole == null)
-                    return 0f;
-
-                return LocalSpan(hitbox).y * Mathf.Abs(pole.lossyScale.y);
             }
 
             public void Validate()
@@ -339,73 +325,151 @@ namespace FallingWizard.Player
                 cooldown = Mathf.Max(0f, cooldown);
             }
 
-            public void DrawGizmos()
+            public bool TryPlant(StaffMode mode, int wielderFacing, float edgeX) =>
+                mode == StaffMode.Bridge
+                    ? TryPlantAsBridge(wielderFacing, edgeX)
+                    : TryPlantAsLadder(wielderFacing, edgeX);
+
+            public bool TryPlantAsClimb(int wielderFacing, Vector2 lip, Vector2 landing)
             {
-                if (pole == null)
+                if (!HasPole || !HasWielder)
+                    return false;
+
+                Face(wielderFacing);
+
+                anchor = new Vector2(wielder.position.x, lip.y + WielderFeetOffset);
+
+                PlantPoleAt(lip.x - facing * lipClearance, lip.y - MeasureTopAboveOrigin(),
+                    Quaternion.identity);
+
+                depth = anchor.y - wielder.position.y;
+                float climbHeight = ClimbUpHeight;
+
+                if (depth <= Epsilon || depth > climbHeight)
+                {
+                    ShoulderPole();
+                    return false;
+                }
+
+                SetUpTheClimb(landing);
+                HangWielderOnTheLadder();
+                return true;
+            }
+
+            public StaffHold Slide(float lean, float fixedDeltaTime)
+            {
+                if (!IsPlanted || !HasWielder || Mode != StaffMode.Ladder)
+                    return StaffHold.LetGo;
+
+                if (IsMounting)
+                    return Mount(fixedDeltaTime);
+
+                float pull = Mathf.Abs(lean) > leanThreshold ? lean : 0f;
+
+                depth = Mathf.Clamp(depth - pull * slideSpeed * fixedDeltaTime, 0f, reach);
+                wielder.MovePosition(FindHangPositionAt(depth));
+
+                if (IsAtTop && lean > leanThreshold)
+                    return LeaveByTheTop();
+
+                return LetGoIfHeldDown(lean, fixedDeltaTime);
+            }
+
+            public void Release(bool arrived = false)
+            {
+                bool wasLadder = IsPlanted && Mode == StaffMode.Ladder;
+                bool wasPlanted = IsPlanted;
+
+                bool toppedOut = arrived && IsPlanted && isClimbingUp && IsAtTop;
+
+                ClearPlantedState();
+                BringPoleBackToHand();
+
+                if (wasPlanted)
+                    readyAt = Time.time + cooldown;
+
+                if (!HasWielder)
                     return;
 
-                if (!IsPlanted)
+                if (wasLadder)
+                    FreeTheWielder(toppedOut);
+            }
+
+            public void HoldPolePosition()
+            {
+                if (poleTransform == null)
+                    return;
+
+                if (IsPlanted)
                 {
-                    DrawCarryGizmos();
-
-                    if (hook == null)
-                        return;
-
-                    HookAtRest(out Vector2 centre, out Vector2 size);
-
-                    Gizmos.color = Color.grey;
-                    Gizmos.DrawWireCube(centre, size);
-
-                    Gizmos.color = Color.yellow;
-                    Gizmos.DrawWireCube(centre + Vector2.up * raiseHeight, size);
-
-                    Gizmos.color = Color.red;
-                    Gizmos.DrawWireCube(centre + Vector2.up * RaiseThatFits(), size);
+                    poleTransform.SetPositionAndRotation(plantedPosition, plantedRotation);
                     return;
                 }
 
-                if (Mode != StaffMode.Ladder)
+                ShoulderPole();
+            }
+
+            void ShoulderPole()
+            {
+                if (poleTransform == null)
                     return;
 
-                Gizmos.color = Color.green;
-                Gizmos.DrawLine(PositionAt(0f), PositionAt(reach));
+                float wanted = FindAimHeight();
 
-                Gizmos.color = Color.red;
-                Gizmos.DrawWireSphere(PositionAt(reach), TipMarkerRadius);
+                ridingOffset = aimSpeed <= 0f
+                    ? wanted
+                    : Mathf.MoveTowards(ridingOffset, wanted, aimSpeed * Time.deltaTime);
+
+                CarryPole();
             }
 
-            void DrawCarryGizmos()
+            float FindAimHeight()
             {
-                if (hitbox == null || pole.parent == null)
-                    return;
+                if (aim == StaffAim.Raised)
+                    return FindRaiseThatFits();
 
-                LocalBox(hitbox, out Vector2 poleBox, out Vector2 poleSize);
+                if (aim == StaffAim.LookingDown)
+                    return -dipHeight;
 
-                Vector3 authored = pole.parent.TransformPoint(new Vector3(
-                    sideOffset * facing + poleBox.x,
-                    restPosition.y + ridingOffset + poleBox.y,
-                    restPosition.z));
-
-                Vector3 actual = pole.parent.TransformPoint(new Vector3(
-                    pole.localPosition.x + poleBox.x,
-                    pole.localPosition.y + poleBox.y,
-                    restPosition.z));
-
-                Gizmos.color = Color.grey;
-                Gizmos.DrawWireCube(authored, poleSize);
-
-                Gizmos.color = authored == actual ? Color.cyan : Color.red;
-                Gizmos.DrawWireCube(actual, poleSize);
-                Gizmos.DrawLine(authored, actual);
+                return 0f;
             }
 
-            public static Vector2 LocalSpan(Collider2D collider2d)
+            float FindRaiseThatFits()
             {
-                LocalBox(collider2d, out Vector2 centre, out Vector2 size);
-                return new Vector2(centre.y, size.y);
+                if (poleTransform == null || hook == null || raiseHeight <= Epsilon)
+                    return raiseHeight;
+
+                FindHookAtRest(out Vector2 centre, out Vector2 size);
+
+                var from = new Vector2(centre.x, centre.y + size.y * Half - CeilingSlack * Half);
+                var probe = new Vector2(size.x, CeilingSlack);
+
+                if (!TryFindGround(from, probe, Vector2.up, raiseHeight + CeilingSlack,
+                        out float ceilingDistance))
+                    return raiseHeight;
+
+                return Mathf.Clamp(ceilingDistance - CeilingSlack, 0f, raiseHeight);
             }
 
-            public static void LocalBox(Collider2D collider2d, out Vector2 centre, out Vector2 size)
+            void FindHookAtRest(out Vector2 centre, out Vector2 size)
+            {
+                MeasureLocalBox(hook, out Vector2 localCentre, out Vector2 localSize);
+
+                Transform hookTransform = hook.transform;
+                var shoulder = new Vector3(poleTransform.localPosition.x, restPosition.y,
+                    restPosition.z);
+
+                if (poleTransform.parent != null)
+                    shoulder = poleTransform.parent.TransformPoint(shoulder);
+
+                centre = (Vector2)(hookTransform.TransformPoint(localCentre) + shoulder -
+                                   poleTransform.position);
+                size = new Vector2(
+                    localSize.x * Mathf.Abs(hookTransform.lossyScale.x),
+                    localSize.y * Mathf.Abs(hookTransform.lossyScale.y));
+            }
+
+            static void MeasureLocalBox(Collider2D collider2d, out Vector2 centre, out Vector2 size)
             {
                 centre = Vector2.zero;
                 size = Vector2.zero;
@@ -429,38 +493,29 @@ namespace FallingWizard.Player
                     bounds.size.y / Mathf.Max(MinScale, Mathf.Abs(owner.lossyScale.y)));
             }
 
-            float TopAboveOrigin()
+            bool TryFindGround(Vector2 from, Vector2 size, Vector2 direction, float distance,
+                out float groundDistance)
             {
-                Vector2 span = LocalSpan(hitbox);
-                float scale = Mathf.Abs(pole.lossyScale.y);
-                return (span.x + span.y * 0.5f) * scale;
-            }
+                groundDistance = 0f;
 
-            void ShoulderPole()
-            {
-                if (pole == null)
-                    return;
+                if (Physics2D.BoxCast(from, size, 0f, direction, GroundFilter, Rays, distance) == 0)
+                    return false;
 
-                float wanted = AimTarget;
-
-                ridingOffset = aimSpeed <= 0f
-                    ? wanted
-                    : Mathf.MoveTowards(ridingOffset, wanted, aimSpeed * Time.deltaTime);
-
-                CarryPole();
+                groundDistance = Rays[0].distance;
+                return groundDistance > 0f;
             }
 
             void CarryPole()
             {
-                if (pole == null)
+                if (poleTransform == null)
                     return;
 
                 if (hitbox is BoxCollider2D carriedBox && carriedBox.offset.x != poleBoxOffset * facing)
                     carriedBox.offset = new Vector2(poleBoxOffset * facing, carriedBox.offset.y);
 
-                float reachOut = CarryReachThatFits();
+                float reachOut = FindCarryReachThatFits();
 
-                pole.localPosition = new Vector3(
+                poleTransform.localPosition = new Vector3(
                     reachOut * facing,
                     restPosition.y + ridingOffset,
                     restPosition.z);
@@ -474,82 +529,44 @@ namespace FallingWizard.Player
                     hookBox.offset = new Vector2(hookOut, hookBox.offset.y);
             }
 
-            float CarryReachThatFits()
+            float FindCarryReachThatFits()
             {
-                if (pole == null || hitbox == null || wielderHitbox == null)
+                if (!IsCarriedByTheWielder())
                     return sideOffset;
 
-                if (pole.parent == null || wielderHitbox.transform != pole.parent)
-                    return sideOffset;
-
-                LocalBox(hitbox, out Vector2 poleBox, out Vector2 poleSize);
-                LocalBox(wielderHitbox, out Vector2 hullBox, out Vector2 hullSize);
+                MeasureLocalBox(hitbox, out Vector2 poleBox, out Vector2 poleSize);
+                MeasureLocalBox(wielderHitbox, out Vector2 hullBox, out Vector2 hullSize);
 
                 float boxAhead = poleBox.x * facing;
                 float travel = sideOffset + boxAhead;
-                float soles = hullBox.y - hullSize.y * 0.5f + FloorSlack;
-                float tip = restPosition.y + poleBox.y + poleSize.y * 0.5f;
+                float soles = hullBox.y - hullSize.y * Half + FloorSlack;
+                float tip = restPosition.y + poleBox.y + poleSize.y * Half;
 
                 if (travel <= Epsilon || tip <= soles + Epsilon)
                     return sideOffset;
 
-                Vector2 from = pole.parent.TransformPoint(
-                    new Vector3(0f, (soles + tip) * 0.5f, restPosition.z));
+                Vector2 from = poleTransform.parent.TransformPoint(
+                    new Vector3(0f, (soles + tip) * Half, restPosition.z));
 
                 var probe = new Vector2(poleSize.x, tip - soles);
 
-                if (Physics2D.BoxCast(from, probe, 0f, new Vector2(facing, 0f), GroundFilter, Rays,
-                        travel) == 0)
+                if (!TryFindGround(from, probe, new Vector2(facing, 0f), travel,
+                        out float wallDistance))
                     return sideOffset;
 
-                if (Rays[0].distance <= 0f)
-                    return sideOffset;
-
-                return Mathf.Clamp(Rays[0].distance - boxAhead, 0f, sideOffset);
+                return Mathf.Clamp(wallDistance - boxAhead, 0f, sideOffset);
             }
 
-            void HookAtRest(out Vector2 centre, out Vector2 size)
+            bool IsCarriedByTheWielder()
             {
-                LocalBox(hook, out Vector2 localCentre, out Vector2 localSize);
+                if (poleTransform == null || hitbox == null || wielderHitbox == null)
+                    return false;
 
-                Transform on = hook.transform;
-                var shoulder = new Vector3(pole.localPosition.x, restPosition.y, restPosition.z);
-
-                if (pole.parent != null)
-                    shoulder = pole.parent.TransformPoint(shoulder);
-
-                centre = (Vector2)(on.TransformPoint(localCentre) + shoulder - pole.position);
-                size = new Vector2(
-                    localSize.x * Mathf.Abs(on.lossyScale.x),
-                    localSize.y * Mathf.Abs(on.lossyScale.y));
+                return poleTransform.parent != null &&
+                       wielderHitbox.transform == poleTransform.parent;
             }
 
-            float RaiseThatFits()
-            {
-                if (pole == null || hook == null || raiseHeight <= Epsilon)
-                    return raiseHeight;
-
-                HookAtRest(out Vector2 centre, out Vector2 size);
-
-                var from = new Vector2(centre.x, centre.y + size.y * 0.5f - CeilingSlack * 0.5f);
-                var probe = new Vector2(size.x, CeilingSlack);
-
-                if (Physics2D.BoxCast(from, probe, 0f, Vector2.up, GroundFilter, Rays,
-                        raiseHeight + CeilingSlack) == 0)
-                    return raiseHeight;
-
-                if (Rays[0].distance <= 0f)
-                    return raiseHeight;
-
-                return Mathf.Clamp(Rays[0].distance - CeilingSlack, 0f, raiseHeight);
-            }
-
-            public bool Plant(StaffMode mode, int wielderFacing, float edgeX) =>
-                mode == StaffMode.Bridge
-                    ? PlantAsBridge(wielderFacing, edgeX)
-                    : PlantAsLadder(wielderFacing, edgeX);
-
-            bool PlantAsLadder(int wielderFacing, float edgeX)
+            bool TryPlantAsLadder(int wielderFacing, float edgeX)
             {
                 if (!HasPole || !HasWielder)
                     return false;
@@ -561,17 +578,12 @@ namespace FallingWizard.Player
                 dropTimer = 0f;
 
                 float surfaceY = anchor.y - WielderFeetOffset;
-                float topAboveOrigin = TopAboveOrigin();
+                float topAboveOrigin = MeasureTopAboveOrigin();
 
-                plantedRotation = Quaternion.identity;
-                plantedPosition = new Vector3(
-                    edgeX + facing * lipClearance,
-                    surfaceY - topAboveOrigin,
-                    pole.position.z);
+                PlantPoleAt(edgeX + facing * lipClearance, surfaceY - topAboveOrigin,
+                    Quaternion.identity);
 
-                pole.SetPositionAndRotation(plantedPosition, plantedRotation);
-
-                reach = ClearReach(MeasureReach() + HangBelowTip);
+                reach = FindReachThatFits(MeasureReach() + HangBelowTip);
 
                 if (reach <= Epsilon)
                 {
@@ -579,60 +591,59 @@ namespace FallingWizard.Player
                     return false;
                 }
 
-                wielderBodyType = wielder.bodyType;
-                wielder.linearVelocity = Vector2.zero;
-                wielder.bodyType = RigidbodyType2D.Kinematic;
-
-                Mode = StaffMode.Ladder;
-                IsPlanted = true;
+                HangWielderOnTheLadder();
                 return true;
             }
 
-            public bool PlantAsClimb(int wielderFacing, Vector2 lip, Vector2 landing)
+            float MeasureTopAboveOrigin()
             {
-                if (!HasPole || !HasWielder)
-                    return false;
+                MeasureLocalBox(hitbox, out Vector2 centre, out Vector2 size);
+                float scale = Mathf.Abs(poleTransform.lossyScale.y);
+                return (centre.y + size.y * Half) * scale;
+            }
 
-                Face(wielderFacing);
+            void PlantPoleAt(float x, float y, Quaternion rotation)
+            {
+                plantedRotation = rotation;
+                plantedPosition = new Vector3(x, y, poleTransform.position.z);
 
-                anchor = new Vector2(wielder.position.x, lip.y + WielderFeetOffset);
+                poleTransform.SetPositionAndRotation(plantedPosition, plantedRotation);
+            }
 
-                plantedRotation = Quaternion.identity;
-                plantedPosition = new Vector3(
-                    lip.x - facing * lipClearance,
-                    lip.y - TopAboveOrigin(),
-                    pole.position.z);
+            float MeasureReach()
+            {
+                if (hitbox == null || poleTransform == null)
+                    return 0f;
 
-                pole.SetPositionAndRotation(plantedPosition, plantedRotation);
+                MeasureLocalBox(hitbox, out _, out Vector2 size);
+                return size.y * Mathf.Abs(poleTransform.lossyScale.y);
+            }
 
-                depth = anchor.y - wielder.position.y;
-                float climbHeight = ClimbUpHeight;
+            float FindReachThatFits(float rawReach)
+            {
+                if (rawReach <= Epsilon)
+                    return 0f;
 
-                if (depth <= Epsilon || depth > climbHeight)
-                {
-                    ShoulderPole();
-                    return false;
-                }
+                float surfaceY = anchor.y - WielderFeetOffset;
+                var origin = new Vector2(plantedPosition.x, surfaceY);
 
-                reach = depth;
+                if (Physics2D.Raycast(origin, Vector2.down, GroundFilter, Rays, rawReach) == 0)
+                    return rawReach;
 
-                climbing = true;
-                mountTimer = -1f;
-                climbLanding = landing;
-                climbHangX = wielder.position.x;
+                return Mathf.Clamp(surfaceY - Rays[0].point.y, 0f, rawReach);
+            }
 
-                dropTimer = -dropHoldTime;
-
+            void HangWielderOnTheLadder()
+            {
                 wielderBodyType = wielder.bodyType;
                 wielder.linearVelocity = Vector2.zero;
                 wielder.bodyType = RigidbodyType2D.Kinematic;
 
                 Mode = StaffMode.Ladder;
                 IsPlanted = true;
-                return true;
             }
 
-            bool PlantAsBridge(int wielderFacing, float edgeX)
+            bool TryPlantAsBridge(int wielderFacing, float edgeX)
             {
                 if (!HasPole || !HasWielder)
                     return false;
@@ -649,32 +660,7 @@ namespace FallingWizard.Player
                 anchor = wielder.position;
                 float surfaceY = anchor.y - WielderFeetOffset;
 
-                LocalBox(bridge, out Vector2 localCentre, out Vector2 localSize);
-
-                float scaleX = Mathf.Abs(pole.lossyScale.x);
-                float scaleY = Mathf.Abs(pole.lossyScale.y);
-                float length = localSize.y * scaleY;
-                float thickness = localSize.x * scaleX;
-
-                if (pole.parent != null)
-                    pole.SetParent(null, true);
-
-                plantedRotation = Quaternion.Euler(0f, 0f, facing > 0 ? -QuarterTurn : QuarterTurn);
-
-                var carried = new Vector2(
-                    facing * localCentre.y * scaleY,
-                    -facing * localCentre.x * scaleX);
-
-                var wanted = new Vector2(
-                    edgeX + facing * (lipClearance + length * 0.5f),
-                    surfaceY - thickness * 0.5f);
-
-                plantedPosition = new Vector3(
-                    wanted.x - carried.x,
-                    wanted.y - carried.y,
-                    pole.position.z);
-
-                pole.SetPositionAndRotation(plantedPosition, plantedRotation);
+                LayPoleFlat(edgeX, surfaceY);
 
                 bridge.enabled = true;
                 reach = 0f;
@@ -685,118 +671,85 @@ namespace FallingWizard.Player
                 return true;
             }
 
-            float ClearReach(float rawReach)
+            void LayPoleFlat(float edgeX, float surfaceY)
             {
-                if (rawReach <= Epsilon)
-                    return 0f;
+                MeasureLocalBox(bridge, out Vector2 localCentre, out Vector2 localSize);
 
-                float surfaceY = anchor.y - WielderFeetOffset;
-                var origin = new Vector2(plantedPosition.x, surfaceY);
+                float scaleX = Mathf.Abs(poleTransform.lossyScale.x);
+                float scaleY = Mathf.Abs(poleTransform.lossyScale.y);
+                float length = localSize.y * scaleY;
+                float thickness = localSize.x * scaleX;
 
-                if (Physics2D.Raycast(origin, Vector2.down, GroundFilter, Rays, rawReach) == 0)
-                    return rawReach;
+                if (poleTransform.parent != null)
+                    poleTransform.SetParent(null, true);
 
-                return Mathf.Clamp(surfaceY - Rays[0].point.y, 0f, rawReach);
+                Quaternion flatRotation =
+                    Quaternion.Euler(0f, 0f, facing > 0 ? -QuarterTurn : QuarterTurn);
+
+                var carried = new Vector2(
+                    facing * localCentre.y * scaleY,
+                    -facing * localCentre.x * scaleX);
+
+                var wanted = new Vector2(
+                    edgeX + facing * (lipClearance + length * Half),
+                    surfaceY - thickness * Half);
+
+                PlantPoleAt(wanted.x - carried.x, wanted.y - carried.y, flatRotation);
             }
 
-            public StaffHold Slide(float lean, float fixedDeltaTime)
+            void SetUpTheClimb(Vector2 landing)
             {
-                if (!IsPlanted || !HasWielder || Mode != StaffMode.Ladder)
-                    return StaffHold.LetGo;
+                reach = depth;
 
-                if (mountTimer >= 0f)
-                    return Mount(fixedDeltaTime);
+                isClimbingUp = true;
+                mountTimer = NotMounting;
+                climbLanding = landing;
+                climbHangX = wielder.position.x;
 
-                float pull = Mathf.Abs(lean) > leanThreshold ? lean : 0f;
+                dropTimer = -dropHoldTime;
+            }
 
-                depth = Mathf.Clamp(depth - pull * slideSpeed * fixedDeltaTime, 0f, reach);
-                wielder.MovePosition(PositionAt(depth));
+            StaffHold Mount(float fixedDeltaTime)
+            {
+                mountTimer += fixedDeltaTime;
 
-                if (AtTop && lean > leanThreshold)
-                {
-                    if (!climbing || mountSeconds <= Epsilon || !LandingIsClear())
-                        return StaffHold.BackOnLedge;
+                float mountProgress = Mathf.Clamp01(mountTimer / mountSeconds);
+                float eased = Mathf.SmoothStep(0f, 1f, mountProgress);
 
-                    mountFrom = wielder.position;
-                    mountTimer = 0f;
+                wielder.MovePosition(new Vector2(
+                    Mathf.Lerp(mountFrom.x, climbLanding.x, eased * eased),
+                    Mathf.Lerp(mountFrom.y, climbLanding.y, Mathf.Sqrt(eased))));
+
+                if (mountProgress < 1f)
                     return StaffHold.Holding;
-                }
 
-                if (AtBottom && lean < -leanThreshold)
-                {
-                    dropTimer += fixedDeltaTime;
+                mountTimer = NotMounting;
+                return StaffHold.BackOnLedge;
+            }
 
-                    if (dropTimer >= dropHoldTime)
-                        return StaffHold.LetGo;
-                }
-                else
-                {
-                    dropTimer = 0f;
-                }
+            Vector2 FindHangPositionAt(float atDepth)
+            {
+                if (isClimbingUp)
+                    return new Vector2(climbHangX, anchor.y - atDepth);
 
+                float ontoPole = swingDepth <= Epsilon ? 1f : Mathf.Clamp01(atDepth / swingDepth);
+
+                return new Vector2(
+                    Mathf.Lerp(anchor.x, plantedPosition.x, ontoPole),
+                    anchor.y - atDepth);
+            }
+
+            StaffHold LeaveByTheTop()
+            {
+                if (!isClimbingUp || mountSeconds <= Epsilon || !IsLandingClear())
+                    return StaffHold.BackOnLedge;
+
+                mountFrom = wielder.position;
+                mountTimer = 0f;
                 return StaffHold.Holding;
             }
 
-            public void Release(bool arrived = false)
-            {
-                bool wasLadder = IsPlanted && Mode == StaffMode.Ladder;
-                bool wasPlanted = IsPlanted;
-
-                bool toppedOut = arrived && IsPlanted && climbing && AtTop;
-
-                IsPlanted = false;
-                climbing = false;
-                mountTimer = -1f;
-                aim = StaffAim.Neutral;
-                ridingOffset = 0f;
-                dropTimer = 0f;
-
-                if (bridge != null)
-                    bridge.enabled = false;
-
-                if (pole != null)
-                {
-                    pole.localRotation = Quaternion.identity;
-
-                    if (pole.parent != carriedParent)
-                        pole.SetParent(carriedParent, false);
-                }
-
-                plantedRotation = Quaternion.identity;
-                Mode = StaffMode.Ladder;
-                ShoulderPole();
-
-                if (wasPlanted)
-                    readyAt = Time.time + cooldown;
-
-                if (!HasWielder)
-                    return;
-
-                if (wasLadder)
-                {
-                    if (toppedOut && LandingIsClear())
-                        wielder.position = climbLanding;
-
-                    wielder.bodyType = wielderBodyType;
-                    wielder.linearVelocity = Vector2.zero;
-                }
-            }
-
-            public void HoldPolePosition()
-            {
-                if (pole == null)
-                    return;
-
-                if (IsPlanted)
-                {
-                    pole.SetPositionAndRotation(plantedPosition, plantedRotation);
-                    return;
-                }
-
-                ShoulderPole();
-            }
-
-            bool LandingIsClear()
+            bool IsLandingClear()
             {
                 if (wielderHitbox == null || wielder == null)
                     return true;
@@ -812,40 +765,128 @@ namespace FallingWizard.Player
 #if UNITY_EDITOR
                 Debug.LogWarning("A staff climb reached the top and then could not be set down " +
                                  "on it, so the wizard was let go in mid-air and fell. Something " +
-                                 "on the ground layer is in the way just past the lip.", pole);
+                                 "on the ground layer is in the way just past the lip.", poleTransform);
 #endif
 
                 return false;
             }
 
-            StaffHold Mount(float fixedDeltaTime)
+            StaffHold LetGoIfHeldDown(float lean, float fixedDeltaTime)
             {
-                mountTimer += fixedDeltaTime;
+                if (IsAtBottom && lean < -leanThreshold)
+                {
+                    dropTimer += fixedDeltaTime;
 
-                float t = Mathf.Clamp01(mountTimer / mountSeconds);
-                float eased = t * t * (3f - 2f * t);
+                    if (dropTimer >= dropHoldTime)
+                        return StaffHold.LetGo;
+                }
+                else
+                {
+                    dropTimer = 0f;
+                }
 
-                wielder.MovePosition(new Vector2(
-                    Mathf.Lerp(mountFrom.x, climbLanding.x, eased * eased),
-                    Mathf.Lerp(mountFrom.y, climbLanding.y, Mathf.Sqrt(eased))));
-
-                if (t < 1f)
-                    return StaffHold.Holding;
-
-                mountTimer = -1f;
-                return StaffHold.BackOnLedge;
+                return StaffHold.Holding;
             }
 
-            public Vector2 PositionAt(float atDepth)
+            void ClearPlantedState()
             {
-                if (climbing)
-                    return new Vector2(climbHangX, anchor.y - atDepth);
+                IsPlanted = false;
+                isClimbingUp = false;
+                mountTimer = NotMounting;
+                aim = StaffAim.Neutral;
+                ridingOffset = 0f;
+                dropTimer = 0f;
+            }
 
-                float ontoPole = swingDepth <= Epsilon ? 1f : Mathf.Clamp01(atDepth / swingDepth);
+            void BringPoleBackToHand()
+            {
+                if (bridge != null)
+                    bridge.enabled = false;
 
-                return new Vector2(
-                    Mathf.Lerp(anchor.x, plantedPosition.x, ontoPole),
-                    anchor.y - atDepth);
+                if (poleTransform != null)
+                {
+                    poleTransform.localRotation = Quaternion.identity;
+
+                    if (poleTransform.parent != carriedParent)
+                        poleTransform.SetParent(carriedParent, false);
+                }
+
+                plantedRotation = Quaternion.identity;
+                Mode = StaffMode.Ladder;
+                ShoulderPole();
+            }
+
+            void FreeTheWielder(bool toppedOut)
+            {
+                if (toppedOut && IsLandingClear())
+                    wielder.position = climbLanding;
+
+                wielder.bodyType = wielderBodyType;
+                wielder.linearVelocity = Vector2.zero;
+            }
+
+            public void DrawGizmos()
+            {
+                if (poleTransform == null)
+                    return;
+
+                if (!IsPlanted)
+                {
+                    DrawCarryGizmos();
+                    DrawRaiseGizmos();
+                    return;
+                }
+
+                if (Mode != StaffMode.Ladder)
+                    return;
+
+                Gizmos.color = Color.green;
+                Gizmos.DrawLine(FindHangPositionAt(0f), FindHangPositionAt(reach));
+
+                Gizmos.color = Color.red;
+                Gizmos.DrawWireSphere(FindHangPositionAt(reach), TipMarkerRadius);
+            }
+
+            void DrawCarryGizmos()
+            {
+                if (hitbox == null || poleTransform.parent == null)
+                    return;
+
+                MeasureLocalBox(hitbox, out Vector2 poleBox, out Vector2 poleSize);
+
+                Vector3 authored = poleTransform.parent.TransformPoint(new Vector3(
+                    sideOffset * facing + poleBox.x,
+                    restPosition.y + ridingOffset + poleBox.y,
+                    restPosition.z));
+
+                Vector3 actual = poleTransform.parent.TransformPoint(new Vector3(
+                    poleTransform.localPosition.x + poleBox.x,
+                    poleTransform.localPosition.y + poleBox.y,
+                    restPosition.z));
+
+                Gizmos.color = Color.grey;
+                Gizmos.DrawWireCube(authored, poleSize);
+
+                Gizmos.color = authored == actual ? Color.cyan : Color.red;
+                Gizmos.DrawWireCube(actual, poleSize);
+                Gizmos.DrawLine(authored, actual);
+            }
+
+            void DrawRaiseGizmos()
+            {
+                if (hook == null)
+                    return;
+
+                FindHookAtRest(out Vector2 centre, out Vector2 size);
+
+                Gizmos.color = Color.grey;
+                Gizmos.DrawWireCube(centre, size);
+
+                Gizmos.color = Color.yellow;
+                Gizmos.DrawWireCube(centre + Vector2.up * raiseHeight, size);
+
+                Gizmos.color = Color.red;
+                Gizmos.DrawWireCube(centre + Vector2.up * FindRaiseThatFits(), size);
             }
         }
     }

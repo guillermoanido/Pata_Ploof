@@ -65,7 +65,7 @@ namespace FallingWizard.World
         [NonSerialized] Collider2D hitbox;
         [NonSerialized] float secondsStoodOn;
         [NonSerialized] float readyAt;
-        [NonSerialized] bool showingPressed;
+        [NonSerialized] bool isShowingPressed;
 
         bool IsRearming => Time.time < readyAt;
 
@@ -79,15 +79,12 @@ namespace FallingWizard.World
 
         void OnValidate()
         {
-            if (SwitchesThePlateOff(idleLook) || SwitchesThePlateOff(pressedLook))
+            if (WouldSwitchThePlateOff(idleLook) || WouldSwitchThePlateOff(pressedLook))
                 Debug.LogWarning($"{name}: a PressurePlate look is the plate itself or one of its " +
                                  "parents, so switching that look off switches the whole plate " +
                                  "off with it. Put the art on a child object and use that " +
                                  "instead.", this);
         }
-
-        bool SwitchesThePlateOff(GameObject look) =>
-            look != null && transform.IsChildOf(look.transform);
 
         void Awake()
         {
@@ -113,6 +110,9 @@ namespace FallingWizard.World
                 ShowTheRightLook(true);
         }
 
+        bool WouldSwitchThePlateOff(GameObject look) =>
+            look != null && transform.IsChildOf(look.transform);
+
         bool IsStoodOnBy(PlayerCharacter wizard)
         {
             if (wizard == null || wizard.Hitbox == null || hitbox == null || !hitbox.enabled)
@@ -123,10 +123,10 @@ namespace FallingWizard.World
             if (!logic.health.IsAlive || logic.State != PlayerState.Normal)
                 return false;
 
-            return logic.movement.IsGrounded && Touches(hitbox.bounds, wizard.Hitbox.bounds);
+            return logic.movement.IsGrounded && IsTouching(hitbox.bounds, wizard.Hitbox.bounds);
         }
 
-        static bool Touches(Bounds plate, Bounds body) =>
+        static bool IsTouching(Bounds plate, Bounds body) =>
             body.min.x <= plate.max.x && body.max.x >= plate.min.x &&
             body.max.y >= plate.min.y && body.min.y - plate.max.y <= ReachBelowTheFeet;
 
@@ -136,9 +136,9 @@ namespace FallingWizard.World
             readyAt = Time.time + rearmSeconds;
 
             if (tumbles)
-                wizard.Trip();
+                wizard.TryTrip();
 
-            wizard.Bounce(launchHeight, sidewaysPush, true);
+            wizard.TryBounce(launchHeight, sidewaysPush, true);
         }
 
         void PopBackUp()
@@ -149,20 +149,20 @@ namespace FallingWizard.World
 
         void ShowTheRightLook(bool pressed)
         {
-            if (pressed == showingPressed)
+            if (pressed == isShowingPressed)
                 return;
 
-            showingPressed = pressed;
+            isShowingPressed = pressed;
             SwitchTheLooks();
         }
 
         void SwitchTheLooks()
         {
             if (idleLook != null)
-                idleLook.SetActive(!showingPressed);
+                idleLook.SetActive(!isShowingPressed);
 
             if (pressedLook != null)
-                pressedLook.SetActive(showingPressed);
+                pressedLook.SetActive(isShowingPressed);
         }
     }
 }

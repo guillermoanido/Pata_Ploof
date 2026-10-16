@@ -1,8 +1,6 @@
 using System;
-using System.Collections.Generic;
 using FallingWizard.Core;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace FallingWizard.Player
 {
@@ -17,6 +15,8 @@ namespace FallingWizard.Player
     [Serializable]
     public partial class PlayerLogic
     {
+        const int NoStaffSelected = -1;
+
         [Header("Parts")]
         public Movement movement = new Movement();
         public Ragdoll ragdoll = new Ragdoll();
@@ -35,7 +35,7 @@ namespace FallingWizard.Player
         [NonSerialized] Staff.Pole pole;
         [NonSerialized] Staff[] staves;
         [NonSerialized] Staff carried;
-        [NonSerialized] int staffRank = -1;
+        [NonSerialized] int staffRank = NoStaffSelected;
         [NonSerialized] Rigidbody2D wielderBody;
         [NonSerialized] Collider2D wielderHull;
         [NonSerialized] Intent input;
@@ -47,24 +47,32 @@ namespace FallingWizard.Player
 
         [NonSerialized] Vector2 pendingPlatformVelocity;
 
-        public event Action Died;
-
         [NonSerialized] public bool Invulnerable;
+
+        public event Action Died;
 
         public Staff.Pole Pole => pole;
         public bool HasPole => pole != null && pole.HasPole;
 
-        public bool StaffIsFree =>
+        public bool IsStaffFree =>
             HasPole && !pole.IsPlanted && pole.IsReady && State == PlayerState.Normal;
 
-        public bool StaffIsPlantedAs(StaffMode mode) =>
-            HasPole && pole.IsPlanted && pole.Mode == mode;
-        public Modifiers Stats => spellbook.stats;
+        public Modifiers Stats => spellbook.Stats;
         public Intent Steering => input;
         public Transform Rig => movement.Rig;
         public PlayerState State { get; private set; }
         public bool IsOnStaff => State == PlayerState.OnStaff;
         public bool IsPeeking { get; private set; }
+        public bool IsStaffLookingDown { get; private set; }
+
+        public bool CanClimbHere =>
+            IsStaffFree && pole.HasHook &&
+            movement.TryFindClimbAt(pole.HookBounds, out _, out _);
+
+        public bool IsOnVine => State == PlayerState.OnVine;
+
+        public bool CanGrabVine =>
+            health.IsAlive && State == PlayerState.Normal && vine.CanGrab;
 
         public void Attach(Rigidbody2D body, Transform art, Collider2D hitbox, Staff[] staffSet)
         {
@@ -84,18 +92,18 @@ namespace FallingWizard.Player
             spellbook.Attach(this);
         }
 
-        public void Observe(in Intent frame, float deltaTime)
+        public void Observe(Intent frame, float deltaTime)
         {
             input = frame;
 
             if (!health.IsAlive)
                 return;
 
-            movement.BufferJump(frame.JumpPressed, deltaTime);
+            movement.BufferJump(frame.WasJumpPressed, deltaTime);
             spellbook.Observe(deltaTime);
 
             IsPeeking = (State == PlayerState.OnStaff && !(HasPole && pole.IsClimbing)) ||
-                        (State == PlayerState.Normal && input.LookingDown);
+                        (State == PlayerState.Normal && input.IsLookingDown);
         }
 
         public void Simulate(float fixedDeltaTime)
@@ -108,24 +116,7 @@ namespace FallingWizard.Player
             ApplyExternalForce(fixedDeltaTime);
             TakeLedgeWhileLookingDown();
 
-            switch (State)
-            {
-                case PlayerState.OnStaff:
-                    UpdateOnStaff(fixedDeltaTime);
-                    break;
-
-                case PlayerState.Ragdoll:
-                    UpdateRagdoll(fixedDeltaTime);
-                    break;
-
-                case PlayerState.OnVine:
-                    UpdateOnVine(fixedDeltaTime);
-                    break;
-
-                default:
-                    UpdateNormal(fixedDeltaTime);
-                    break;
-            }
+            UpdateCurrentState(fixedDeltaTime);
 
             spellbook.TickTimers(fixedDeltaTime);
         }
@@ -148,14 +139,14 @@ namespace FallingWizard.Player
             vine.DrawGizmos();
         }
 
-        public bool Trip() => Trip(movement.TravelDirection);
+        public bool TryTrip() => TryTrip(movement.TravelDirection);
 
-        public bool Trip(int direction)
+        public bool TryTrip(int direction)
         {
             if (State != PlayerState.Normal || !health.IsAlive)
                 return false;
 
-            int way = direction < 0 ? -1 : 1;
+            int way = Movement.GetDirectionOf(direction);
 
             ragdoll.Begin(way, way == movement.TravelDirection);
 
@@ -163,7 +154,7 @@ namespace FallingWizard.Player
             return true;
         }
 
-        public bool Bounce(float heightInBoxes, float sideways, bool resetsFall)
+        public bool TryBounce(float heightInBoxes, float sideways, bool resetsFall)
         {
             if (!health.IsAlive || State == PlayerState.OnStaff || State == PlayerState.OnVine)
                 return false;
@@ -191,7 +182,7 @@ namespace FallingWizard.Player
 
         public void Hurt(int hearts)
         {
-            if (hearts <= 0 || !health.IsAlive || Invulnerable || Stats.Shielded)
+            if (hearts <= 0 || !health.IsAlive || Invulnerable || Stats.IsShielded)
                 return;
 
             health.TakeDamage(hearts);
@@ -204,9 +195,9 @@ namespace FallingWizard.Player
 
         public void RestoreHealth() => health.RestoreToFull();
 
-        public bool GrowHeart(int hearts)
+        public bool TryGrowHeart(int hearts)
         {
-            int taken = Mathf.Min(hearts, health.Room);
+            int taken = Mathf.Min(hearts, health.RoomForBonusHearts);
 
             if (taken <= 0)
                 return false;
@@ -217,31 +208,30 @@ namespace FallingWizard.Player
             return true;
         }
 
-        public void BeginFallFrom(float worldY) => movement.BeginFallFrom(worldY);
-
-        public int PredictArc(Vector2 launch, in Movement.ArcSettings look, List<Vector2> into,
-            out Movement.ArcEnd end)
+        public bool WouldFlingThroughHazard(Vector2 launch, Movement.ArcSettings look)
         {
             if (State != PlayerState.Normal || !health.IsAlive)
-            {
-                into.Clear();
-                end = default;
-                return 0;
-            }
+                return false;
 
-            return movement.PredictArc(launch, Stats, look, into, out end);
+            return movement.WouldTumbleThroughHazard(launch, look);
         }
 
-        public bool Fling(Vector2 velocity, float controlLockout)
+        public bool TryFling(Vector2 velocity)
         {
             if (State != PlayerState.Normal || !health.IsAlive)
                 return false;
 
             movement.Stop();
+            movement.UseBaseGravity();
             movement.BeginFallFrom(movement.Position.y);
-            movement.AddImpulse(velocity, controlLockout);
+            ragdoll.Throw(Movement.GetDirectionOf(velocity.x), velocity);
+
+            State = PlayerState.Ragdoll;
             return true;
         }
+
+        public bool IsStaffPlantedAs(StaffMode mode) =>
+            HasPole && pole.IsPlanted && pole.Mode == mode;
 
         public bool TryPlantStaff(StaffMode mode)
         {
@@ -254,7 +244,7 @@ namespace FallingWizard.Player
             if (!movement.TryFindLedgeEdge(out float edgeX))
                 return false;
 
-            if (!pole.Plant(mode, movement.Facing, edgeX))
+            if (!pole.TryPlant(mode, movement.Facing, edgeX))
                 return false;
 
             if (mode == StaffMode.Ladder)
@@ -267,17 +257,11 @@ namespace FallingWizard.Player
 
         public void LowerStaff() => pole?.Aim(StaffAim.Neutral);
 
-        public bool StaffLooksDown { get; private set; }
-
         public void AimStaffDown(bool down)
         {
-            StaffLooksDown = down;
+            IsStaffLookingDown = down;
             pole?.Aim(down ? StaffAim.LookingDown : StaffAim.Neutral);
         }
-
-        public bool CanClimbHere =>
-            StaffIsFree && pole.HasHook &&
-            movement.TryFindClimbAt(pole.HookBounds, out _, out _);
 
         public bool TryClimbStaff()
         {
@@ -290,7 +274,7 @@ namespace FallingWizard.Player
 
             bool caughtInTheAir = !movement.IsGrounded;
 
-            if (!pole.PlantAsClimb(movement.Facing, lip, landing))
+            if (!pole.TryPlantAsClimb(movement.Facing, lip, landing))
                 return false;
 
             if (caughtInTheAir)
@@ -299,8 +283,6 @@ namespace FallingWizard.Player
             State = PlayerState.OnStaff;
             return true;
         }
-
-        public Staff CarriedStaff => carried;
 
         public void SelectStaff(int rank)
         {
@@ -311,56 +293,22 @@ namespace FallingWizard.Player
             staffRank = rank;
             carried = staves[Mathf.Clamp(rank - 1, 0, staves.Length - 1)];
 
-            foreach (Staff staff in staves)
-            {
-                if (staff != null)
-                    staff.gameObject.SetActive(staff == carried);
-            }
-
-            Staff.Pole next = carried != null ? carried.Logic : null;
-
-            if (next == pole)
-                return;
-
-            pole = next;
-            pole?.BindWielder(wielderBody, wielderHull);
-            pole?.Face(movement.Facing);
-        }
-
-        void TakeLedgeWhileLookingDown()
-        {
-            if (!StaffLooksDown || !StaffIsFree || !movement.IsAtEdge)
-                return;
-
-            if (TryPlantStaff(StaffMode.Ladder))
-                AimStaffDown(false);
+            ShowOnlyCarriedStaff();
+            SwitchToCarriedPole();
         }
 
         public void RecoverStaff() => RecoverStaff(false);
 
-        public void RecoverStaff(bool arrived)
+        public bool TryGrabVine(Vine.Hold spec)
         {
-            pole?.Release(arrived);
-
-            if (State == PlayerState.OnStaff)
-                State = PlayerState.Normal;
-        }
-
-        public bool IsOnVine => State == PlayerState.OnVine;
-
-        public bool CanGrabVine =>
-            health.IsAlive && State == PlayerState.Normal && vine.CanGrab;
-
-        public bool TryGrabVine(in Vine.Hold spec)
-        {
-            if (!CanGrabVine || !vine.Grab(spec, movement.Position, movement.Velocity))
+            if (!CanGrabVine || !vine.TryGrab(spec, movement.Position, movement.Velocity))
                 return false;
 
             State = PlayerState.OnVine;
             return true;
         }
 
-        public float GrabSnapDistance(in Vine.Hold spec) =>
+        public float GrabSnapDistance(Vine.Hold spec) =>
             Vector2.Distance(movement.Position, vine.WouldHangAt(spec, movement.Position));
 
         public void LetGoOfVine()
@@ -368,13 +316,13 @@ namespace FallingWizard.Player
             if (State != PlayerState.OnVine)
                 return;
 
-            float from = vine.HangPosition.y;
+            float hangHeight = vine.HangPosition.y;
             Vector2 launch = vine.Release();
 
             State = PlayerState.Normal;
 
             movement.Stop();
-            movement.BeginFallFrom(from);
+            movement.BeginFallFrom(hangHeight);
             movement.AddImpulse(launch, 0f);
         }
 
@@ -383,20 +331,80 @@ namespace FallingWizard.Player
             if (State != PlayerState.OnStaff)
                 return;
 
-            float from = pole.HangPosition.y;
+            float hangHeight = pole.HangPosition.y;
 
             pole.Release();
-            movement.BeginFallFrom(from);
+            movement.BeginFallFrom(hangHeight);
             State = PlayerState.Normal;
         }
 
-        void UpdateNormal(float fixedDeltaTime)
+        void ApplyExternalForce(float fixedDeltaTime)
         {
-            movement.FixedTick(input.Movement, Stats, fixedDeltaTime);
+            movement.SetGrip(pendingGrip);
+            movement.SetPlatformVelocity(pendingPlatformVelocity);
 
-            pole?.Face(movement.Facing);
+            ApplyPendingWind(fixedDeltaTime);
+            ClearPendingForces();
+        }
 
-            CheckLanding();
+        void ApplyPendingWind(float fixedDeltaTime)
+        {
+            switch (State)
+            {
+                case PlayerState.OnStaff:
+                case PlayerState.OnVine:
+                    break;
+
+                case PlayerState.Ragdoll:
+                    movement.NudgeVelocity(pendingWind * Stats.WindMultiplier * fixedDeltaTime);
+                    break;
+
+                default:
+                    movement.ApplyWind(pendingWind * Stats.WindMultiplier, pendingRampup,
+                        pendingGroundScale, fixedDeltaTime);
+                    break;
+            }
+        }
+
+        void ClearPendingForces()
+        {
+            pendingWind = Vector2.zero;
+            pendingRampup = 0f;
+            pendingGroundScale = 1f;
+
+            pendingGrip = 1f;
+            pendingPlatformVelocity = Vector2.zero;
+        }
+
+        void TakeLedgeWhileLookingDown()
+        {
+            if (!IsStaffLookingDown || !IsStaffFree || !movement.IsAtEdge)
+                return;
+
+            if (TryPlantStaff(StaffMode.Ladder))
+                AimStaffDown(false);
+        }
+
+        void UpdateCurrentState(float fixedDeltaTime)
+        {
+            switch (State)
+            {
+                case PlayerState.OnStaff:
+                    UpdateOnStaff(fixedDeltaTime);
+                    break;
+
+                case PlayerState.Ragdoll:
+                    UpdateRagdoll(fixedDeltaTime);
+                    break;
+
+                case PlayerState.OnVine:
+                    UpdateOnVine(fixedDeltaTime);
+                    break;
+
+                default:
+                    UpdateNormal(fixedDeltaTime);
+                    break;
+            }
         }
 
         void UpdateOnStaff(float fixedDeltaTime)
@@ -413,10 +421,12 @@ namespace FallingWizard.Player
             }
         }
 
-        void UpdateOnVine(float fixedDeltaTime)
+        void RecoverStaff(bool arrived)
         {
-            if (input.JumpPressed || !vine.Ride(input.Move, fixedDeltaTime))
-                LetGoOfVine();
+            pole?.Release(arrived);
+
+            if (State == PlayerState.OnStaff)
+                State = PlayerState.Normal;
         }
 
         void UpdateRagdoll(float fixedDeltaTime)
@@ -426,35 +436,6 @@ namespace FallingWizard.Player
 
             if (ragdoll.Tick(fixedDeltaTime, movement.IsGrounded, movement.HorizontalSpeed))
                 State = PlayerState.Normal;
-        }
-
-        void ApplyExternalForce(float fixedDeltaTime)
-        {
-            movement.SetGrip(pendingGrip);
-            movement.SetPlatformVelocity(pendingPlatformVelocity);
-
-            switch (State)
-            {
-                case PlayerState.OnStaff:
-                case PlayerState.OnVine:
-                    break;
-
-                case PlayerState.Ragdoll:
-                    movement.NudgeVelocity(pendingWind * Stats.WindMultiplier * fixedDeltaTime);
-                    break;
-
-                default:
-                    movement.ApplyWind(pendingWind * Stats.WindMultiplier, pendingRampup,
-                        pendingGroundScale, fixedDeltaTime);
-                    break;
-            }
-
-            pendingWind = Vector2.zero;
-            pendingRampup = 0f;
-            pendingGroundScale = 1f;
-
-            pendingGrip = 1f;
-            pendingPlatformVelocity = Vector2.zero;
         }
 
         void CheckLanding()
@@ -470,6 +451,21 @@ namespace FallingWizard.Player
                 return;
 
             Hurt(Mathf.RoundToInt(excess * damagePerBox * Stats.FallDamageMultiplier));
+        }
+
+        void UpdateOnVine(float fixedDeltaTime)
+        {
+            if (input.WasJumpPressed || !vine.Ride(input.Move, fixedDeltaTime))
+                LetGoOfVine();
+        }
+
+        void UpdateNormal(float fixedDeltaTime)
+        {
+            movement.FixedTick(input.Command, Stats, fixedDeltaTime);
+
+            pole?.Face(movement.Facing);
+
+            CheckLanding();
         }
 
         void Die()
@@ -489,6 +485,27 @@ namespace FallingWizard.Player
             spellbook.ResetForRun();
 
             Died?.Invoke();
+        }
+
+        void ShowOnlyCarriedStaff()
+        {
+            foreach (Staff staff in staves)
+            {
+                if (staff != null)
+                    staff.gameObject.SetActive(staff == carried);
+            }
+        }
+
+        void SwitchToCarriedPole()
+        {
+            Staff.Pole next = carried != null ? carried.Logic : null;
+
+            if (next == pole)
+                return;
+
+            pole = next;
+            pole?.BindWielder(wielderBody, wielderHull);
+            pole?.Face(movement.Facing);
         }
     }
 }

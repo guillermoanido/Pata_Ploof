@@ -20,11 +20,11 @@ namespace FallingWizard.Menus
             for (int i = 0; i < levels.Length; i++)
             {
                 Level level = levels[i];
-                bool open = IsUnlocked(i) && IsInTheBuild(level);
+                bool isOpen = IsUnlocked(i) && IsInTheBuild(level);
 
-                level.pip.interactable = open;
+                level.pip.interactable = isOpen;
 
-                if (!open)
+                if (!isOpen)
                     continue;
 
                 level.pip.onClick.AddListener(() => Game.LoadLevel(level.sceneName));
@@ -39,13 +39,13 @@ namespace FallingWizard.Menus
 
         static bool IsInTheBuild(Level level)
         {
-            bool built = Application.CanStreamedLevelBeLoaded(level.sceneName);
+            bool isBuilt = Application.CanStreamedLevelBeLoaded(level.sceneName);
 
-            if (!built)
+            if (!isBuilt)
                 Debug.LogWarning($"The '{level.sceneName}' scene is not in File > Build Settings, " +
                                  "so its pip stays locked.");
 
-            return built;
+            return isBuilt;
         }
 
         [Serializable]

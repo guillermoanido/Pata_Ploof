@@ -19,13 +19,11 @@ namespace FallingWizard.World
         [Min(0f)] public float settleTime = 0.4f;
 
         [NonSerialized] Vector2 home;
-        [NonSerialized] bool knowsHome;
+        [NonSerialized] bool hasHome;
 
         [NonSerialized] float underside;
 
         public static IReadOnlyList<Carryable> All => Loose;
-
-        public bool IsStowed => !gameObject.activeSelf;
 
         public Sprite Icon
         {
@@ -36,11 +34,7 @@ namespace FallingWizard.World
             }
         }
 
-        void Awake()
-        {
-            home = transform.position;
-            knowsHome = true;
-        }
+        void Awake() => RememberHome();
 
         void OnEnable() => Loose.Add(this);
 
@@ -48,11 +42,8 @@ namespace FallingWizard.World
 
         public void Stow()
         {
-            if (!knowsHome)
-            {
-                home = transform.position;
-                knowsHome = true;
-            }
+            if (!hasHome)
+                RememberHome();
 
             var footprint = GetComponent<Collider2D>();
 
@@ -62,9 +53,39 @@ namespace FallingWizard.World
             gameObject.SetActive(false);
         }
 
-        public void PutDown(Vector2 where)
+        public void PutDownOn(float middleX, float floorY) =>
+            PutDown(new Vector2(middleX, floorY + underside));
+
+        public void GoHome() => PutDown(home);
+
+        public static Carryable Nearest(Vector2 point, float reach)
         {
-            transform.position = where;
+            Carryable closest = null;
+            float closestGap = float.MaxValue;
+
+            foreach (Carryable thing in Loose)
+            {
+                float gap = Vector2.Distance(point, thing.transform.position);
+
+                if (gap > Mathf.Min(reach, thing.takeRange) || gap >= closestGap)
+                    continue;
+
+                closestGap = gap;
+                closest = thing;
+            }
+
+            return closest;
+        }
+
+        void RememberHome()
+        {
+            home = transform.position;
+            hasHome = true;
+        }
+
+        void PutDown(Vector2 point)
+        {
+            transform.position = point;
             gameObject.SetActive(true);
 
             var body = GetComponent<Rigidbody2D>();
@@ -77,30 +98,6 @@ namespace FallingWizard.World
 
             foreach (Hazard hazard in GetComponentsInChildren<Hazard>(true))
                 hazard.Disarm(settleTime);
-        }
-
-        public void PutDownOn(float middleX, float floorY) =>
-            PutDown(new Vector2(middleX, floorY + underside));
-
-        public void GoHome() => PutDown(home);
-
-        public static Carryable Nearest(Vector2 point, float reach)
-        {
-            Carryable closest = null;
-            float best = float.MaxValue;
-
-            foreach (Carryable thing in Loose)
-            {
-                float gap = Vector2.Distance(point, thing.transform.position);
-
-                if (gap > Mathf.Min(reach, thing.takeRange) || gap >= best)
-                    continue;
-
-                best = gap;
-                closest = thing;
-            }
-
-            return closest;
         }
     }
 }

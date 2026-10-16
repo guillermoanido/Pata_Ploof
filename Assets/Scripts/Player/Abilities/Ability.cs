@@ -8,6 +8,12 @@ namespace FallingWizard.Player
 {
     public abstract class Ability : ScriptableObject
     {
+        public const float NotCharging = -1f;
+
+        const int NoFixedSlot = -1;
+
+        const int LastSlot = Progress.SlotCount - 1;
+
         [Header("Identity")]
         [Tooltip("Key this spell is remembered by. Leave empty to use the asset's file name. " +
                  "Once a save exists, changing it forgets the spell.")]
@@ -33,7 +39,7 @@ namespace FallingWizard.Player
 
         [Tooltip("The slot a locked spell always sits in. 0 is the first button, 1 the second, " +
                  "and so on. -1 for anything the player is free to place.")]
-        [Range(-1, 3)] public int fixedSlot = -1;
+        [Range(NoFixedSlot, LastSlot)] public int fixedSlot = NoFixedSlot;
 
         [Header("Input")]
         [Tooltip("A passive has no button. It still takes up one of the four slots, so bringing " +
@@ -82,9 +88,6 @@ namespace FallingWizard.Player
 
         public bool HasUpgrades => upgrades != null && upgrades.Length > 0;
 
-        public Upgrade NextUpgrade(int rank) =>
-            upgrades != null && rank >= 1 && rank <= upgrades.Length ? upgrades[rank - 1] : null;
-
         public string Key => string.IsNullOrEmpty(id) ? name : id;
 
         public string LocKey => Loc.AbilityPrefix + Key;
@@ -92,6 +95,20 @@ namespace FallingWizard.Player
         public string Name => Loc.Text(LocKey + ".name", displayName);
 
         public string Description => Loc.Text(LocKey + ".desc", description);
+
+        void OnValidate()
+        {
+            cost = Mathf.Max(0, cost);
+
+            if (upgrades != null)
+                foreach (Upgrade step in upgrades)
+                    step?.Validate();
+
+            Validate();
+        }
+
+        public Upgrade NextUpgrade(int rank) =>
+            upgrades != null && rank >= 1 && rank <= upgrades.Length ? upgrades[rank - 1] : null;
 
         public string UpgradeTitle(int rank)
         {
@@ -125,7 +142,7 @@ namespace FallingWizard.Player
 
         public virtual Color IconTintFor(PlayerLogic wizard) => Color.white;
 
-        public virtual float ChargeFor(PlayerLogic wizard) => -1f;
+        public virtual float ChargeFor(PlayerLogic wizard) => NotCharging;
 
         public virtual void OnHeld(PlayerLogic wizard, float heldSeconds, float fixedDeltaTime) { }
 
@@ -143,15 +160,26 @@ namespace FallingWizard.Player
 
         public virtual void OnEnded(PlayerLogic wizard) { }
 
-        protected static T TierFor<T>(T[] tiers, int rank) where T : class =>
-            tiers == null || tiers.Length == 0
-                ? null
-                : tiers[Mathf.Clamp(rank - 1, 0, tiers.Length - 1)];
+        protected virtual void Validate() { }
 
-        protected static float TierFor(float[] tiers, int rank) =>
-            tiers == null || tiers.Length == 0
-                ? 1f
-                : tiers[Mathf.Clamp(rank - 1, 0, tiers.Length - 1)];
+        protected void ValidateTiers(ITier[] tiers)
+        {
+            if (tiers != null)
+                foreach (ITier tier in tiers)
+                    tier?.Validate();
+
+            WarnIfTooFewTiers(tiers != null ? tiers.Length : 0);
+        }
+
+        protected T PickTier<T>(T[] tiers, PlayerLogic wizard) where T : class, new()
+        {
+            int rank = wizard.spellbook.RankOf(this);
+
+            if (tiers == null || tiers.Length == 0)
+                return new T();
+
+            return tiers[Mathf.Clamp(rank - 1, 0, tiers.Length - 1)] ?? new T();
+        }
 
         protected static GameObject FindChildNamed(Transform rig, string wanted)
         {
@@ -162,26 +190,13 @@ namespace FallingWizard.Player
             return null;
         }
 
-        protected void CheckTiers(int count)
+        void WarnIfTooFewTiers(int count)
         {
             if (count > 0 && count < MaxRank)
                 Debug.LogWarning($"'{name}' reaches rank {MaxRank} but has only {count} block(s) " +
                                  $"of numbers, so rank {count + 1} and up repeat the last one.",
                                  this);
         }
-
-        void OnValidate()
-        {
-            cost = Mathf.Max(0, cost);
-
-            if (upgrades != null)
-                foreach (Upgrade step in upgrades)
-                    step?.Validate();
-
-            Validate();
-        }
-
-        protected virtual void Validate() { }
 
         [Serializable]
         public class Upgrade
@@ -197,6 +212,11 @@ namespace FallingWizard.Player
             public string description = "";
 
             public void Validate() => cost = Mathf.Max(0, cost);
+        }
+
+        protected interface ITier
+        {
+            void Validate();
         }
     }
 }

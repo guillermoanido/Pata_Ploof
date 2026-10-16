@@ -48,9 +48,9 @@ rest.pressOn,"Rest, then press on",Descansar y seguir bajando
 rest.turnBack,Turn back and bank {0} Magic Scrap,Volver y guardar {0} Basura Mágica
 hud.wisps,{0} carried    {1} banked,{0} en mano    {1} a salvo
 ability.fling.name,Fling,Impulso
-ability.fling.desc,"Hold to wind up and aim, let go to be flung.","Mantén presionado para apuntar, suelta para ser arrojado."
+ability.fling.desc,"Hold to aim up or down, let go to be thrown into a tumble.","Mantén presionado para apuntar arriba o abajo, suelta para salir lanzado dando vueltas."
 ability.fling.upgrade.0.title,Harder throw,Tiro más fuerte
-ability.fling.upgrade.0.desc,Winds up faster and throws you further.,Carga más rápido y te lanza más lejos.
+ability.fling.upgrade.0.desc,Throws you further.,Te lanza más lejos.
 ability.glide.name,Glide,Planeo
 ability.glide.desc,Throw out your hat to glide around.,Despliega tu sombrero para planear.
 ability.glide.upgrade.0.title,Wider hat gives more control.,El sombrero se agranda otorgando mayor control.

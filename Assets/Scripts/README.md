@@ -28,9 +28,9 @@ coming back down it can never hurt you.
 | Folder | What lives there |
 | --- | --- |
 | `Core/` | `Game` (pause, scene flow, quit), `GameSettings`, `Controls` (every input lookup, plus which device is in use), `Progress` (what the wizard has learned), `SingletonBehaviour` |
-| `Player/` | `PlayerCharacter`, `PlayerLogic` and its parts, `Staff` |
+| `Player/` | `PlayerCharacter`, `PlayerLogic` and its parts, `Staff`, `HealthLook`, `RagdollBumps` |
 | `Player/Abilities/` | `Ability` and the spells, `AbilityBook`, `AbilityShrine` |
-| `Localization/` | `Loc`, `LanguageTable`, `LocalizedText` |
+| `Localization/` | `Loc`, `TextBook`, `LocalizedText` |
 | `World/` | `PlayerTrigger`, `Hazard` and the seven hazards, `Pickup`, `TileGrid`, `FollowCamera` |
 | `UI/` | `PlayerHud`, `HudSlot`, `FlingArrow`, `Ui` and the runtime screens |
 | `Menus/`, `Cutscenes/` | `MenuScreen` and the three menus; `CutsceneRunner` |
@@ -48,7 +48,7 @@ top-level ones and show up as foldouts in the inspector.
 | File | Holds |
 | --- | --- |
 | `PlayerLogic.cs` | the wizard's own fields, the state machine, and everything that crosses parts |
-| `PlayerLogic.Movement.cs` | `Movement`, with its `ClimbRefusal`, `ArcSettings` and `ArcEnd` |
+| `PlayerLogic.Movement.cs` | `Movement`, with its `ClimbRefusal` and `ArcSettings` |
 | `PlayerLogic.Spellbook.cs` | `Spellbook` and `Spellbook.Slot` |
 | `PlayerLogic.Vine.cs` | `Vine` and `Vine.Hold` |
 | `PlayerLogic.Ragdoll.cs` | `Ragdoll` |
@@ -80,6 +80,39 @@ goes in `PlayerLogic.cs`; a file named for a part contains only that part.
   serializes by default, so a public timer would be baked into the scene at whatever value it held
   when you last saved.
 
+## How the scripts are written
+
+Every script follows the same six rules, so any one of them reads like the rest:
+
+1. **No comments.** Names explain the code. A `[Tooltip]` explains an Inspector field to whoever is
+   tuning it.
+2. **Small, simple methods.** One job each, about 20 lines at most, early `return`s instead of deep
+   nesting. Plain loops, not LINQ; `if (x != null)`, not `?.`, on anything Unity owns.
+3. **Objects own their data.** Anything another script does not need is `private`, and shared
+   behaviour lives in a base class: `PlayerTrigger`, `Hazard`, `Pickup`, `Ability`, `MenuScreen`.
+4. **The same order in every class:**
+   - constants
+   - Inspector fields
+   - private state
+   - events
+   - properties
+   - Unity messages (`Reset`, `OnValidate`, `Awake`, `OnEnable`, `Start`, `FixedUpdate`, `Update`…)
+   - public methods
+   - protected methods
+   - private methods, in the order they are first called
+   - gizmos
+   - nested types
+5. **Names say what things are and do.** No abbreviations.
+   - Methods start with a verb: `ShowTheRightLook`.
+   - Yes/no values read as questions: `IsGrounded`, `HasPole`, `WasPausePressed`, `CanAffect`.
+   - A method that may not manage it, and tells you whether it did, starts with `Try`: `TryTrip`,
+     `TryBuy`.
+   - A method named for what it gives back (`RankOf`, `CentreOf`) only looks something up.
+6. **No magic numbers.** Every number in code except 0 and 1 is a named `const`, or a
+   `static readonly` for colours and vectors, at the top of its class: `Half`, `BothSides`,
+   `NoFixedSlot`. Layer masks come from `Layers`. An Inspector field's default (`runSpeed = 6f`) is
+   already named by its field.
+
 ## Numbers
 
 Three kinds of field, and which one a thing is decides how it is declared:
@@ -100,8 +133,9 @@ Hazards and spells never reach in and set a number. They call verbs on `PlayerLo
 decides for itself whether it applies:
 
 ```csharp
-wizard.Trip();                                   // rocks
-wizard.Bounce(heightInBoxes, sideways, resetsFall);  // slimes
+wizard.TryTrip();                                // rocks
+wizard.TryBounce(heightInBoxes, sideways, resetsFall);  // slimes
+wizard.TryFling(velocity);                       // the Fling spell, straight into a tumble
 wizard.Push(boxesPerSecond, rampup, groundScale);    // wind, every step you are inside it
 wizard.Shove(velocity, controlLockout);          // one-off knock
 wizard.Hurt(hearts);  wizard.Heal(hearts);
@@ -181,7 +215,7 @@ The Staff is yours from the start and welded to E; everything else fights over t
 | **Glide** | A canopy. It barely slows the drop - it carries you. | wider wing |
 | **Telekinesis** | Take a hazard with you and set it down where you want it. | longer reach |
 | **Haste** | You quicken; the world wades. Once per level. | deeper haste |
-| **Fling** | Hold to wind up and aim, let go to fly. | harder throw |
+| **Fling** | Hold to aim up or down (never more than 45° up), let go to be thrown into a tumble. | harder throw |
 
 Two of them want level content and already have it: Mage Hand needs a `Vine`, Telekinesis needs a
 `Carryable` — which the `Slime` and `Wet Floor Sign` prefabs now carry, so every slime and sign
@@ -209,12 +243,12 @@ that bites harder when steered *also brakes harder when released* — so letting
 wizard straight down, which is the exact opposite of gliding. `AirControlMultiplier` scales the
 first, `AirDragMultiplier` the second, and Glide pushes them in opposite directions: 1.6 and 0.45.
 
-**`foldsOnLanding` needs the spell's own memory of having flown, not `Movement.Airtime`.** Airtime
-is a lifetime counter that only ever increments, so `Airtime > 0` guarded exactly one cast — the
-first of a session. After a single jump it was true forever, and throwing the canopy out while
-stood at a ledge folded it on the next physics step, put it on cooldown, and left the wizard
-falling at completely normal speed with nothing to say why. The `Wing.flown` flag is set the first
-step the wizard is off the ground and cleared on every cast.
+**`foldsOnLanding` needs the spell's own memory of having flown.** An early version read a
+lifetime air-time counter that only ever counted up, so it guarded exactly one cast — the first of
+a session. After a single jump it was true forever, and throwing the canopy out while stood at a
+ledge folded it on the next physics step, put it on cooldown, and left the wizard falling at
+completely normal speed with nothing to say why. The `Wing.hasFlown` flag is set the first step the
+wizard is off the ground and cleared on every cast. (The counter is gone now; nothing else read it.)
 
 **Telekinesis is one button doing two jobs**, chosen by whether your hands are full. Empty, the
 press takes hold of the nearest `Carryable` and stows it; full, the press sets it down in the first
@@ -240,7 +274,7 @@ which is the worked example.
 
 A spell's rank lives in `Progress.ranks` — `Dictionary<string,int>`, permanent tier, on disk, and
 it round-tripped values above 1 from the day it was written, so there was no save-format work to
-do. Rank 1 is "learned"; `Buy` and `Grant` hand that out and `Progress.Upgrade` deliberately
+do. Rank 1 is "learned"; `TryBuy` and `Grant` hand that out and `Progress.TryUpgrade` deliberately
 **refuses to learn**, so no bug in a screen can hand rank 2 to a spell nobody bought.
 
 The split matters: **`Ability.upgrades[]` is the shop** — a cost, a title and a sentence per rank,
@@ -343,10 +377,10 @@ run up and go spend what is banked.
 editor `UiFactory` with the editor-only parts taken out — including
 `AssetDatabase.GetBuiltinExtraResource`, which does not exist in a player and silently produced
 untinted white boxes when it was tried. They sit at sorting order 200 and 220, above the Pause
-Menu's 100. Both set `Screens.ModalOpen`, and `MenuScreen.Update` checks it, so the pause menu
+Menu's 100. Both set `Screens.IsModalOpen`, and `MenuScreen.Update` checks it, so the pause menu
 underneath does not eat Escape.
 
-**A panel that sizes itself must be built with `Ui.Sheet`, never `Ui.Plate` plus a
+**A panel that sizes itself must be built with `Ui.CreateSheet`, never `Ui.CreatePlate` plus a
 `ContentSizeFitter`.** `Ui.SetSize` attaches a `LayoutElement`, and a `LayoutElement` outranks a
 `VerticalLayoutGroup` when a `ContentSizeFitter` asks how tall the thing wants to be — so a panel
 built that way with height 0 fits itself to **zero**. The group then has less room than its
@@ -371,36 +405,36 @@ the same way - the steam vents, wax drips, moving platforms and pressure plates 
 rebuilds the spellbook, which is what a level transition is. Dying refills it too, since that also
 reloads — self-punishing enough not to be worth policing.
 
-## Fling, and the promise the dotted line makes
+## Fling: aim, then tumble
 
-The arc and the launch are **the same `Vector2`**, computed once per fixed step and handed to both
-the prediction and the shove. The moment those become two code paths the line stops being a
-promise and becomes a suggestion.
+**Holding the button aims; letting go throws.** There is no wind-up: how hard you are thrown is
+set per rank (`Tier.speed`, 9 and then 11 boxes a second), and holding only turns the arrow.
 
-`Movement.PredictArc` is ported from the abandoned jump-test branch, but three adaptations matter
-more than the port, and each was wrong before:
+- **Aiming.** The arrow starts at `startAngle` (20°), and holding up or down turns it at
+  `aimSpeed` (90° a second) between `lowestAngle` (−45°) and `highestAngle` (45°). The sliders stop
+  at 45° on purpose, so a fling is a throw across rather than a jump. Set Lowest Angle to 0 if you
+  never want to be thrown downward. Left and right follow the way the wizard faces, so pushing the
+  stick sideways while aiming turns them round.
+- **The throw is a ragdoll.** `PlayerLogic.TryFling` stops the wizard, puts gravity back to normal,
+  starts the fall-damage count at the launch height and hands the speed to `Ragdoll.Throw`. They
+  tumble until they land and slow down, exactly like a trip, then get back up. A throw that ends
+  more than `safeFallDistance` below its highest point still costs hearts.
+- **The arrow warns before you commit.** `Movement.WouldTumbleThroughHazard` flies the same throw
+  ahead of time, with the plain gravity a tumbling wizard falls with, and the arrow's Danger Look
+  switches on when the throw would cross a hazard before it lands. Hazards do not stop the
+  prediction: every hazard here is a trigger you pass straight through, so stopping at the first
+  one would hide the rest of the flight.
 
-- **Hazards do not stop you.** Every hazard here is a trigger you pass straight through, so an arc
-  that ended at the first slime would hide where you actually land. It flies on and reports that it
-  crossed one, and the line turns red without getting shorter.
-- **Wind pushes you mid-flight.** `wind.y` is added outside `Run`, so it reaches a wizard whose
-  steering is locked; `wind.x` is not, because `Run` early-returns on lockout. Only the vertical
-  component belongs in the simulation.
-- **The flight has to be locked, and for exactly the right length.** `Run` rewrites
-  `linearVelocityX` every step, dragging it back toward the stick at `airControl × groundFriction`.
-  Unlocked, a 14 b/s fling is spent inside half a second and the drawing is a lie. `ArcEnd.Seconds`
-  is the arc reporting its own duration, and that is what the spell locks for.
-
-**`Rooted` is set from `ModifyStats`, never from `OnHeld`.** `TryCast` runs before `Rebuild`, and
+**`IsRooted` is set from `ModifyStats`, never from `OnHeld`.** `TryCast` runs before `Rebuild`, and
 `Rebuild` opens with `stats.Reset()` — anything written during the hold is wiped on the next line,
-and the wizard walks away while winding up with nothing in the console to say why.
+and the wizard walks away while aiming with nothing in the console to say why.
 
 **The release is latched in `Observe` and consumed before the hook runs.** `Observe` is an Update
 and `TryCast` is a FixedUpdate: polling `WasReleasedThisFrame` from a fixed-step hook misses the
 edge on a slow frame and fires twice on a fast one.
 
-A charged spell wants **`pressBuffer: 0`**. Anything else and `WhyNot` complains to the console
-every tenth of a second you spend winding up.
+A held spell wants **`pressBuffer: 0`**. Anything else and `WhyNot` complains to the console every
+tenth of a second you spend aiming.
 
 ## Carrying a hazard
 
@@ -412,7 +446,7 @@ means putting it down cannot lose anything.
 without it, a slime set down at your feet still has the re-arm timer it had when you picked it up,
 and bounces you on the very next physics step.
 
-**Placement settles; it does not test one row.** `TileGrid.RestingCell` takes a column and the
+**Placement settles; it does not test one row.** `TileGrid.TryFindRestingCell` takes a column and the
 height the wizard aimed at, carries the thing up over anything in the way (`StepOver`, two boxes),
 then walks it down onto the first floor beneath (`LookDown`, six). What comes back is where the
 thing would come to rest — *on top of the tiles, as low as the column allows*.
@@ -450,7 +484,7 @@ axes. So nothing carries a constant for it — the two spells each ask the world
 
 | | takes its height from | why that is exact |
 | --- | --- | --- |
-| A carried slime, rock or boulder | `TileGrid.SurfaceUnder` — a cast straight down inside the cell, and `Footing.y` if it falls through | it is the tile's own top, whatever the slice did |
+| A carried slime, rock or boulder | `TileGrid.TryFindSurfaceUnder` — a cast straight down inside the cell, and `Footing.y` if it falls through | it is the tile's own top, whatever the slice did |
 | Wall Growth's block | `Movement.Footing.y`, the wizard's soles | they are STOOD on the platform being extended, so their soles *are* its surface |
 
 Re-slice the sheet to 32×32 one day and both keep working, having never been told what the old
@@ -485,7 +519,7 @@ squaring all 212 of them off would wall the level in.
 ## Which row is the wizard standing in
 
 Neither spell counts rows off `TileGrid.StandingCell` any more — Wall Growth finds its floor with
-`FloorRowUnder` and Telekinesis settles with `RestingCell`, both of which survive the answer being
+`TryFindFloorRowUnder` and Telekinesis settles with `TryFindRestingCell`, both of which survive the answer being
 a row out. It still has to be right, because it is where they start looking, and **it has to
 answer with the empty
 cell the body is in, never the solid one holding it up.** One row out is not a near miss — it is
@@ -539,7 +573,7 @@ So each step works out where the swing wants the wizard, and asks for the veloci
 there: `(wanted - position) / dt`. Physics then does what physics does, and a wall stops them. The
 next step reads their **actual** position back and re-derives the angle and the length from it, so
 the arc always agrees with where the wizard really is rather than grinding along the inside of a
-wall insisting otherwise. Ending a step more than `Blocked` boxes from where the last one asked
+wall insisting otherwise. Ending a step more than `BlockedDistance` boxes from where the last one asked
 means they hit something, and the swing is killed. That check is against **the step's own target**,
 not against the arc recomputed from their position — a rope pulling taut on the first step of a
 grab is not the same thing as hitting a wall, and confusing the two throws away the run they
@@ -601,6 +635,18 @@ Spell effects work the same way, as children of the wizard found by name: **Glid
 with a **Fling Arrow** component (a direct child of the wizard, art pointing right, Danger Look
 optional). Missing one just means that effect does not show.
 
+**Placeholder art ships in the prefabs**, so every effect shows something until the real art
+arrives. The sprites are plain shapes in `Assets/Art/Placeholders`:
+
+- **PLAYER:** a `Glide Canopy` under `Visual`, and a `Fling Arrow` with an `Arrow Art` child and a red
+  `Danger Look`.
+- **Hand Hold:** a blue `Glow Look` behind the hand.
+- **Stone Wall:** a stone block on its `Body`.
+
+To replace one, open the prefab and drag your sprite onto that object's Sprite Renderer, or put your
+own object in its place under the same name. Haste Trail is the one still empty: until a child of
+that name exists, Haste shows nothing.
+
 The only things a script still moves are the ones where the movement *is* the mechanic: the
 wizard's `Visual` is flipped to face their way and spun when they tumble, the staff sprite is
 flipped, the vine's rope is stretched as it unrolls and leans with the swing, the Wall Growth
@@ -612,7 +658,7 @@ copies of your own sheet side by side so the background never runs out.
 Three separate faults made "I cannot swap abilities" true, and all three had to go.
 
 **The screen could not target a slot.** Every equip path went through `Progress.FirstEmptySlot()`,
-and the rail along the top was `Ui.Plate` images with no `Button` on them — a read-out, not a
+and the rail along the top was `Ui.CreatePlate` images with no `Button` on them — a read-out, not a
 control. Swapping Q and R was not expressible. The verb now is **pick a spell, then press the
 button you want it on** (or click the rail cell). Those four actions already exist and are already
 enabled, and the glyph on the rail is the same one the HUD prints under that slot in play — so the
@@ -625,14 +671,14 @@ overwrote the target, so dropping one spell onto another lost the second one sil
 **`Playtest` re-dealt the loadout on every scene load.** `BeginSandbox()` → `Clear()` blanks
 `ranks`, `equipped`, and the checkpoint, and it ran at execution order −100 — a frame ahead of the
 spellbook reading them. Sandbox is now a property of the play **session** and seeding it is a
-one-time act: `Progress.SandboxSeeded` gates it, `redealOnEveryLoad` forces it back for when you
+one-time act: `Progress.IsSandboxSeeded` gates it, `redealOnEveryLoad` forces it back for when you
 are tuning the ticks. `SceneManager.LoadScene` does not re-run
 `RuntimeInitializeOnLoadMethod`, so `Progress`'s statics would have survived the reload on their
 own — Playtest was the entire failure. It also fixes a checkpoint quietly dying on every load.
 
 **And you could barely reach the screen.** It opened only from a `RestSite` or the death screen,
-both of which end the run first. Two doors now: **Play** opens it from the main menu, and while
-`Progress.Sandbox` is on, **Escape** opens it mid-level. The second installs only in a sandbox, so
+both of which end the run first. Two doors now: **Play** opens it from the main menu, and while a
+`Playtest` sandbox is running, **Escape** opens it mid-level. The second installs only in a sandbox, so
 it cannot exist in a real playthrough and "decide before you go down" is untouched.
 
 ## Testing a spell without earning it
@@ -645,7 +691,7 @@ trying the skill screen.
 
 **Nothing it does is written to the save.** `Progress.BeginSandbox()` wipes the in-memory tiers and
 puts `Save()` to sleep for the session, so a playtest cannot spend, unlock or consume anything in
-the real one. It runs at `[DefaultExecutionOrder(-100)]`, ahead of `PlayerCharacter.OnAwake`, which
+the real one. It runs early (`[DefaultExecutionOrder(RunBeforeTheWizardWakes)]`, which is −100), ahead of `PlayerCharacter.OnAwake`, which
 is the frame the spellbook reads `Progress` and builds its slots.
 
 Spells welded to a slot are placed **first**, before any tick is honoured. Otherwise a ticked spell
@@ -665,7 +711,7 @@ of `OnValidate` — where it can be refused mid-deserialisation. But a serialize
 sitting in the inspector never reached the scene file, and entering Play Mode deserialised an empty
 one straight back over it: no ticks, nothing granted, every slot empty.
 
-With the book in a field, `Sync()` runs directly in `OnValidate`, where Unity re-serialises what it
+With the book in a field, `SyncWithTheBook()` runs directly in `OnValidate`, where Unity re-serialises what it
 changes. The deferred path survives only to fill in a component that predates the field — and it
 calls `EditorUtility.SetDirty` afterwards, which was the piece missing all along.
 
@@ -742,6 +788,18 @@ it is completed. Completed levels are saved with the permanent tier, so they sta
 and launches until the save is reset. A pip whose scene is missing from Build Settings stays locked
 and says so in the console. Selection starts on the deepest open pip.
 
+**Level 2 and Level 3 start empty.** They are made with **Falling Wizard > Build Empty Levels 2 and
+3**, which never overwrites a scene that already exists:
+
+1. It copies `Level 1`.
+2. It keeps the wizard, the camera, the light, the HUD, the menus and the tile grid.
+3. It removes everything else, including the parallax background.
+4. It lays a strip of floor under the wizard, using the first tile it finds beneath them, and puts
+   one Level Exit ten tiles ahead of them.
+5. It adds both scenes to File > Build Settings, right after Level 1, so the pips can open them.
+
+Finishing Level 2 opens Level 3, because `LevelExit` completes whichever scene is playing.
+
 
 ## Checkpoints
 
@@ -780,9 +838,9 @@ A trip **launches you onward** — your speed, plus `launchForward`, never below
 `launchUp` of lift so you actually leave the floor. Landing back down, the skid bleeds at
 `slideFriction` boxes per second squared. All of it on `PlayerLogic ▸ Ragdoll`, and all of it the
 same every time: a wet floor sign, a slime and a bad staircase throw you identically, because none of
-them supply their own knock — they just call `Trip()`.
+them supply their own knock — they just call `TryTrip()`.
 
-The one exception is the **rake**, which calls `Trip(int)` to throw you *back the way you came*. That
+The one exception is the **rake**, which calls `TryTrip(int)` to throw you *back the way you came*. That
 overload also drops the momentum you arrived with, because `Begin` adds `launchForward` to your
 current speed: keep it, and a wizard running in at 4 boxes a second and "thrown backwards" comes out
 still going forwards. Do not add a second hazard that reverses you — one is a punchline, two is a
@@ -795,6 +853,18 @@ setting removes it because it is geometry, not bounciness. It also makes how far
 on which corner happens to be down. Spinning the art instead costs nothing and looks the same.
 
 The wizard's `Rigidbody2D` rotation is frozen and nothing in the game ever unfreezes it.
+
+**Bump stars.** `RagdollBumps` on the PLAYER spawns its `bumpEffect` wherever a tumbling wizard hits
+something:
+
+- **Floor and ceiling:** any collision faster than `minimumBumpSpeed`.
+- **Walls:** the tumble turns round just *before* it touches a wall, so a wall hit would never count
+  as a collision. `Ragdoll.BouncedOffAWall` reports those bounces instead.
+
+`secondsBetweenBumps` stops a shower of stars. The effect is the **Ragdoll Bump Stars** prefab in
+`Assets/Prefabs/Effects`, a short burst of spinning yellow stars made by **Falling Wizard > Build
+Ragdoll Bump Stars**, which also plugs it into the PLAYER. Edit the prefab freely. Any prefab works
+in the slot, and each copy is cleared away after `secondsToKeepEachBump`.
 
 ## Slopes, steps, and why neither of them slows you down
 
@@ -816,7 +886,7 @@ reads as the stairs being sticky. With it, a slope changes neither how fast they
 long it takes to get there. The divide is bounded by cos(`maxSlopeAngle`), so a wall-ish surface
 sneaking past the walkable test cannot divide by nothing.
 
-**`TryStepUp` carries them over a lip a box collider cannot climb.** The wizard is a box with
+**`StepUpSmallLedges` carries them over a lip a box collider cannot climb.** The wizard is a box with
 square corners, frozen rotation and no friction, so a lip is a flat vertical face meeting a flat
 vertical face; the solver's only answer is to delete the sideways speed, and `Run` puts it straight
 back on the next step. That is what "stuck on the scenery" feels like — the stick is forward, the
@@ -887,7 +957,7 @@ hanging on the same pole, driven by the same stick.
 ledge, so the far end is where your feet will end up and you can read the drop off it. Slide down,
 and keep pushing down at the bottom to let go.
 
-*Up*, on a hold against a wall: `Movement.TryFindClimb` measures the wall, `Staff.Pole.PlantAsClimb`
+*Up*, on a hold against a wall: `Movement.TryFindClimbAt` measures the wall, `Staff.Pole.TryPlantAsClimb`
 stands the pole against it, and from there it is the identical ride — push up to climb, push up at
 the top to step over the lip. Releasing the button does **not** drop you off: a climb is a place you
 are, not a button you are holding.
@@ -965,12 +1035,12 @@ to nothing, once, after a third of a second, and `StaffAbility.WhyNot` splits th
 look identical from the outside: *nothing in reach to raise it against*, and *what is ahead is too
 tall, or there is no room on top of it*.
 
-`Staff.cs` can still lay the pole flat as a **Bridge** — `StaffMode.Bridge`, `PlantAsBridge`, and a
+`Staff.cs` can still lay the pole flat as a **Bridge** — `StaffMode.Bridge`, `TryPlantAsBridge`, and a
 separate solid collider on a child on the Ground layer, because the staff itself is on the Player
 layer, which the ground check deliberately ignores. Nothing casts it since the Staff Bridge spell
 was retired. It is left in because it works and is one small class away from coming back.
 
-The guards it left behind are still earning their keep. `StaffIsFree` and `StaffIsPlantedAs(mode)`
+The guards it left behind are still earning their keep. `IsStaffFree` and `IsStaffPlantedAs(mode)`
 say what the pole is busy *with*, not merely that it is busy, and `TryPlantStaff` refuses a pole
 already in the ground. Without that, standing on your own bridge puts you at a lip with `IsAtEdge`
 true and the Staff spell would happily re-plant the same pole as a ladder, pulling the floor out
@@ -1011,7 +1081,7 @@ and deliberately skip the gate entirely — a floor cannot be dodged by being sl
 The steps themselves are **tilemap**, not the hazard. `Movement` already walks them: the slope
 handling steers along the face and the step assist carries the wizard over each tread. `Stairs` is
 a trigger box you lay over the top saying *this stretch of floor is a staircase*, and all it does
-is `Trip()` above `minimumSpeed`.
+is `TryTrip()` above `minimumSpeed`.
 
 That gives the whole rule in two numbers a designer can see: **run at them and you go down them the
 way you were already travelling; walk, or jog, and you go up and down without noticing.** The
@@ -1185,4 +1255,4 @@ leave them on `Default` at negative sorting orders, which the existing light alr
 - Buttons are wired in `Awake` in code, not through the inspector's OnClick list. Add both and they
   fire twice.
 - The **Exit** button is always shown. Console certification usually forbids quitting to the OS from
-  a menu, so hide it in `MainMenuController.Awake` for a console build.
+  a menu, so hide it in `MainMenuController.WireButtons` for a console build.

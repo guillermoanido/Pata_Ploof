@@ -12,10 +12,17 @@ namespace FallingWizard.Player
 
             const float MaxLean = 89f;
 
+            const float MaxDamping = 8f;
+
             const float MinReach = 0.1f;
 
-            static readonly Color RopeColour = new Color(0.42f, 0.75f, 0.38f);
             const float GripRadius = 0.2f;
+
+            const float MaxHaulSpeed = 60f;
+
+            const float BlockedDistance = 0.25f;
+
+            static readonly Color RopeColour = new Color(0.42f, 0.75f, 0.38f);
 
             [Header("Swinging")]
             [Tooltip("How hard the wizard hangs, against Unity's own gravity. Match it to the " +
@@ -31,11 +38,11 @@ namespace FallingWizard.Player
             [Tooltip("How quickly a swing dies down with nobody steering it, per second. 0 swings " +
                      "forever. High numbers hang almost still. This is what settles the wizard " +
                      "back under the knot when they let the stick go.")]
-            [Range(0f, 8f)] public float damping = 1.1f;
+            [Range(0f, MaxDamping)] public float damping = 1.1f;
 
             [Tooltip("How far the vine will lean either side of straight down, in degrees. It " +
                      "stops dead at the limit rather than bouncing off it.")]
-            [Range(0f, 89f)] public float maxSwing = 70f;
+            [Range(0f, MaxLean)] public float maxSwing = 70f;
 
             [Header("Climbing")]
             [Tooltip("Fastest the wizard can ever climb, in boxes per second. A spell asks for " +
@@ -45,7 +52,7 @@ namespace FallingWizard.Player
 
             [Tooltip("Closest you can climb to where the vine is tied, in boxes. Keeps the wizard " +
                      "out of the ceiling.")]
-            [Min(0.1f)] public float minDepth = 0.75f;
+            [Min(MinReach)] public float minDepth = 0.75f;
 
             [Header("Letting Go")]
             [Tooltip("How much of the swing you actually leave with. 1 is exactly the speed you " +
@@ -69,77 +76,56 @@ namespace FallingWizard.Player
                      "the very end.")]
             public bool letGoAtTheEnd = false;
 
-            const float MaxHaul = 60f;
-
-            const float Blocked = 0.25f;
-
             [NonSerialized] Rigidbody2D body;
-            [NonSerialized] float restoreGravity;
+            [NonSerialized] float gravityToRestore;
 
+            [NonSerialized] bool isRiding;
             [NonSerialized] Vector2 anchor;
             [NonSerialized] float length;
-            [NonSerialized] float limit;
+            [NonSerialized] float swingLimit;
             [NonSerialized] float depth;
             [NonSerialized] float angle;
             [NonSerialized] float spin;
-            [NonSerialized] float climb;
+            [NonSerialized] float climbSpeedInPlay;
             [NonSerialized] float readyAt;
 
-            [NonSerialized] Vector2 wanted;
-            [NonSerialized] bool steered;
-
-            public bool IsRiding { get; private set; }
+            [NonSerialized] Vector2 haulTarget;
+            [NonSerialized] bool hasSteered;
 
             public bool CanGrab => body != null && Time.time >= readyAt;
 
             public Vector2 Anchor => anchor;
 
-            public struct Hold
-            {
-                public Vector2 Anchor;
-                public float Length;
-                public float MaxSwingDegrees;
-                public float ClimbSpeed;
-                public float SnapLimit;
-            }
-
-            public Vector2 HangPosition => PositionAt(angle, depth);
-
-            public float Depth => depth;
+            public Vector2 HangPosition => FindHangPosition(anchor, angle, depth);
 
             public float Lean => angle * Mathf.Rad2Deg;
 
-            public int SwingDirection => spin < 0f ? -1 : 1;
+            Vector2 ArcDirection => new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
 
-            public float SwingSpeed => Mathf.Abs(spin) * depth;
-
-            public void Attach(Rigidbody2D wielder)
+            public void Attach(Rigidbody2D wizardBody)
             {
-                body = wielder;
+                body = wizardBody;
 
                 if (body != null)
-                    restoreGravity = body.gravityScale;
+                    gravityToRestore = body.gravityScale;
 
-                IsRiding = false;
+                isRiding = false;
                 readyAt = 0f;
             }
 
-            public Vector2 WouldHangAt(in Hold spec, Vector2 from)
+            public Vector2 WouldHangAt(Hold spec, Vector2 from)
             {
-                float cap = Mathf.Min(maxSwing, Mathf.Abs(spec.MaxSwingDegrees)) * Mathf.Deg2Rad;
                 Vector2 reach = from - spec.Anchor;
 
-                float deep = Mathf.Clamp(reach.magnitude, minDepth, spec.Length);
-                float lean = reach.sqrMagnitude < Epsilon
-                    ? 0f
-                    : Mathf.Clamp(Mathf.Atan2(reach.x, -reach.y), -cap, cap);
+                float hangDepth = Mathf.Clamp(reach.magnitude, minDepth, spec.Length);
+                float lean = MeasureLean(reach, FindSwingLimit(spec));
 
-                return spec.Anchor + new Vector2(Mathf.Sin(lean), -Mathf.Cos(lean)) * deep;
+                return FindHangPosition(spec.Anchor, lean, hangDepth);
             }
 
-            public bool Grab(in Hold spec, Vector2 from, Vector2 carried)
+            public bool TryGrab(Hold spec, Vector2 from, Vector2 carriedVelocity)
             {
-                if (body == null || IsRiding || spec.Length <= minDepth)
+                if (body == null || isRiding || spec.Length <= minDepth)
                     return false;
 
                 if (Vector2.Distance(from, WouldHangAt(spec, from)) > spec.SnapLimit)
@@ -147,101 +133,54 @@ namespace FallingWizard.Player
 
                 anchor = spec.Anchor;
                 length = spec.Length;
-                limit = Mathf.Min(maxSwing, Mathf.Abs(spec.MaxSwingDegrees)) * Mathf.Deg2Rad;
+                swingLimit = FindSwingLimit(spec);
 
-                climb = Mathf.Min(climbSpeed, Mathf.Max(0f, spec.ClimbSpeed));
+                climbSpeedInPlay = Mathf.Min(climbSpeed, Mathf.Max(0f, spec.ClimbSpeed));
 
-                Vector2 reach = from - anchor;
+                StartSwingFrom(from, carriedVelocity);
+                TakeOverBody();
 
-                depth = Mathf.Clamp(reach.magnitude, minDepth, length);
-                angle = reach.sqrMagnitude < Epsilon
-                    ? 0f
-                    : Mathf.Clamp(Mathf.Atan2(reach.x, -reach.y), -limit, limit);
-
-                Vector2 along = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
-                spin = depth <= Epsilon ? 0f : Vector2.Dot(carried, along) / depth;
-
-                restoreGravity = body.gravityScale;
-                body.gravityScale = 0f;
-                body.linearVelocity = Vector2.zero;
-
-                steered = false;
-                IsRiding = true;
+                hasSteered = false;
+                isRiding = true;
                 return true;
             }
 
-            public bool Ride(Vector2 lean, float fixedDeltaTime)
+            public bool Ride(Vector2 stick, float fixedDeltaTime)
             {
-                if (!IsRiding || body == null || fixedDeltaTime <= Epsilon)
+                if (!isRiding || body == null || fixedDeltaTime <= Epsilon)
                     return false;
 
-                if (steered && (body.position - wanted).sqrMagnitude > Blocked * Blocked)
-                    spin = 0f;
+                StopSwingIfBlocked();
+                CatchUpWithBody();
+                Climb(stick, fixedDeltaTime);
+                Swing(stick, fixedDeltaTime);
+                HaulBodyToRope(fixedDeltaTime);
 
-                Vector2 real = body.position - anchor;
-
-                if (real.sqrMagnitude > Epsilon)
-                {
-                    depth = Mathf.Clamp(real.magnitude, minDepth, length);
-                    angle = Mathf.Clamp(Mathf.Atan2(real.x, -real.y), -limit, limit);
-                }
-
-                depth = Mathf.Clamp(depth - lean.y * climb * fixedDeltaTime, minDepth, length);
-
-                float rope = Mathf.Max(depth, MinReach);
-                float gravity = Mathf.Abs(Physics2D.gravity.y) * weight;
-
-                float pull = -(gravity / rope) * Mathf.Sin(angle);
-                float push = lean.x * (swingPush / rope);
-
-                spin += (pull + push) * fixedDeltaTime;
-                spin *= Mathf.Clamp01(1f - damping * fixedDeltaTime);
-
-                angle += spin * fixedDeltaTime;
-
-                if (Mathf.Abs(angle) > limit)
-                {
-                    angle = Mathf.Clamp(angle, -limit, limit);
-
-                    if (spin * angle > 0f)
-                        spin = 0f;
-                }
-
-                wanted = HangPosition;
-                steered = true;
-
-                Vector2 haul = (wanted - body.position) / fixedDeltaTime;
-
-                body.linearVelocity = Vector2.ClampMagnitude(haul, MaxHaul);
-
-                return !letGoAtTheEnd || depth < length - Epsilon || lean.y >= 0f;
+                return !letGoAtTheEnd || depth < length - Epsilon || stick.y >= 0f;
             }
 
             public Vector2 Release()
             {
-                if (body != null)
-                    body.gravityScale = restoreGravity;
+                RestoreGravity();
 
-                IsRiding = false;
+                isRiding = false;
                 readyAt = Time.time + regrabDelay;
 
-                Vector2 along = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
                 float speed = Mathf.Clamp(spin * depth * releaseBoost,
                     -maxReleaseSpeed, maxReleaseSpeed);
 
                 spin = 0f;
 
-                return along * speed + Vector2.up * releaseLift;
+                return ArcDirection * speed + Vector2.up * releaseLift;
             }
 
             public void Cancel()
             {
-                if (body != null)
-                    body.gravityScale = restoreGravity;
+                RestoreGravity();
 
-                IsRiding = false;
+                isRiding = false;
                 spin = 0f;
-                steered = false;
+                hasSteered = false;
                 readyAt = 0f;
             }
 
@@ -249,7 +188,7 @@ namespace FallingWizard.Player
             {
                 weight = Mathf.Max(0f, weight);
                 swingPush = Mathf.Max(0f, swingPush);
-                damping = Mathf.Clamp(damping, 0f, 8f);
+                damping = Mathf.Clamp(damping, 0f, MaxDamping);
                 maxSwing = Mathf.Clamp(maxSwing, 0f, MaxLean);
                 climbSpeed = Mathf.Max(0f, climbSpeed);
                 minDepth = Mathf.Max(MinReach, minDepth);
@@ -261,7 +200,7 @@ namespace FallingWizard.Player
 
             public void DrawGizmos()
             {
-                if (!IsRiding)
+                if (!isRiding)
                     return;
 
                 Gizmos.color = RopeColour;
@@ -269,8 +208,111 @@ namespace FallingWizard.Player
                 Gizmos.DrawWireSphere(HangPosition, GripRadius);
             }
 
-            Vector2 PositionAt(float lean, float distance) =>
-                anchor + new Vector2(Mathf.Sin(lean), -Mathf.Cos(lean)) * distance;
+            static float MeasureLean(Vector2 reach, float limit)
+            {
+                if (reach.sqrMagnitude < Epsilon)
+                    return 0f;
+
+                return Mathf.Clamp(Mathf.Atan2(reach.x, -reach.y), -limit, limit);
+            }
+
+            float FindSwingLimit(Hold spec) =>
+                Mathf.Min(maxSwing, Mathf.Abs(spec.MaxSwingDegrees)) * Mathf.Deg2Rad;
+
+            static Vector2 FindHangPosition(Vector2 anchorPoint, float lean, float distance) =>
+                anchorPoint + new Vector2(Mathf.Sin(lean), -Mathf.Cos(lean)) * distance;
+
+            void StartSwingFrom(Vector2 from, Vector2 carriedVelocity)
+            {
+                Vector2 reach = from - anchor;
+
+                depth = Mathf.Clamp(reach.magnitude, minDepth, length);
+                angle = MeasureLean(reach, swingLimit);
+                spin = depth <= Epsilon ? 0f : Vector2.Dot(carriedVelocity, ArcDirection) / depth;
+            }
+
+            void TakeOverBody()
+            {
+                gravityToRestore = body.gravityScale;
+                body.gravityScale = 0f;
+                body.linearVelocity = Vector2.zero;
+            }
+
+            void StopSwingIfBlocked()
+            {
+                if (hasSteered &&
+                    (body.position - haulTarget).sqrMagnitude > BlockedDistance * BlockedDistance)
+                    spin = 0f;
+            }
+
+            void CatchUpWithBody()
+            {
+                Vector2 reach = body.position - anchor;
+
+                if (reach.sqrMagnitude > Epsilon)
+                {
+                    depth = Mathf.Clamp(reach.magnitude, minDepth, length);
+                    angle = MeasureLean(reach, swingLimit);
+                }
+            }
+
+            void Climb(Vector2 stick, float fixedDeltaTime)
+            {
+                depth = Mathf.Clamp(depth - stick.y * climbSpeedInPlay * fixedDeltaTime,
+                    minDepth, length);
+            }
+
+            void Swing(Vector2 stick, float fixedDeltaTime)
+            {
+                float rope = Mathf.Max(depth, MinReach);
+                float gravity = Mathf.Abs(Physics2D.gravity.y) * weight;
+
+                float pull = -(gravity / rope) * Mathf.Sin(angle);
+                float push = stick.x * (swingPush / rope);
+
+                spin += (pull + push) * fixedDeltaTime;
+                spin *= Mathf.Clamp01(1f - damping * fixedDeltaTime);
+
+                angle += spin * fixedDeltaTime;
+
+                StopAtSwingLimit();
+            }
+
+            void StopAtSwingLimit()
+            {
+                if (Mathf.Abs(angle) > swingLimit)
+                {
+                    angle = Mathf.Clamp(angle, -swingLimit, swingLimit);
+
+                    if (spin * angle > 0f)
+                        spin = 0f;
+                }
+            }
+
+            void HaulBodyToRope(float fixedDeltaTime)
+            {
+                haulTarget = HangPosition;
+                hasSteered = true;
+
+                Vector2 haul = (haulTarget - body.position) / fixedDeltaTime;
+
+                body.linearVelocity = Vector2.ClampMagnitude(haul, MaxHaulSpeed);
+            }
+
+            void RestoreGravity()
+            {
+                if (body != null)
+                    body.gravityScale = gravityToRestore;
+            }
+
+            public struct Hold
+            {
+                public Vector2 Anchor;
+                public float Length;
+                public float MaxSwingDegrees;
+                public float ClimbSpeed;
+                public float SnapLimit;
+            }
         }
     }
 }

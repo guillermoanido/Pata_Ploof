@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using FallingWizard.Localization;
 using UnityEngine;
 
 namespace FallingWizard.Core
@@ -9,7 +8,7 @@ namespace FallingWizard.Core
     {
         const string FileName = "settings.json";
 
-        const int Format = 1;
+        const int FormatVersion = 1;
 
         const string LegacyVolumeKey = "settings.volume";
         const string LegacyFullscreenKey = "settings.fullscreen";
@@ -17,21 +16,30 @@ namespace FallingWizard.Core
         const string LegacyResolutionHeightKey = "settings.resolution.height";
 
         static float volume = 1f;
-        static bool fullscreen = true;
+        static bool isFullscreen = true;
         static int resolutionIndex;
         static string language = string.Empty;
         static List<Resolution> resolutions;
 
-        static bool settingsAreUnreadable;
-        static bool warnedAboutUnreadable;
+        static bool isSettingsFileUnreadable;
+        static bool hasWarnedAboutUnreadable;
 
-        public static bool Loaded { get; private set; }
+        public static bool IsLoaded { get; private set; }
 
         public static bool DisplaySettingsSupported =>
             Application.isEditor || Application.platform == RuntimePlatform.WindowsPlayer ||
             Application.platform == RuntimePlatform.OSXPlayer || Application.platform == RuntimePlatform.LinuxPlayer;
 
-        public static IReadOnlyList<Resolution> Resolutions => resolutions ??= BuildResolutionList();
+        public static IReadOnlyList<Resolution> Resolutions
+        {
+            get
+            {
+                if (resolutions == null)
+                    resolutions = BuildResolutionList();
+
+                return resolutions;
+            }
+        }
 
         public static float Volume
         {
@@ -43,12 +51,12 @@ namespace FallingWizard.Core
             }
         }
 
-        public static bool Fullscreen
+        public static bool IsFullscreen
         {
-            get => fullscreen;
+            get => isFullscreen;
             set
             {
-                fullscreen = value;
+                isFullscreen = value;
                 ApplyResolution();
             }
         }
@@ -72,62 +80,24 @@ namespace FallingWizard.Core
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         public static void Load()
         {
-            settingsAreUnreadable = false;
-            warnedAboutUnreadable = false;
+            isSettingsFileUnreadable = false;
+            hasWarnedAboutUnreadable = false;
 
-            SettingsData data = null;
+            SettingsData data = ReadStoredSettings();
 
-            switch (SaveFile.Read(FileName, out SettingsData stored))
-            {
-                case SaveRead.Loaded:
-                    data = stored;
-                    break;
+            if (data == null)
+                data = MakeDefaultSettings();
 
-                case SaveRead.Unreadable:
-                    settingsAreUnreadable = true;
-                    break;
+            ApplySettings(data);
 
-                case SaveRead.Missing:
-                    data = ImportLegacyPlayerPrefs();
-                    break;
-            }
-
-            data ??= new SettingsData
-            {
-                version = Format,
-                volume = 1f,
-                fullscreen = Screen.fullScreen,
-                resolutionWidth = Screen.width,
-                resolutionHeight = Screen.height,
-            };
-
-            Volume = data.volume;
-            fullscreen = data.fullscreen;
-            Language = data.language;
-
-            resolutionIndex = FindResolutionIndex(
-                data.resolutionWidth > 0 ? data.resolutionWidth : Screen.width,
-                data.resolutionHeight > 0 ? data.resolutionHeight : Screen.height);
-
-            if (DisplaySettingsSupported)
-                ApplyResolution();
-
-            Loaded = true;
+            IsLoaded = true;
         }
 
         public static void Save()
         {
-            if (settingsAreUnreadable)
+            if (isSettingsFileUnreadable)
             {
-                if (!warnedAboutUnreadable)
-                {
-                    warnedAboutUnreadable = true;
-                    Debug.LogWarning($"Not saving settings: the file at {SaveFile.PathFor(FileName)} " +
-                                     "could not be read when the game started, and writing over it " +
-                                     "would throw away whatever is in there. Changes made this " +
-                                     "session will not be kept.");
-                }
-
+                WarnOnceAboutNotSaving();
                 return;
             }
 
@@ -135,41 +105,107 @@ namespace FallingWizard.Core
 
             SaveFile.Write(FileName, new SettingsData
             {
-                version = Format,
+                version = FormatVersion,
                 volume = volume,
-                fullscreen = fullscreen,
+                fullscreen = isFullscreen,
                 resolutionWidth = chosen.width,
                 resolutionHeight = chosen.height,
                 language = language,
             });
         }
 
+        static SettingsData ReadStoredSettings()
+        {
+            switch (SaveFile.Read(FileName, out SettingsData stored))
+            {
+                case SaveRead.Loaded:
+                    return stored;
+
+                case SaveRead.Unreadable:
+                    isSettingsFileUnreadable = true;
+                    return null;
+
+                case SaveRead.Missing:
+                    return ImportLegacyPlayerPrefs();
+            }
+
+            return null;
+        }
+
         static SettingsData ImportLegacyPlayerPrefs()
         {
-            if (!PlayerPrefs.HasKey(LegacyVolumeKey) && !PlayerPrefs.HasKey(LegacyFullscreenKey) &&
-                !PlayerPrefs.HasKey(LegacyResolutionWidthKey))
+            if (!HasLegacyPlayerPrefs())
                 return null;
 
-            var data = new SettingsData
+            SettingsData data = ReadLegacyPlayerPrefs();
+
+            if (SaveFile.Write(FileName, data))
+                DeleteLegacyPlayerPrefs();
+
+            return data;
+        }
+
+        static bool HasLegacyPlayerPrefs() =>
+            PlayerPrefs.HasKey(LegacyVolumeKey) || PlayerPrefs.HasKey(LegacyFullscreenKey) ||
+            PlayerPrefs.HasKey(LegacyResolutionWidthKey);
+
+        static SettingsData ReadLegacyPlayerPrefs()
+        {
+            return new SettingsData
             {
-                version = Format,
+                version = FormatVersion,
                 volume = PlayerPrefs.GetFloat(LegacyVolumeKey, 1f),
                 fullscreen = PlayerPrefs.GetInt(LegacyFullscreenKey, Screen.fullScreen ? 1 : 0) == 1,
                 resolutionWidth = PlayerPrefs.GetInt(LegacyResolutionWidthKey, Screen.width),
                 resolutionHeight = PlayerPrefs.GetInt(LegacyResolutionHeightKey, Screen.height),
                 language = string.Empty,
             };
+        }
 
-            if (SaveFile.Write(FileName, data))
+        static void DeleteLegacyPlayerPrefs()
+        {
+            PlayerPrefs.DeleteKey(LegacyVolumeKey);
+            PlayerPrefs.DeleteKey(LegacyFullscreenKey);
+            PlayerPrefs.DeleteKey(LegacyResolutionWidthKey);
+            PlayerPrefs.DeleteKey(LegacyResolutionHeightKey);
+            PlayerPrefs.Save();
+        }
+
+        static SettingsData MakeDefaultSettings()
+        {
+            return new SettingsData
             {
-                PlayerPrefs.DeleteKey(LegacyVolumeKey);
-                PlayerPrefs.DeleteKey(LegacyFullscreenKey);
-                PlayerPrefs.DeleteKey(LegacyResolutionWidthKey);
-                PlayerPrefs.DeleteKey(LegacyResolutionHeightKey);
-                PlayerPrefs.Save();
-            }
+                version = FormatVersion,
+                volume = 1f,
+                fullscreen = Screen.fullScreen,
+                resolutionWidth = Screen.width,
+                resolutionHeight = Screen.height,
+            };
+        }
 
-            return data;
+        static void ApplySettings(SettingsData data)
+        {
+            Volume = data.volume;
+            isFullscreen = data.fullscreen;
+            Language = data.language;
+
+            resolutionIndex = FindResolutionIndex(
+                data.resolutionWidth > 0 ? data.resolutionWidth : Screen.width,
+                data.resolutionHeight > 0 ? data.resolutionHeight : Screen.height);
+
+            ApplyResolution();
+        }
+
+        static void WarnOnceAboutNotSaving()
+        {
+            if (hasWarnedAboutUnreadable)
+                return;
+
+            hasWarnedAboutUnreadable = true;
+            Debug.LogWarning($"Not saving settings: the file at {SaveFile.PathFor(FileName)} " +
+                             "could not be read when the game started, and writing over it " +
+                             "would throw away whatever is in there. Changes made this " +
+                             "session will not be kept.");
         }
 
         static void ApplyResolution()
@@ -178,7 +214,7 @@ namespace FallingWizard.Core
                 return;
 
             Resolution chosen = Resolutions[resolutionIndex];
-            FullScreenMode mode = fullscreen ? FullScreenMode.FullScreenWindow : FullScreenMode.Windowed;
+            FullScreenMode mode = isFullscreen ? FullScreenMode.FullScreenWindow : FullScreenMode.Windowed;
             Screen.SetResolution(chosen.width, chosen.height, mode, chosen.refreshRateRatio);
         }
 
@@ -193,25 +229,34 @@ namespace FallingWizard.Core
 
         static List<Resolution> BuildResolutionList()
         {
-            var best = new Dictionary<(int, int), Resolution>();
+            var fastestPerSize = new Dictionary<Vector2Int, Resolution>();
 
             foreach (Resolution option in Screen.resolutions)
             {
-                var size = (option.width, option.height);
-                if (!best.TryGetValue(size, out Resolution current) ||
-                    option.refreshRateRatio.value > current.refreshRateRatio.value)
-                    best[size] = option;
+                var size = new Vector2Int(option.width, option.height);
+
+                if (!fastestPerSize.TryGetValue(size, out Resolution kept) ||
+                    option.refreshRateRatio.value > kept.refreshRateRatio.value)
+                    fastestPerSize[size] = option;
             }
 
-            if (best.Count == 0)
+            if (fastestPerSize.Count == 0)
             {
                 Resolution current = Screen.currentResolution;
-                best[(current.width, current.height)] = current;
+                fastestPerSize[new Vector2Int(current.width, current.height)] = current;
             }
 
-            var list = new List<Resolution>(best.Values);
-            list.Sort((a, b) => a.width != b.width ? a.width.CompareTo(b.width) : a.height.CompareTo(b.height));
+            var list = new List<Resolution>(fastestPerSize.Values);
+            list.Sort(CompareBySize);
             return list;
+        }
+
+        static int CompareBySize(Resolution first, Resolution second)
+        {
+            if (first.width != second.width)
+                return first.width.CompareTo(second.width);
+
+            return first.height.CompareTo(second.height);
         }
 
         [Serializable]

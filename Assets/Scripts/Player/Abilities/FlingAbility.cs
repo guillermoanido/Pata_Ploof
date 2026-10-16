@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using FallingWizard.Core;
 using FallingWizard.UI;
 using UnityEngine;
 
@@ -9,46 +9,37 @@ namespace FallingWizard.Player
     {
         const float StickDeadzone = 0.2f;
 
-        [Header("Power")]
-        [Tooltip("Launch speed at no charge, in boxes per second.")]
-        [Min(0f)] public float minSpeed = 6f;
+        const float SteepestAim = 45f;
 
-        [Tooltip("Launch speed at full charge. A standing jump leaves at about 9, for scale.")]
-        [Min(0f)] public float maxSpeed = 14f;
+        [Header("Aim")]
+        [Tooltip("Where the arrow points when you start holding, in degrees above level. " +
+                 "Holding up or down turns it from here.")]
+        [Range(-SteepestAim, SteepestAim)] public float startAngle = 20f;
 
-        [Tooltip("Seconds of holding to wind up to full power.")]
-        [Min(0.05f)] public float chargeTime = 0.7f;
+        [Tooltip("Lowest the arrow can point, in degrees. Below 0 points down; set it to 0 so " +
+                 "the wizard is never thrown downward.")]
+        [Range(-SteepestAim, SteepestAim)] public float lowestAngle = -45f;
 
-        [Header("Angle")]
-        [Tooltip("Flattest shot, in degrees above horizontal - stick pushed all the way down.")]
-        [Range(0f, 90f)] public float minAngle = 15f;
+        [Tooltip("Highest the arrow can point, in degrees. It stops at 45 so a fling is a throw " +
+                 "across, never a jump.")]
+        [Range(-SteepestAim, SteepestAim)] public float highestAngle = 45f;
 
-        [Tooltip("Steepest shot - stick pushed all the way up.")]
-        [Range(0f, 90f)] public float maxAngle = 80f;
-
-        [Tooltip("Angle with the stick neutral, so a bare hold-and-release is still a sensible " +
-                 "jump rather than a mistake.")]
-        [Range(0f, 90f)] public float restAngle = 55f;
-
-        [Header("Flight")]
-        [Tooltip("Extra seconds of locked steering on top of the flight the arc predicted. A " +
-                 "little makes the landing read as deliberate; a lot takes the recovery away.")]
-        [Min(0f)] public float extraLock = 0.05f;
+        [Tooltip("How fast holding up or down turns the arrow, in degrees per second.")]
+        [Min(0f)] public float aimSpeed = 90f;
 
         [Header("The Look Ahead")]
-        [Tooltip("What the flight is allowed to notice. Ground so it knows where you land, " +
-                 "Hazard so the arrow can warn you what you are about to fly through. This is " +
-                 "still simulated even though the arrow does not draw the path - it is what " +
-                 "sets the landing and how long steering stays locked.")]
-        public LayerMask seen = (1 << 6) | (1 << 8);
+        [Tooltip("What the predicted throw notices. Ground so it knows where you land, Hazard " +
+                 "so the arrow can warn you that the throw would carry you through one.")]
+        public LayerMask seen = Layers.GroundMask | Layers.HazardMask;
 
         [Tooltip("Seconds per simulated step. Smaller is smoother and more accurate.")]
-        [Min(0.005f)] public float step = 0.02f;
+        [Min(PlayerLogic.Movement.MinArcStep)] public float step = 0.02f;
 
         [Tooltip("Most steps to simulate, whatever else happens.")]
         [Range(8, 400)] public int steps = 200;
 
-        [Tooltip("How far ahead to look, in boxes. The line stops here even if it never lands.")]
+        [Tooltip("How far ahead to look, in boxes. The warning only covers this much of the " +
+                 "throw.")]
         [Min(1f)] public float lookAhead = 16f;
 
         [Header("Ranks")]
@@ -60,111 +51,86 @@ namespace FallingWizard.Player
 
         public override void ModifyStats(PlayerLogic wizard, PlayerLogic.Modifiers stats)
         {
-            if (wizard.spellbook.StateOf<Charge>(this).winding)
-                stats.Rooted = true;
+            if (wizard.spellbook.StateOf<Aiming>(this).isAiming)
+                stats.IsRooted = true;
         }
 
         public override void OnHeld(PlayerLogic wizard, float heldSeconds, float fixedDeltaTime)
         {
-            Charge charge = wizard.spellbook.StateOf<Charge>(this);
-
             if (wizard.State != PlayerState.Normal)
             {
-                Drop(wizard);
+                StopAiming(wizard);
                 return;
             }
 
-            if (!charge.winding)
-            {
-                charge.winding = true;
-                charge.angle = restAngle;
-                charge.facing = wizard.movement.Facing;
-            }
+            Aiming aiming = wizard.spellbook.StateOf<Aiming>(this);
 
-            Aim(wizard, charge, fixedDeltaTime);
-            ShowArrow(wizard, charge);
+            if (!aiming.isAiming)
+                StartAiming(aiming);
+
+            TurnTheAim(wizard, aiming, fixedDeltaTime);
+            ShowArrow(wizard, aiming);
         }
 
-        public override void OnChargeLost(PlayerLogic wizard) => Drop(wizard);
+        public override void OnChargeLost(PlayerLogic wizard) => StopAiming(wizard);
 
         public override void OnReleased(PlayerLogic wizard, float heldSeconds)
         {
-            Charge charge = wizard.spellbook.StateOf<Charge>(this);
+            Aiming aiming = wizard.spellbook.StateOf<Aiming>(this);
 
-            if (!charge.winding)
+            if (!aiming.isAiming)
                 return;
 
-            charge.winding = false;
-            HideArrow(wizard, charge);
+            StopAiming(wizard);
 
-            if (wizard.State != PlayerState.Normal || !wizard.spellbook.Fire(this))
+            if (wizard.State != PlayerState.Normal || !wizard.spellbook.TryFire(this))
                 return;
 
-            Vector2 launch = Launch(wizard, charge);
-
-            wizard.PredictArc(launch, Look(wizard), charge.path, out PlayerLogic.Movement.ArcEnd end);
-            wizard.Fling(launch, end.Seconds + extraLock);
-
-            charge.wound = 0f;
-        }
-
-        public override float ChargeFor(PlayerLogic wizard)
-        {
-            Charge charge = wizard.spellbook.StateOf<Charge>(this);
-            return charge.winding ? Mathf.Clamp01(charge.wound) : -1f;
+            wizard.TryFling(CalculateLaunch(wizard, aiming));
         }
 
         public override void OnEquipped(PlayerLogic wizard) =>
-            HideArrow(wizard, wizard.spellbook.StateOf<Charge>(this));
+            HideArrow(wizard, wizard.spellbook.StateOf<Aiming>(this));
 
-        public override void OnRunReset(PlayerLogic wizard) => Drop(wizard);
+        public override void OnRunReset(PlayerLogic wizard) => StopAiming(wizard);
 
-        public override void OnUnequipped(PlayerLogic wizard) => Drop(wizard);
+        public override void OnUnequipped(PlayerLogic wizard) => StopAiming(wizard);
 
         protected override void Validate()
         {
-            maxSpeed = Mathf.Max(minSpeed, maxSpeed);
-            maxAngle = Mathf.Max(minAngle, maxAngle);
-            restAngle = Mathf.Clamp(restAngle, minAngle, maxAngle);
+            highestAngle = Mathf.Max(lowestAngle, highestAngle);
+            startAngle = Mathf.Clamp(startAngle, lowestAngle, highestAngle);
 
-            if (tiers != null)
-                foreach (Tier tier in tiers)
-                    tier?.Validate();
-
-            CheckTiers(tiers != null ? tiers.Length : 0);
+            ValidateTiers(tiers);
         }
 
-        void Aim(PlayerLogic wizard, Charge charge, float fixedDeltaTime)
+        void StartAiming(Aiming aiming)
         {
-            Tier tier = Of(wizard);
+            aiming.isAiming = true;
+            aiming.angle = startAngle;
+        }
 
-            charge.wound = Mathf.Min(1f,
-                charge.wound + fixedDeltaTime / Mathf.Max(0.05f, tier.chargeTime));
+        void TurnTheAim(PlayerLogic wizard, Aiming aiming, float fixedDeltaTime)
+        {
+            float upOrDown = wizard.Steering.Move.y;
 
-            Vector2 stick = wizard.Steering.Move;
-
-            if (stick.sqrMagnitude < StickDeadzone * StickDeadzone)
+            if (Mathf.Abs(upOrDown) < StickDeadzone)
                 return;
 
-            if (Mathf.Abs(stick.x) > StickDeadzone)
-                charge.facing = stick.x < 0f ? -1 : 1;
-
-            charge.angle = stick.y >= 0f
-                ? Mathf.Lerp(restAngle, maxAngle, stick.y)
-                : Mathf.Lerp(restAngle, minAngle, -stick.y);
+            float turned = aiming.angle + upOrDown * aimSpeed * fixedDeltaTime;
+            aiming.angle = Mathf.Clamp(turned, lowestAngle, highestAngle);
         }
 
-        Vector2 Launch(PlayerLogic wizard, Charge charge)
+        Vector2 CalculateLaunch(PlayerLogic wizard, Aiming aiming)
         {
-            Tier tier = Of(wizard);
+            float radians = aiming.angle * Mathf.Deg2Rad;
+            int facing = wizard.movement.Facing;
 
-            float speed = Mathf.Lerp(minSpeed, tier.maxSpeed, Mathf.Clamp01(charge.wound));
-            float radians = Mathf.Deg2Rad * Mathf.Clamp(charge.angle, 0f, 90f);
-
-            return new Vector2(charge.facing * Mathf.Cos(radians), Mathf.Sin(radians)) * speed;
+            var direction = new Vector2(facing * Mathf.Cos(radians), Mathf.Sin(radians));
+            return direction * PickTier(tiers, wizard).speed;
         }
 
-        PlayerLogic.Movement.ArcSettings Look(PlayerLogic wizard) =>
+        PlayerLogic.Movement.ArcSettings DescribeLookAhead() =>
             new PlayerLogic.Movement.ArcSettings
             {
                 Layers = seen,
@@ -173,87 +139,67 @@ namespace FallingWizard.Player
                 Distance = lookAhead,
             };
 
-        void ShowArrow(PlayerLogic wizard, Charge charge)
+        void ShowArrow(PlayerLogic wizard, Aiming aiming)
         {
-            FlingArrow arrow = ArrowOf(wizard, charge);
+            FlingArrow arrow = FindArrow(wizard, aiming);
 
             if (arrow == null)
                 return;
 
-            Vector2 launch = Launch(wizard, charge);
+            Vector2 launch = CalculateLaunch(wizard, aiming);
+            bool isDangerous = wizard.WouldFlingThroughHazard(launch, DescribeLookAhead());
 
-            wizard.PredictArc(launch, Look(wizard), charge.path,
-                out PlayerLogic.Movement.ArcEnd end);
-
-            Vector2 from = charge.path.Count > 0
-                ? charge.path[0]
-                : (Vector2)wizard.Rig.position;
-
-            arrow.Show(from, launch, end.Hazard);
+            arrow.Show(wizard.movement.Position, launch, isDangerous);
         }
 
-        void HideArrow(PlayerLogic wizard, Charge charge)
+        void HideArrow(PlayerLogic wizard, Aiming aiming)
         {
-            FlingArrow arrow = ArrowOf(wizard, charge);
+            FlingArrow arrow = FindArrow(wizard, aiming);
 
             if (arrow != null)
                 arrow.Hide();
         }
 
-        FlingArrow ArrowOf(PlayerLogic wizard, Charge charge)
+        FlingArrow FindArrow(PlayerLogic wizard, Aiming aiming)
         {
-            if (charge.searched || wizard.Rig == null)
-                return charge.arrow;
+            if (aiming.hasSearched || wizard.Rig == null)
+                return aiming.arrow;
 
-            charge.searched = true;
-            charge.arrow = wizard.Rig.GetComponentInChildren<FlingArrow>(true);
+            aiming.hasSearched = true;
+            aiming.arrow = wizard.Rig.GetComponentInChildren<FlingArrow>(true);
 
-            if (charge.arrow == null)
+            if (aiming.arrow == null)
                 Debug.LogWarning($"'{name}' found no Fling Arrow under the wizard, so aiming " +
                                  "shows no arrow. Add the Fling Arrow component to your arrow " +
                                  "object and place it under the wizard.", this);
 
-            return charge.arrow;
+            return aiming.arrow;
         }
 
-        void Drop(PlayerLogic wizard)
+        void StopAiming(PlayerLogic wizard)
         {
-            Charge charge = wizard.spellbook.StateOf<Charge>(this);
+            Aiming aiming = wizard.spellbook.StateOf<Aiming>(this);
 
-            charge.winding = false;
-            charge.wound = 0f;
-            HideArrow(wizard, charge);
+            aiming.isAiming = false;
+            HideArrow(wizard, aiming);
         }
-
-        Tier Of(PlayerLogic wizard) =>
-            TierFor(tiers, wizard.spellbook.RankOf(this)) ?? new Tier();
 
         [System.Serializable]
-        public class Tier
+        public class Tier : ITier
         {
-            [Tooltip("Launch speed at full charge at this rank, in boxes per second.")]
-            [Min(0f)] public float maxSpeed = 14f;
+            [Tooltip("How fast the throw sends the wizard at this rank, in boxes per second. A " +
+                     "standing jump leaves at about 9, for scale.")]
+            [Min(0f)] public float speed = 9f;
 
-            [Tooltip("Seconds of holding to wind up to full power at this rank.")]
-            [Min(0.05f)] public float chargeTime = 0.7f;
-
-            public void Validate()
-            {
-                maxSpeed = Mathf.Max(0f, maxSpeed);
-                chargeTime = Mathf.Max(0.05f, chargeTime);
-            }
+            public void Validate() => speed = Mathf.Max(0f, speed);
         }
 
-        public class Charge
+        class Aiming
         {
-            public readonly List<Vector2> path = new List<Vector2>(256);
-
             public FlingArrow arrow;
-            public bool searched;
-            public bool winding;
-            public float wound;
-            public float angle = 55f;
-            public int facing = 1;
+            public bool hasSearched;
+            public bool isAiming;
+            public float angle;
         }
     }
 }

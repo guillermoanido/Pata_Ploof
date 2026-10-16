@@ -28,6 +28,10 @@ namespace FallingWizard.EditorTools
         const string StandInSprite = "UI/Skin/UISprite.psd";
         const int ArtSortingOrder = 1;
 
+        const float DropRadius = 0.15f;
+
+        const float Half = 0.5f;
+
         static readonly Vector2 SteamColumnSize = new Vector2(1f, 3f);
         static readonly Vector2 SteamColumnCentre = new Vector2(0f, 1.5f);
         static readonly Vector2 PipeSize = new Vector2(1.2f, 0.4f);
@@ -38,7 +42,6 @@ namespace FallingWizard.EditorTools
         static readonly Color PuffColour = new Color(0.85f, 0.85f, 0.85f, 0.7f);
         static readonly Color SteamColour = new Color(0.95f, 0.97f, 1f, 0.35f);
 
-        const float DropRadius = 0.15f;
         static readonly Vector2 DropSize = new Vector2(0.3f, 0.3f);
         static readonly Color DropColour = new Color(1f, 0.65f, 0.2f);
 
@@ -61,18 +64,18 @@ namespace FallingWizard.EditorTools
         static readonly Vector2 ShardsCentre = new Vector2(0f, 0.075f);
         static readonly Color ShardsColour = new Color(0.5f, 0.8f, 0.6f, 0.85f);
 
-        static readonly (string Name, int Layer, System.Action<GameObject> SetUp)[] Prefabs =
+        static readonly string[] PrefabNames =
         {
-            (SteamVentName, Layers.Hazard, SetUpSteamVent),
-            (WaxDropName, Layers.Hazard, SetUpWaxDrop),
-            (WaxCandleName, Layers.Default, SetUpWaxCandle),
-            (MovingPlatformName, Layers.Ground, SetUpMovingPlatform),
-            (PressurePlateName, Layers.Hazard, SetUpPressurePlate),
-            (BrokenGlassName, Layers.Hazard, SetUpBrokenGlass),
+            SteamVentName,
+            WaxDropName,
+            WaxCandleName,
+            MovingPlatformName,
+            PressurePlateName,
+            BrokenGlassName,
         };
 
         [MenuItem("Falling Wizard/Build Steampunk Hazards")]
-        public static void Build()
+        static void Build()
         {
             EnsureFolder();
 
@@ -83,13 +86,7 @@ namespace FallingWizard.EditorTools
 
             try
             {
-                foreach ((string name, int layer, System.Action<GameObject> setUp) in Prefabs)
-                {
-                    if (File.Exists(PathOf(name)))
-                        leftAlone.Add(name);
-                    else if (MakeAndSave(stage, name, layer, setUp))
-                        made.Add(name);
-                }
+                MakeMissingPrefabs(stage, made, leftAlone);
             }
             finally
             {
@@ -103,23 +100,33 @@ namespace FallingWizard.EditorTools
                       "want a fresh copy of it.");
         }
 
-        static string PathOf(string name) => $"{Folder}/{name}.prefab";
-
-        static string NamesOrNone(List<string> names) =>
-            names.Count == 0 ? "none" : string.Join(", ", names);
-
         static void EnsureFolder()
         {
             if (!AssetDatabase.IsValidFolder(Folder))
                 AssetDatabase.CreateFolder(ParentFolder, FolderName);
         }
 
-        static bool MakeAndSave(Scene stage, string name, int layer, System.Action<GameObject> setUp)
+        static void MakeMissingPrefabs(Scene stage, List<string> made, List<string> leftAlone)
+        {
+            foreach (string name in PrefabNames)
+            {
+                if (File.Exists(PathOf(name)))
+                    leftAlone.Add(name);
+                else if (TryMakeAndSave(stage, name))
+                    made.Add(name);
+            }
+        }
+
+        static string NamesOrNone(List<string> names) =>
+            names.Count == 0 ? "none" : string.Join(", ", names);
+
+        static string PathOf(string name) => $"{Folder}/{name}.prefab";
+
+        static bool TryMakeAndSave(Scene stage, string name)
         {
             GameObject root = ObjectFactory.CreateGameObject(stage, HideFlags.None, name);
-            root.layer = layer;
 
-            setUp(root);
+            SetUp(root, name);
 
             GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, PathOf(name));
             Object.DestroyImmediate(root);
@@ -127,8 +134,35 @@ namespace FallingWizard.EditorTools
             return saved != null;
         }
 
+        static void SetUp(GameObject root, string name)
+        {
+            switch (name)
+            {
+                case SteamVentName:
+                    SetUpSteamVent(root);
+                    break;
+                case WaxDropName:
+                    SetUpWaxDrop(root);
+                    break;
+                case WaxCandleName:
+                    SetUpWaxCandle(root);
+                    break;
+                case MovingPlatformName:
+                    SetUpMovingPlatform(root);
+                    break;
+                case PressurePlateName:
+                    SetUpPressurePlate(root);
+                    break;
+                case BrokenGlassName:
+                    SetUpBrokenGlass(root);
+                    break;
+            }
+        }
+
         static void SetUpSteamVent(GameObject root)
         {
+            root.layer = Layers.Hazard;
+
             AddTriggerBox(root, SteamColumnSize, SteamColumnCentre);
 
             AddArt(root, "Pipe", PipeSize, PipeCentre, PipeColour);
@@ -145,6 +179,8 @@ namespace FallingWizard.EditorTools
 
         static void SetUpWaxDrop(GameObject root)
         {
+            root.layer = Layers.Hazard;
+
             var drop = ObjectFactory.AddComponent<CircleCollider2D>(root);
             drop.radius = DropRadius;
             drop.isTrigger = true;
@@ -157,10 +193,12 @@ namespace FallingWizard.EditorTools
 
         static void SetUpWaxCandle(GameObject root)
         {
+            root.layer = Layers.Default;
+
             var candle = ObjectFactory.AddComponent<WaxCandle>(root);
             candle.dropPrefab = AssetDatabase.LoadAssetAtPath<WaxDrop>(PathOf(WaxDropName));
 
-            Vector2 justAboveTheSpout = candle.spoutOffset + Vector2.up * (CandleSize.y * 0.5f);
+            Vector2 justAboveTheSpout = candle.spoutOffset + Vector2.up * (CandleSize.y * Half);
             AddArt(root, ArtName, CandleSize, justAboveTheSpout, CandleColour);
 
             if (candle.dropPrefab == null)
@@ -171,6 +209,8 @@ namespace FallingWizard.EditorTools
 
         static void SetUpMovingPlatform(GameObject root)
         {
+            root.layer = Layers.Ground;
+
             var deck = ObjectFactory.AddComponent<BoxCollider2D>(root);
             deck.size = PlatformSize;
             deck.isTrigger = false;
@@ -185,6 +225,8 @@ namespace FallingWizard.EditorTools
 
         static void SetUpPressurePlate(GameObject root)
         {
+            root.layer = Layers.Hazard;
+
             AddTriggerBox(root, PlateSize, PlateCentre);
 
             GameObject idle = AddArt(root, "Idle Look", PlateSize, PlateCentre, PlateColour);
@@ -199,6 +241,8 @@ namespace FallingWizard.EditorTools
 
         static void SetUpBrokenGlass(GameObject root)
         {
+            root.layer = Layers.Hazard;
+
             AddTriggerBox(root, GlassZoneSize, GlassZoneCentre);
             AddArt(root, ArtName, ShardsSize, ShardsCentre, ShardsColour);
 

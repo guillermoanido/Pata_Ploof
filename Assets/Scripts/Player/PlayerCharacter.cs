@@ -9,12 +9,12 @@ namespace FallingWizard.Player
     [RequireComponent(typeof(Rigidbody2D))]
     public class PlayerCharacter : SingletonBehaviour<PlayerCharacter>
     {
-        public const string ArtObjectName = "Visual";
+        const string ArtObjectName = "Visual";
 
         [Header("Body")]
         [Tooltip("Gravity written onto the Rigidbody2D by Reset. 3 with a 2 box jump is the feel " +
                  "the rest of the tuning assumes.")]
-        [Min(0.01f)] public float gravityScale = 3f;
+        [Min(PlayerLogic.Movement.MinGravityScale)] public float gravityScale = 3f;
 
         [Header("Stick Feel")]
         [Tooltip("Stick tilt needed before looking up or down counts. Raise it if a worn stick drifts.")]
@@ -50,8 +50,6 @@ namespace FallingWizard.Player
 
         public PlayerLogic Logic => logic;
 
-        public Staff Staff => logic.CarriedStaff;
-
         public Collider2D Hitbox { get; private set; }
 
         void Reset()
@@ -73,20 +71,33 @@ namespace FallingWizard.Player
         protected override void OnAwake()
         {
             Hitbox = GetComponent<Collider2D>();
+
             if (staves == null || staves.Length == 0)
                 staves = GetComponentsInChildren<Staff>(true);
+
             controls = new Controls();
 
             MoveToCheckpoint();
 
-            logic.health.SetBaseHealth(HighestHealthLook());
+            logic.health.SetBaseHealth(FindHighestLookHealth());
             logic.Attach(GetComponent<Rigidbody2D>(), FindArt(), Hitbox, staves);
             logic.Died += OnDied;
         }
 
+        void FixedUpdate() => logic.Simulate(Time.fixedDeltaTime);
+
+        void Update() =>
+            logic.Observe(controls.Read(lookThreshold, lookHoldSeconds, Time.deltaTime), Time.deltaTime);
+
+        protected override void OnDestroy()
+        {
+            base.OnDestroy();
+            logic.Died -= OnDied;
+        }
+
         void MoveToCheckpoint()
         {
-            if (!Progress.CheckpointIsHere)
+            if (!Progress.IsCheckpointHere)
                 return;
 
             var body = GetComponent<Rigidbody2D>();
@@ -96,32 +107,7 @@ namespace FallingWizard.Player
             transform.position = Progress.CheckpointPoint;
         }
 
-        protected override void OnDestroy()
-        {
-            base.OnDestroy();
-            logic.Died -= OnDied;
-        }
-
-        void Update() =>
-            logic.Observe(controls.Read(lookThreshold, lookHoldSeconds, Time.deltaTime), Time.deltaTime);
-
-        void FixedUpdate() => logic.Simulate(Time.fixedDeltaTime);
-
-        void OnDrawGizmosSelected() => logic.DrawGizmos(transform.position);
-
-        Transform FindArt()
-        {
-            Transform art = transform.Find(ArtObjectName);
-
-            if (art == null)
-                Debug.LogError($"'{name}' has no child called '{ArtObjectName}', so there is " +
-                               "nothing to turn round when the wizard faces the other way or " +
-                               "tumbles. Put the wizard's art under a child with that name.", this);
-
-            return art;
-        }
-
-        int HighestHealthLook()
+        int FindHighestLookHealth()
         {
             int highest = 0;
 
@@ -134,6 +120,18 @@ namespace FallingWizard.Player
                                "under Visual with a Health Look on it.", this);
 
             return highest;
+        }
+
+        Transform FindArt()
+        {
+            Transform art = transform.Find(ArtObjectName);
+
+            if (art == null)
+                Debug.LogError($"'{name}' has no child called '{ArtObjectName}', so there is " +
+                               "nothing to turn round when the wizard faces the other way or " +
+                               "tumbles. Put the wizard's art under a child with that name.", this);
+
+            return art;
         }
 
         void OnDied()
@@ -157,48 +155,50 @@ namespace FallingWizard.Player
                 screen.Choice(Loc.Get(Loc.Keys.DeathContinue),
                     () => screen.CloseThen(Game.ReloadCurrentScene));
 
-            screen.Choice(Loc.Get(Loc.Keys.DeathGiveUp), () => screen.CloseThen(() =>
-            {
-                Progress.EndRun();
-                SkillScreen.Open(Game.LoadFirstLevel);
-            }));
+            screen.Choice(Loc.Get(Loc.Keys.DeathGiveUp), () => screen.CloseThen(GiveUpTheRun));
+        }
+
+        static void GiveUpTheRun()
+        {
+            Progress.EndRun();
+            SkillScreen.Open(Game.LoadFirstLevel);
         }
 
         void RestartLevel() => Game.ReloadCurrentScene();
 
-        public class Controls
+        void OnDrawGizmosSelected() => logic.DrawGizmos(transform.position);
+
+        class Controls
         {
-            readonly InputAction move = Core.Controls.Player("Move");
-            readonly InputAction jump = Core.Controls.Player("Jump");
-            readonly InputAction walk = Core.Controls.Player("Walk");
+            readonly InputAction moveAction = Core.Controls.Player("Move");
+            readonly InputAction jumpAction = Core.Controls.Player("Jump");
+            readonly InputAction walkAction = Core.Controls.Player("Walk");
 
-            float heldDown;
-            bool walking;
-
-            public bool Walking => walking;
+            float secondsHeldDown;
+            bool isWalking;
 
             public PlayerLogic.Intent Read(float lookThreshold, float holdSeconds, float deltaTime)
             {
                 if (Game.IsPaused)
                 {
-                    heldDown = 0f;
+                    secondsHeldDown = 0f;
                     return default;
                 }
 
-                Vector2 stick = move != null ? move.ReadValue<Vector2>() : Vector2.zero;
+                Vector2 stick = moveAction != null ? moveAction.ReadValue<Vector2>() : Vector2.zero;
 
-                heldDown = stick.y < -lookThreshold ? heldDown + deltaTime : 0f;
+                secondsHeldDown = stick.y < -lookThreshold ? secondsHeldDown + deltaTime : 0f;
 
-                if (walk != null && walk.WasPressedThisFrame())
-                    walking = !walking;
+                if (walkAction != null && walkAction.WasPressedThisFrame())
+                    isWalking = !isWalking;
 
                 return new PlayerLogic.Intent
                 {
                     Move = stick,
-                    JumpPressed = jump != null && jump.WasPressedThisFrame(),
-                    JumpHeld = jump != null && jump.IsPressed(),
-                    Walk = walking,
-                    LookingDown = heldDown >= holdSeconds && heldDown > 0f,
+                    WasJumpPressed = jumpAction != null && jumpAction.WasPressedThisFrame(),
+                    IsJumpHeld = jumpAction != null && jumpAction.IsPressed(),
+                    IsWalking = isWalking,
+                    IsLookingDown = secondsHeldDown >= holdSeconds && secondsHeldDown > 0f,
                 };
             }
         }

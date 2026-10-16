@@ -7,13 +7,22 @@ namespace FallingWizard.World
 {
     public class WindTrap : WindZone2D
     {
-        const float MinPeriod = 0.1f;
+        const float ShortestCycle = 0.1f;
 
         const float KickGrace = 0.2f;
 
-        const float Tiny = 0.0001f;
+        const float NotArmed = -1f;
+
+        const float Half = 0.5f;
 
         const float StrongPush = 6f;
+
+        const float RiskyTumbleScale = 0.5f;
+
+        const float TurbineRampup = 60f;
+        const float TurbineGroundScale = 0.6f;
+
+        static readonly Vector2 TurbinePush = new Vector2(12f, 0f);
 
         [Header("Turbine")]
         [Tooltip("Seconds it sits shut between blasts. This is the window the player has to get " +
@@ -98,22 +107,24 @@ namespace FallingWizard.World
         public GameObject blowingLook;
 
         [NonSerialized] float clock;
-        [NonSerialized] float armedUntil = -1f;
+        [NonSerialized] float armedUntil = NotArmed;
         [NonSerialized] bool wasOpen;
 
-        [NonSerialized] bool showingWarning;
-        [NonSerialized] bool showingBlowing;
+        [NonSerialized] bool isShowingWarning;
+        [NonSerialized] bool isShowingBlowing;
 
-        public float Period =>
-            Mathf.Max(MinPeriod, Mathf.Max(0f, shutSeconds) + Mathf.Max(0f, openSeconds));
+        float CycleLength =>
+            Mathf.Max(ShortestCycle, Mathf.Max(0f, shutSeconds) + Mathf.Max(0f, openSeconds));
 
-        public float Phase => Mathf.Repeat(clock + phase * Period, Period);
+        float TimeIntoCycle => Mathf.Repeat(clock + phase * CycleLength, CycleLength);
 
-        public bool IsOpen => Phase >= Mathf.Max(0f, shutSeconds);
+        bool IsOpen => TimeIntoCycle >= Mathf.Max(0f, shutSeconds);
 
-        public bool IsWindingUp => !IsOpen && Alarm > 0f;
+        bool IsWindingUp => !IsOpen && WindUp > 0f;
 
-        float Travel => Mathf.Clamp(shutterTravel, 0f, Mathf.Max(0f, shutSeconds) * 0.5f);
+        bool HasStrongPush => push.sqrMagnitude > StrongPush * StrongPush;
+
+        float Travel => Mathf.Clamp(shutterTravel, 0f, Mathf.Max(0f, shutSeconds) * Half);
 
         float Openness
         {
@@ -124,9 +135,9 @@ namespace FallingWizard.World
                 if (shut <= 0f)
                     return 1f;
 
-                float t = Phase;
+                float now = TimeIntoCycle;
 
-                if (t >= shut)
+                if (now >= shut)
                     return 1f;
 
                 float travel = Travel;
@@ -134,17 +145,17 @@ namespace FallingWizard.World
                 if (travel <= 0f)
                     return 0f;
 
-                if (t < travel)
-                    return 1f - t / travel;
+                if (now < travel)
+                    return 1f - now / travel;
 
-                if (t >= shut - travel)
-                    return (t - (shut - travel)) / travel;
+                if (now >= shut - travel)
+                    return (now - (shut - travel)) / travel;
 
                 return 0f;
             }
         }
 
-        public float Alarm
+        float WindUp
         {
             get
             {
@@ -153,17 +164,17 @@ namespace FallingWizard.World
                 if (shut <= 0f)
                     return 1f;
 
-                float t = Phase;
+                float now = TimeIntoCycle;
 
-                if (t >= shut)
+                if (now >= shut)
                     return 1f;
 
                 float travel = Travel;
 
-                if (travel <= 0f || t < shut - travel)
+                if (travel <= 0f || now < shut - travel)
                     return 0f;
 
-                return (t - (shut - travel)) / travel;
+                return (now - (shut - travel)) / travel;
             }
         }
 
@@ -171,9 +182,9 @@ namespace FallingWizard.World
         {
             base.Reset();
 
-            push = new Vector2(12f, 0f);
-            rampup = 60f;
-            groundScale = 0.6f;
+            push = TurbinePush;
+            rampup = TurbineRampup;
+            groundScale = TurbineGroundScale;
 
             affectsOnStaff = false;
 
@@ -181,42 +192,6 @@ namespace FallingWizard.World
         }
 
         void OnValidate() => Validate();
-
-        void Validate()
-        {
-            shutSeconds = Mathf.Max(0f, shutSeconds);
-            openSeconds = Mathf.Max(0f, openSeconds);
-            shutterTravel = Mathf.Max(0f, shutterTravel);
-
-            if (shutSeconds <= 0f && openSeconds <= 0f)
-                Debug.LogWarning("WindTrap has a shut time and an open time of 0, so it has no " +
-                                 "cycle at all and simply blows forever. Give it some of each, " +
-                                 "or use a plain Wind zone instead - that is what one is.", this);
-
-            if (push.sqrMagnitude < Tiny && kick.sqrMagnitude < Tiny)
-                Debug.LogWarning("WindTrap has a push and a kick of 0, so it opens and closes " +
-                                 "and does nothing to anyone standing in it. Put a number in " +
-                                 "Kick to throw the wizard, or in Push to hold them.", this);
-
-            if (shutSeconds > 0f && shutterTravel <= 0f)
-                Debug.LogWarning("WindTrap has a Shutter Travel of 0, so it snaps from shut to " +
-                                 "full blast in a single frame and the Warning Look never " +
-                                 "shows. Half a second is about the shortest tell that is " +
-                                 "still fair.", this);
-
-            if (shutterTravel > shutSeconds * 0.5f && shutSeconds > 0f)
-                Debug.LogWarning("WindTrap's Shutter Travel is more than half its shut time, so " +
-                                 "it is always winding up or easing off and never properly " +
-                                 "shut. It is clamped at runtime, but the numbers in the " +
-                                 "inspector will not be the ones you get.", this);
-
-            if (affectsRagdolled && tumbleScale > 0.5f && push.sqrMagnitude > StrongPush * StrongPush)
-                Debug.LogWarning("WindTrap pushes harder than 6 boxes a second and lets more " +
-                                 "than half of it reach a tumbling wizard. Wind on a ragdoll " +
-                                 "has nothing pushing back, so it keeps accumulating - a trip " +
-                                 "inside this one is a wizard leaving the level sideways. Drop " +
-                                 "Tumble Scale.", this);
-        }
 
         protected override void Awake()
         {
@@ -228,20 +203,93 @@ namespace FallingWizard.World
 
         void Update()
         {
-            Advance();
+            AdvanceTheCycle();
             ShowTheRightLook();
         }
 
-        void Advance()
+        protected override void OnPlayerInside(PlayerCharacter wizard, float fixedDeltaTime)
+        {
+            if (!CanAffect(wizard))
+                return;
+
+            float openness = Openness;
+
+            if (openness <= 0f)
+                return;
+
+            PlayerLogic logic = wizard.Logic;
+            bool tumbling = logic.State == PlayerState.Ragdoll;
+
+            float strength = openness * (tumbling ? tumbleScale : 1f);
+
+            logic.Push(WorldPush * strength * Haste.WorldScale, rampup, groundScale);
+
+            if (openness < 1f || tumbling || clock > armedUntil)
+                return;
+
+            armedUntil = NotArmed;
+            Blast(logic);
+        }
+
+        void Validate()
+        {
+            shutSeconds = Mathf.Max(0f, shutSeconds);
+            openSeconds = Mathf.Max(0f, openSeconds);
+            shutterTravel = Mathf.Max(0f, shutterTravel);
+
+            WarnAboutSettingsLeftAtZero();
+            WarnAboutTheShutterTravel();
+            WarnAboutTumblingWizards();
+        }
+
+        void WarnAboutSettingsLeftAtZero()
+        {
+            if (shutSeconds <= 0f && openSeconds <= 0f)
+                Debug.LogWarning("WindTrap has a shut time and an open time of 0, so it has no " +
+                                 "cycle at all and simply blows forever. Give it some of each, " +
+                                 "or use a plain Wind zone instead - that is what one is.", this);
+
+            if (push.sqrMagnitude < Epsilon && kick.sqrMagnitude < Epsilon)
+                Debug.LogWarning("WindTrap has a push and a kick of 0, so it opens and closes " +
+                                 "and does nothing to anyone standing in it. Put a number in " +
+                                 "Kick to throw the wizard, or in Push to hold them.", this);
+        }
+
+        void WarnAboutTheShutterTravel()
+        {
+            if (shutSeconds > 0f && shutterTravel <= 0f)
+                Debug.LogWarning("WindTrap has a Shutter Travel of 0, so it snaps from shut to " +
+                                 "full blast in a single frame and the Warning Look never " +
+                                 "shows. Half a second is about the shortest tell that is " +
+                                 "still fair.", this);
+
+            if (shutterTravel > shutSeconds * Half && shutSeconds > 0f)
+                Debug.LogWarning("WindTrap's Shutter Travel is more than half its shut time, so " +
+                                 "it is always winding up or easing off and never properly " +
+                                 "shut. It is clamped at runtime, but the numbers in the " +
+                                 "inspector will not be the ones you get.", this);
+        }
+
+        void WarnAboutTumblingWizards()
+        {
+            if (affectsRagdolled && tumbleScale > RiskyTumbleScale && HasStrongPush)
+                Debug.LogWarning("WindTrap pushes harder than 6 boxes a second and lets more " +
+                                 "than half of it reach a tumbling wizard. Wind on a ragdoll " +
+                                 "has nothing pushing back, so it keeps accumulating - a trip " +
+                                 "inside this one is a wizard leaving the level sideways. Drop " +
+                                 "Tumble Scale.", this);
+        }
+
+        void AdvanceTheCycle()
         {
             clock += hasteSlowsCycle ? Haste.DeltaTime : Time.deltaTime;
 
-            bool open = IsOpen;
+            bool isOpenNow = IsOpen;
 
-            if (open && !wasOpen)
+            if (isOpenNow && !wasOpen)
                 armedUntil = clock + KickGrace;
 
-            wasOpen = open;
+            wasOpen = isOpenNow;
         }
 
         void ShowTheRightLook()
@@ -249,14 +297,14 @@ namespace FallingWizard.World
             bool warning = IsWindingUp;
             bool blowing = IsOpen;
 
-            if (warning != showingWarning || blowing != showingBlowing)
+            if (warning != isShowingWarning || blowing != isShowingBlowing)
                 SwitchLooks(warning, blowing);
         }
 
         void SwitchLooks(bool warning, bool blowing)
         {
-            showingWarning = warning;
-            showingBlowing = blowing;
+            isShowingWarning = warning;
+            isShowingBlowing = blowing;
 
             if (warningLook != null)
                 warningLook.SetActive(warning);
@@ -265,36 +313,12 @@ namespace FallingWizard.World
                 blowingLook.SetActive(blowing);
         }
 
-        protected override void OnPlayerInside(PlayerCharacter wizard, float fixedDeltaTime)
-        {
-            if (!Allowed(wizard))
-                return;
-
-            float open = Openness;
-
-            if (open <= 0f)
-                return;
-
-            PlayerLogic logic = wizard.Logic;
-            bool tumbling = logic.State == PlayerState.Ragdoll;
-
-            float strength = open * (tumbling ? tumbleScale : 1f);
-
-            logic.Push(WorldPush * strength * Haste.WorldScale, rampup, groundScale);
-
-            if (open < 1f || tumbling || clock > armedUntil)
-                return;
-
-            armedUntil = -1f;
-            Blast(logic);
-        }
-
         void Blast(PlayerLogic wizard)
         {
             if (tumbles)
-                wizard.Trip();
+                wizard.TryTrip();
 
-            wizard.Shove(TurnedWithThisObject(kick), kickLockout);
+            wizard.Shove(TurnWithThisObject(kick), kickLockout);
         }
     }
 }

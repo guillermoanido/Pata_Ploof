@@ -7,31 +7,26 @@ namespace FallingWizard.Localization
 {
     public static class TextBook
     {
-        public const string ResourcePath = "Language/Text";
+        const string ResourcePath = "Language/Text";
 
         public const string AssetPath = "Assets/Resources/" + ResourcePath + ".csv";
 
-        const char Separator = ',';
-        const char Quote = '"';
-        const char Comment = '#';
-        const char Return = '\r';
-        const char NewLine = '\n';
-        const char Bom = '\uFEFF';
+        const char CommentMarker = '#';
 
         const int KeyColumn = 0;
+
+        const Language NoLanguage = (Language)(-1);
 
         static readonly Dictionary<string, string[]> Rows = new Dictionary<string, string[]>();
 
         static readonly int LanguageCount = Enum.GetValues(typeof(Language)).Length;
 
-        public static bool Loaded { get; private set; }
-
-        public static IEnumerable<string> Keys => Rows.Keys;
+        static bool isLoaded;
 
         public static void Load()
         {
             Rows.Clear();
-            Loaded = true;
+            isLoaded = true;
 
             var sheet = Resources.Load<TextAsset>(ResourcePath);
 
@@ -43,7 +38,7 @@ namespace FallingWizard.Localization
                 return;
             }
 
-            Fill(Parse(sheet.text));
+            Fill(new SheetParser().Parse(sheet.text));
         }
 
         public static bool TryFind(string key, Language language, out string text)
@@ -53,7 +48,7 @@ namespace FallingWizard.Localization
             if (string.IsNullOrEmpty(key))
                 return false;
 
-            if (!Loaded)
+            if (!isLoaded)
                 Load();
 
             if (!Rows.TryGetValue(key, out string[] row))
@@ -88,7 +83,7 @@ namespace FallingWizard.Localization
             var columns = new Language[header.Length];
 
             for (int i = 0; i < columns.Length; i++)
-                columns[i] = (Language)(-1);
+                columns[i] = NoLanguage;
 
             for (int i = KeyColumn + 1; i < header.Length; i++)
             {
@@ -108,105 +103,127 @@ namespace FallingWizard.Localization
             return columns;
         }
 
-        static void Add(string[] cells, Language[] columns, int row)
+        static void Add(string[] cells, Language[] columns, int rowNumber)
         {
             if (cells.Length == 0)
                 return;
 
             string key = cells[KeyColumn].Trim();
 
-            if (key.Length == 0 || key[0] == Comment)
+            if (key.Length == 0 || key[0] == CommentMarker)
                 return;
 
             if (Rows.ContainsKey(key))
                 Debug.LogWarning($"{AssetPath} gives the key '{key}' twice, the second time on " +
-                                 $"row {row}. The lower one wins and the one above it is never " +
+                                 $"row {rowNumber}. The lower one wins and the one above it is never " +
                                  "shown.");
 
-            var line = new string[LanguageCount];
+            Rows[key] = ArrangeByLanguage(cells, columns);
+        }
+
+        static string[] ArrangeByLanguage(string[] cells, Language[] columns)
+        {
+            var row = new string[LanguageCount];
 
             for (int i = KeyColumn + 1; i < cells.Length && i < columns.Length; i++)
             {
                 int column = (int)columns[i];
 
-                if (column >= 0 && column < line.Length)
-                    line[column] = cells[i];
+                if (column >= 0 && column < row.Length)
+                    row[column] = cells[i];
             }
 
-            Rows[key] = line;
+            return row;
         }
 
-        static List<string[]> Parse(string text)
+        class SheetParser
         {
-            var rows = new List<string[]>();
-            var cells = new List<string>();
-            var cell = new StringBuilder();
-            bool quoted = false;
+            const char Separator = ',';
+            const char Quote = '"';
+            const char CarriageReturn = '\r';
+            const char NewLine = '\n';
+            const char ByteOrderMark = '\uFEFF';
 
-            for (int i = 0; i < text.Length; i++)
+            readonly List<string[]> rows = new List<string[]>();
+            readonly List<string> cells = new List<string>();
+            readonly StringBuilder cell = new StringBuilder();
+
+            bool isInsideQuotes;
+
+            public List<string[]> Parse(string text)
             {
-                char c = text[i];
-
-                if (quoted)
+                for (int i = 0; i < text.Length; i++)
                 {
-                    if (c != Quote)
+                    if (!isInsideQuotes)
                     {
-                        if (c != Return)
-                            cell.Append(c);
+                        ReadOutsideQuotes(text[i]);
                     }
-                    else if (i + 1 < text.Length && text[i + 1] == Quote)
+                    else if (IsDoubledQuote(text, i))
                     {
                         cell.Append(Quote);
                         i++;
                     }
                     else
                     {
-                        quoted = false;
+                        ReadInsideQuotes(text[i]);
                     }
-
-                    continue;
                 }
 
-                switch (c)
+                if (cell.Length > 0 || cells.Count > 0)
+                    EndRow();
+
+                return rows;
+            }
+
+            void ReadOutsideQuotes(char character)
+            {
+                switch (character)
                 {
                     case Quote:
-                        quoted = true;
+                        isInsideQuotes = true;
                         break;
 
                     case Separator:
-                        cells.Add(Take(cell));
+                        EndCell();
                         break;
 
-                    case Return:
-                    case Bom:
+                    case CarriageReturn:
+                    case ByteOrderMark:
                         break;
 
                     case NewLine:
-                        cells.Add(Take(cell));
-                        rows.Add(cells.ToArray());
-                        cells.Clear();
+                        EndRow();
                         break;
 
                     default:
-                        cell.Append(c);
+                        cell.Append(character);
                         break;
                 }
             }
 
-            if (cell.Length > 0 || cells.Count > 0)
+            static bool IsDoubledQuote(string text, int index) =>
+                text[index] == Quote && index + 1 < text.Length && text[index + 1] == Quote;
+
+            void ReadInsideQuotes(char character)
             {
-                cells.Add(Take(cell));
-                rows.Add(cells.ToArray());
+                if (character == Quote)
+                    isInsideQuotes = false;
+                else if (character != CarriageReturn)
+                    cell.Append(character);
             }
 
-            return rows;
-        }
+            void EndCell()
+            {
+                cells.Add(cell.ToString());
+                cell.Clear();
+            }
 
-        static string Take(StringBuilder cell)
-        {
-            string text = cell.ToString();
-            cell.Clear();
-            return text;
+            void EndRow()
+            {
+                EndCell();
+                rows.Add(cells.ToArray());
+                cells.Clear();
+            }
         }
     }
 }

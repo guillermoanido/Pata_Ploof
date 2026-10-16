@@ -15,34 +15,36 @@ namespace FallingWizard.Core
     public static class Progress
     {
         public const int SlotCount = 4;
+        public const int NoSlot = -1;
 
         const string FileName = "progress.json";
 
-        const int Format = 1;
+        const int FormatVersion = 1;
 
-        const string Prefix = "FallingWizard.";
-        const string LegacyWispsKey = Prefix + "Wisps";
-        const string LegacyRanksKey = Prefix + "Ranks";
-        const string LegacyLoadoutKey = Prefix + "Loadout";
-        const string LegacySpentKey = Prefix + "Spent";
-        const string LegacyHeartsKey = Prefix + "Hearts";
-        const char Separator = ';';
-        const char Pair = ':';
+        const string LegacyKeyPrefix = "FallingWizard.";
+        const string LegacyWispsKey = LegacyKeyPrefix + "Wisps";
+        const string LegacyRanksKey = LegacyKeyPrefix + "Ranks";
+        const string LegacyLoadoutKey = LegacyKeyPrefix + "Loadout";
+        const string LegacySpentKey = LegacyKeyPrefix + "Spent";
+        const string LegacyHeartsKey = LegacyKeyPrefix + "Hearts";
+        const char LegacyListSeparator = ';';
+        const char LegacyRankSeparator = ':';
 
         static readonly Dictionary<string, int> ranks = new Dictionary<string, int>();
         static readonly string[] equipped = new string[SlotCount];
 
         static readonly HashSet<string> found = new HashSet<string>();
-        static readonly HashSet<string> carrying = new HashSet<string>();
+        static readonly HashSet<string> carried = new HashSet<string>();
         static readonly HashSet<string> spent = new HashSet<string>();
         static readonly HashSet<string> completedLevels = new HashSet<string>();
 
-        static bool saveIsUnreadable;
-        static bool warnedAboutUnreadable;
+        static bool isSandbox;
+        static string checkpointScene = string.Empty;
 
-        public static bool Sandbox { get; private set; }
+        static bool isSaveFileUnreadable;
+        static bool hasWarnedAboutUnreadable;
 
-        public static bool SandboxSeeded { get; private set; }
+        public static bool IsSandboxSeeded { get; private set; }
 
         public static int Wisps { get; private set; }
 
@@ -52,13 +54,30 @@ namespace FallingWizard.Core
 
         public static bool HasCheckpoint { get; private set; }
         public static Vector2 CheckpointPoint { get; private set; }
-        public static string CheckpointScene { get; private set; } = string.Empty;
 
-        public static bool CheckpointIsHere =>
-            HasCheckpoint && CheckpointScene == SceneManager.GetActiveScene().name;
+        public static bool IsCheckpointHere =>
+            HasCheckpoint && checkpointScene == SceneManager.GetActiveScene().name;
 
-        public static int Rank(string key) =>
-            !string.IsNullOrEmpty(key) && ranks.TryGetValue(key, out int rank) ? rank : 0;
+        public static bool IsSpendingFree { get; set; }
+
+        public static bool HasSave => SaveFile.Exists(FileName) || PlayerPrefs.HasKey(LegacyWispsKey);
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetOnPlay() => Clear();
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        static void LoadOnPlay() => Load();
+
+        public static int Rank(string key)
+        {
+            if (string.IsNullOrEmpty(key))
+                return 0;
+
+            if (ranks.TryGetValue(key, out int rank))
+                return rank;
+
+            return 0;
+        }
 
         public static bool Owns(string key) => Rank(key) > 0;
 
@@ -71,49 +90,43 @@ namespace FallingWizard.Core
             Save();
         }
 
-        public static bool FreeSpending { get; set; }
+        public static bool CanAfford(int cost) => IsSpendingFree || Wisps >= cost;
 
-        public static bool CanAfford(int cost) => FreeSpending || Wisps >= cost;
-
-        public static bool Buy(string key, int cost)
+        public static bool TryBuy(string key, int cost)
         {
-            if (string.IsNullOrEmpty(key) || Owns(key) || (!FreeSpending && Wisps < cost))
+            if (string.IsNullOrEmpty(key) || Owns(key) || !CanAfford(cost))
                 return false;
 
-            if (!FreeSpending)
-                Wisps -= cost;
-
-            ranks[key] = 1;
-            Save();
+            PayWisps(cost);
+            Grant(key);
             return true;
         }
 
         public static string EquippedIn(int slot) =>
-            (uint)slot < SlotCount ? equipped[slot] : string.Empty;
+            IsValidSlot(slot) ? equipped[slot] : string.Empty;
 
         public static int SlotHolding(string key)
         {
             if (string.IsNullOrEmpty(key))
-                return -1;
+                return NoSlot;
 
             for (int i = 0; i < SlotCount; i++)
                 if (equipped[i] == key)
                     return i;
 
-            return -1;
+            return NoSlot;
         }
 
         public static void Equip(int slot, string key)
         {
-            if ((uint)slot >= SlotCount)
+            if (!IsValidSlot(slot))
                 return;
 
-            key ??= string.Empty;
+            if (key == null)
+                key = string.Empty;
 
             if (key.Length > 0)
-                for (int i = 0; i < SlotCount; i++)
-                    if (equipped[i] == key)
-                        equipped[i] = string.Empty;
+                ClearSlotsHolding(key);
 
             equipped[slot] = key;
             Save();
@@ -121,16 +134,17 @@ namespace FallingWizard.Core
 
         public static void Place(int slot, string key)
         {
-            if ((uint)slot >= SlotCount)
+            if (!IsValidSlot(slot))
                 return;
 
-            key ??= string.Empty;
+            if (key == null)
+                key = string.Empty;
 
             int from = SlotHolding(key);
 
-            if (key.Length > 0 && from >= 0 && from != slot)
+            if (key.Length > 0 && from != NoSlot && from != slot)
             {
-                (equipped[from], equipped[slot]) = (equipped[slot], equipped[from]);
+                SwapSlots(from, slot);
                 Save();
                 return;
             }
@@ -144,22 +158,20 @@ namespace FallingWizard.Core
                 if (string.IsNullOrEmpty(equipped[i]))
                     return i;
 
-            return -1;
+            return NoSlot;
         }
 
-        public static bool Upgrade(string key, int cost, int cap)
+        public static bool TryUpgrade(string key, int cost, int cap)
         {
             if (string.IsNullOrEmpty(key))
                 return false;
 
             int rank = Rank(key);
 
-            if (rank < 1 || rank >= Mathf.Max(1, cap) || (!FreeSpending && Wisps < cost))
+            if (rank < 1 || rank >= Mathf.Max(1, cap) || !CanAfford(cost))
                 return false;
 
-            if (!FreeSpending)
-                Wisps -= cost;
-
+            PayWisps(cost);
             ranks[key] = rank + 1;
             Save();
             return true;
@@ -191,7 +203,7 @@ namespace FallingWizard.Core
             switch (staysTaken)
             {
                 case StaysTaken.OnceBanked:
-                    carrying.Add(id);
+                    carried.Add(id);
                     break;
 
                 case StaysTaken.ForGood:
@@ -228,8 +240,8 @@ namespace FallingWizard.Core
         {
             CarriedWisps = 0;
 
-            found.ExceptWith(carrying);
-            carrying.Clear();
+            found.ExceptWith(carried);
+            carried.Clear();
         }
 
         public static void BankCarried()
@@ -237,8 +249,8 @@ namespace FallingWizard.Core
             Wisps += CarriedWisps;
             CarriedWisps = 0;
 
-            spent.UnionWith(carrying);
-            carrying.Clear();
+            spent.UnionWith(carried);
+            carried.Clear();
 
             Save();
         }
@@ -246,14 +258,14 @@ namespace FallingWizard.Core
         public static void MarkCheckpoint(Vector2 point)
         {
             CheckpointPoint = point;
-            CheckpointScene = SceneManager.GetActiveScene().name;
+            checkpointScene = SceneManager.GetActiveScene().name;
             HasCheckpoint = true;
         }
 
         public static void ClearCheckpoint()
         {
             HasCheckpoint = false;
-            CheckpointScene = string.Empty;
+            checkpointScene = string.Empty;
             CheckpointPoint = Vector2.zero;
         }
 
@@ -282,81 +294,80 @@ namespace FallingWizard.Core
             DeleteLegacyPlayerPrefs();
         }
 
-        public static bool HasSave => SaveFile.Exists(FileName) || PlayerPrefs.HasKey(LegacyWispsKey);
-
         public static void BeginSandbox(bool reseed = false)
         {
-            if (Sandbox && SandboxSeeded && !reseed)
+            if (isSandbox && IsSandboxSeeded && !reseed)
                 return;
 
             Clear();
-            Sandbox = true;
-            SandboxSeeded = true;
-        }
-
-        public static void Save()
-        {
-            if (Sandbox)
-                return;
-
-            if (saveIsUnreadable)
-            {
-                if (!warnedAboutUnreadable)
-                {
-                    warnedAboutUnreadable = true;
-                    Debug.LogWarning($"Not saving: the save file at {SaveFile.PathFor(FileName)} " +
-                                     "could not be read when the game started, and writing a fresh " +
-                                     "one over it would throw away whatever is in there. Nothing " +
-                                     "earned this session will be kept. Relaunch once whatever is " +
-                                     "holding that file has let go of it.");
-                }
-
-                return;
-            }
-
-            SaveFile.Write(FileName, Pack());
-        }
-
-        public static void Load()
-        {
-            SaveFile.Announce();
-
-            saveIsUnreadable = false;
-            warnedAboutUnreadable = false;
-
-            switch (SaveFile.Read(FileName, out SaveData data))
-            {
-                case SaveRead.Loaded:
-                    Unpack(data);
-                    return;
-
-                case SaveRead.Unreadable:
-                    saveIsUnreadable = true;
-                    return;
-            }
-
-            if (!ImportLegacyPlayerPrefs())
-                Unpack(null);
+            isSandbox = true;
+            IsSandboxSeeded = true;
         }
 
         public static void ForgetAll()
         {
             if (SaveFile.Delete(FileName))
-            {
-                saveIsUnreadable = false;
-                warnedAboutUnreadable = false;
-            }
+                UnblockSaving();
 
             DeleteLegacyPlayerPrefs();
 
             Clear();
         }
 
+        static void PayWisps(int cost)
+        {
+            if (!IsSpendingFree)
+                Wisps -= cost;
+        }
+
+        static bool IsValidSlot(int slot) => slot >= 0 && slot < SlotCount;
+
+        static void ClearSlotsHolding(string key)
+        {
+            for (int i = 0; i < SlotCount; i++)
+                if (equipped[i] == key)
+                    equipped[i] = string.Empty;
+        }
+
+        static void SwapSlots(int first, int second)
+        {
+            string firstKey = equipped[first];
+            equipped[first] = equipped[second];
+            equipped[second] = firstKey;
+        }
+
+        static void Save()
+        {
+            if (isSandbox)
+                return;
+
+            if (isSaveFileUnreadable)
+            {
+                WarnOnceAboutNotSaving();
+                return;
+            }
+
+            SaveFile.Write(FileName, Pack());
+        }
+
+        static void WarnOnceAboutNotSaving()
+        {
+            if (hasWarnedAboutUnreadable)
+                return;
+
+            hasWarnedAboutUnreadable = true;
+            Debug.LogWarning($"Not saving: the save file at {SaveFile.PathFor(FileName)} " +
+                             "could not be read when the game started, and writing a fresh " +
+                             "one over it would throw away whatever is in there. Nothing " +
+                             "earned this session will be kept. Relaunch once whatever is " +
+                             "holding that file has let go of it.");
+        }
+
         static SaveData Pack()
         {
             var data = new SaveData
             {
-                version = Format,
+                version = FormatVersion,
                 wisps = Wisps,
                 bonusHearts = BonusHearts,
                 loadout = new string[SlotCount],
@@ -365,90 +376,114 @@ namespace FallingWizard.Core
             for (int i = 0; i < SlotCount; i++)
                 data.loadout[i] = equipped[i] ?? string.Empty;
 
-            var keys = new List<string>(ranks.Keys);
-            keys.Sort(StringComparer.Ordinal);
-
-            data.ranks = new List<RankEntry>(keys.Count);
-
-            foreach (string key in keys)
-                data.ranks.Add(new RankEntry { key = key, rank = ranks[key] });
-
-            data.spent = new List<string>(spent);
-            data.spent.Sort(StringComparer.Ordinal);
-
-            data.completedLevels = new List<string>(completedLevels);
-            data.completedLevels.Sort(StringComparer.Ordinal);
+            data.ranks = PackRanks();
+            data.spent = MakeSortedCopy(spent);
+            data.completedLevels = MakeSortedCopy(completedLevels);
 
             return data;
         }
 
+        static List<RankEntry> PackRanks()
+        {
+            List<string> keys = MakeSortedCopy(ranks.Keys);
+            var entries = new List<RankEntry>(keys.Count);
+
+            foreach (string key in keys)
+                entries.Add(new RankEntry { key = key, rank = ranks[key] });
+
+            return entries;
+        }
+
+        static List<string> MakeSortedCopy(IEnumerable<string> values)
+        {
+            var sorted = new List<string>(values);
+            sorted.Sort(StringComparer.Ordinal);
+            return sorted;
+        }
+
+        static void Load()
+        {
+            SaveFile.Announce();
+
+            UnblockSaving();
+
+            switch (SaveFile.Read(FileName, out SaveData data))
+            {
+                case SaveRead.Loaded:
+                    Unpack(data);
+                    return;
+
+                case SaveRead.Unreadable:
+                    isSaveFileUnreadable = true;
+                    return;
+            }
+
+            if (!TryImportLegacyPlayerPrefs())
+                Unpack(null);
+        }
+
+        static void UnblockSaving()
+        {
+            isSaveFileUnreadable = false;
+            hasWarnedAboutUnreadable = false;
+        }
+
         static void Unpack(SaveData data)
         {
-            data ??= new SaveData();
+            if (data == null)
+                data = new SaveData();
 
             Wisps = Mathf.Max(0, data.wisps);
             BonusHearts = Mathf.Max(0, data.bonusHearts);
 
-            ranks.Clear();
-
-            if (data.ranks != null)
-                foreach (RankEntry entry in data.ranks)
-                {
-                    if (entry == null || string.IsNullOrEmpty(entry.key))
-                        continue;
-
-                    ranks[entry.key] = Mathf.Max(1, entry.rank);
-                }
-
-            for (int i = 0; i < SlotCount; i++)
-                equipped[i] = data.loadout != null && i < data.loadout.Length && data.loadout[i] != null
-                    ? data.loadout[i]
-                    : string.Empty;
-
-            spent.Clear();
-
-            if (data.spent != null)
-                foreach (string id in data.spent)
-                    if (!string.IsNullOrEmpty(id))
-                        spent.Add(id);
-
-            completedLevels.Clear();
-
-            if (data.completedLevels != null)
-                foreach (string level in data.completedLevels)
-                    if (!string.IsNullOrEmpty(level))
-                        completedLevels.Add(level);
+            UnpackRanks(data.ranks);
+            FillLoadout(data.loadout);
+            Refill(spent, data.spent);
+            Refill(completedLevels, data.completedLevels);
         }
 
-        static bool ImportLegacyPlayerPrefs()
+        static void UnpackRanks(List<RankEntry> entries)
+        {
+            ranks.Clear();
+
+            if (entries == null)
+                return;
+
+            foreach (RankEntry entry in entries)
+            {
+                if (entry == null || string.IsNullOrEmpty(entry.key))
+                    continue;
+
+                ranks[entry.key] = Mathf.Max(1, entry.rank);
+            }
+        }
+
+        static void FillLoadout(string[] keys)
+        {
+            for (int i = 0; i < SlotCount; i++)
+                equipped[i] = keys != null && i < keys.Length && keys[i] != null
+                    ? keys[i]
+                    : string.Empty;
+        }
+
+        static void Refill(HashSet<string> target, List<string> values)
+        {
+            target.Clear();
+
+            if (values == null)
+                return;
+
+            foreach (string value in values)
+                if (!string.IsNullOrEmpty(value))
+                    target.Add(value);
+        }
+
+        static bool TryImportLegacyPlayerPrefs()
         {
             if (!PlayerPrefs.HasKey(LegacyWispsKey))
                 return false;
 
-            Wisps = PlayerPrefs.GetInt(LegacyWispsKey, 0);
-            BonusHearts = PlayerPrefs.GetInt(LegacyHeartsKey, 0);
-
-            ranks.Clear();
-
-            foreach (string entry in SplitLegacy(PlayerPrefs.GetString(LegacyRanksKey, string.Empty)))
-            {
-                int split = entry.LastIndexOf(Pair);
-
-                if (split <= 0 || !int.TryParse(entry.Substring(split + 1), out int rank))
-                    continue;
-
-                ranks[entry.Substring(0, split)] = Mathf.Max(1, rank);
-            }
-
-            string[] slots = PlayerPrefs.GetString(LegacyLoadoutKey, string.Empty).Split(Separator);
-
-            for (int i = 0; i < SlotCount; i++)
-                equipped[i] = i < slots.Length ? slots[i] : string.Empty;
-
-            spent.Clear();
-
-            foreach (string id in SplitLegacy(PlayerPrefs.GetString(LegacySpentKey, string.Empty)))
-                spent.Add(id);
+            ReadLegacyPlayerPrefs();
 
             if (!SaveFile.Write(FileName, Pack()))
             {
@@ -465,6 +500,42 @@ namespace FallingWizard.Core
             return true;
         }
 
+        static void ReadLegacyPlayerPrefs()
+        {
+            Wisps = PlayerPrefs.GetInt(LegacyWispsKey, 0);
+            BonusHearts = PlayerPrefs.GetInt(LegacyHeartsKey, 0);
+
+            ReadLegacyRanks();
+            FillLoadout(PlayerPrefs.GetString(LegacyLoadoutKey, string.Empty).Split(LegacyListSeparator));
+            Refill(spent, SplitLegacy(PlayerPrefs.GetString(LegacySpentKey, string.Empty)));
+        }
+
+        static void ReadLegacyRanks()
+        {
+            ranks.Clear();
+
+            foreach (string entry in SplitLegacy(PlayerPrefs.GetString(LegacyRanksKey, string.Empty)))
+            {
+                int separatorIndex = entry.LastIndexOf(LegacyRankSeparator);
+
+                if (separatorIndex <= 0 || !int.TryParse(entry.Substring(separatorIndex + 1), out int rank))
+                    continue;
+
+                ranks[entry.Substring(0, separatorIndex)] = Mathf.Max(1, rank);
+            }
+        }
+
+        static List<string> SplitLegacy(string packed)
+        {
+            var pieces = new List<string>();
+
+            foreach (string piece in packed.Split(LegacyListSeparator))
+                if (!string.IsNullOrEmpty(piece))
+                    pieces.Add(piece);
+
+            return pieces;
+        }
+
         static void DeleteLegacyPlayerPrefs()
         {
             PlayerPrefs.DeleteKey(LegacyWispsKey);
@@ -475,18 +546,11 @@ namespace FallingWizard.Core
             PlayerPrefs.Save();
         }
 
-        static IEnumerable<string> SplitLegacy(string packed)
-        {
-            foreach (string piece in packed.Split(Separator))
-                if (!string.IsNullOrEmpty(piece))
-                    yield return piece;
-        }
-
         static void Clear()
         {
             ranks.Clear();
             found.Clear();
-            carrying.Clear();
+            carried.Clear();
             spent.Clear();
             completedLevels.Clear();
 
@@ -496,17 +560,11 @@ namespace FallingWizard.Core
             Wisps = 0;
             CarriedWisps = 0;
             BonusHearts = 0;
-            Sandbox = false;
-            SandboxSeeded = false;
+            isSandbox = false;
+            IsSandboxSeeded = false;
 
             ClearCheckpoint();
         }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetOnPlay() => Clear();
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        static void LoadOnPlay() => Load();
 
         [Serializable]
         class SaveData

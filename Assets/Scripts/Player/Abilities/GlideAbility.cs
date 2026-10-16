@@ -7,26 +7,11 @@ namespace FallingWizard.Player
     {
         const string CanopyName = "Glide Canopy";
 
-        [Header("Descent")]
-        [Tooltip("Fall speed with the canopy out, as a fraction of normal. Set it as low as " +
-                 "reads well: fall damage counts BOXES fallen rather than how fast you were " +
-                 "going, so however slow this makes the descent, the drop bills you exactly the " +
-                 "same. It cannot turn this into a survival tool. It is also where the REACH " +
-                 "comes from: distance across a fall is airtime times sideways speed, so halving " +
-                 "the descent is what gives the wing its arc. At 0.8 the spell was just a sprint " +
-                 "that happened in the air.")]
-        [Range(0.2f, 1f)] public float fallSpeed = 0.5f;
+        const float SlowestFallSpeed = 0.2f;
+
+        const float LeastAirControl = 0.5f;
 
         [Header("Reach")]
-        [Tooltip("Top sideways speed in the air, against a run. About 1.9 turns a running jump " +
-                 "from a bit over two boxes into nearly four. It does nothing on the ground - a " +
-                 "canopy needs air under it.")]
-        [Min(1f)] public float airSpeed = 1.9f;
-
-        [Tooltip("How hard the stick bites in the air. Steering only - it does not touch how " +
-                 "fast you coast to a stop.")]
-        [Min(0.5f)] public float airControl = 1.6f;
-
         [Tooltip("How fast you slow down in the air with NO stick held, against normal. Below 1 " +
                  "you coast, which is the point of a wing: a canopy that braked harder than bare " +
                  "air would drop you straight down the moment you stopped steering, which is the " +
@@ -48,14 +33,14 @@ namespace FallingWizard.Player
 
         public override bool OnCast(PlayerLogic wizard)
         {
-            wizard.spellbook.StateOf<Wing>(this).flown = false;
+            wizard.spellbook.StateOf<Wing>(this).hasFlown = false;
             ShowCanopy(wizard, true);
             return true;
         }
 
         public override void ModifyStatsWhileLit(PlayerLogic wizard, PlayerLogic.Modifiers stats)
         {
-            Tier tier = Of(wizard);
+            Tier tier = PickTier(tiers, wizard);
 
             stats.FallSpeedMultiplier *= tier.fallSpeed;
             stats.AirSpeedMultiplier *= tier.airSpeed;
@@ -69,11 +54,11 @@ namespace FallingWizard.Player
 
             if (!wizard.movement.IsGrounded)
             {
-                wing.flown = true;
+                wing.hasFlown = true;
                 return;
             }
 
-            if (foldsOnLanding && wing.flown)
+            if (foldsOnLanding && wing.hasFlown)
                 wizard.spellbook.Extinguish(this);
         }
 
@@ -85,34 +70,24 @@ namespace FallingWizard.Player
 
         public override void OnUnequipped(PlayerLogic wizard) => ShowCanopy(wizard, false);
 
-        protected override void Validate()
-        {
-            if (tiers != null)
-                foreach (Tier tier in tiers)
-                    tier?.Validate();
-
-            CheckTiers(tiers != null ? tiers.Length : 0);
-        }
-
-        Tier Of(PlayerLogic wizard) =>
-            TierFor(tiers, wizard.spellbook.RankOf(this)) ?? new Tier();
+        protected override void Validate() => ValidateTiers(tiers);
 
         void ShowCanopy(PlayerLogic wizard, bool shown)
         {
-            GameObject canopy = CanopyOf(wizard);
+            GameObject canopy = FindCanopy(wizard);
 
             if (canopy != null)
                 canopy.SetActive(shown);
         }
 
-        GameObject CanopyOf(PlayerLogic wizard)
+        GameObject FindCanopy(PlayerLogic wizard)
         {
             Wing wing = wizard.spellbook.StateOf<Wing>(this);
 
-            if (wing.searched || wizard.Rig == null)
+            if (wing.hasSearched || wizard.Rig == null)
                 return wing.canopy;
 
-            wing.searched = true;
+            wing.hasSearched = true;
             wing.canopy = FindChildNamed(wizard.Rig, CanopyName);
 
             if (wing.canopy == null)
@@ -124,30 +99,30 @@ namespace FallingWizard.Player
         }
 
         [System.Serializable]
-        public class Tier
+        public class Tier : ITier
         {
             [Tooltip("Fall speed with the canopy out at this rank, as a fraction of normal.")]
-            [Range(0.2f, 1f)] public float fallSpeed = 0.5f;
+            [Range(SlowestFallSpeed, 1f)] public float fallSpeed = 0.5f;
 
             [Tooltip("Top sideways speed in the air at this rank, against a run.")]
             [Min(1f)] public float airSpeed = 1.9f;
 
             [Tooltip("How hard the stick bites in the air at this rank.")]
-            [Min(0.5f)] public float airControl = 1.6f;
+            [Min(LeastAirControl)] public float airControl = 1.6f;
 
             public void Validate()
             {
-                fallSpeed = Mathf.Clamp(fallSpeed, 0.2f, 1f);
+                fallSpeed = Mathf.Clamp(fallSpeed, SlowestFallSpeed, 1f);
                 airSpeed = Mathf.Max(1f, airSpeed);
-                airControl = Mathf.Max(0.5f, airControl);
+                airControl = Mathf.Max(LeastAirControl, airControl);
             }
         }
 
-        public class Wing
+        class Wing
         {
             public GameObject canopy;
-            public bool searched;
-            public bool flown;
+            public bool hasSearched;
+            public bool hasFlown;
         }
     }
 }

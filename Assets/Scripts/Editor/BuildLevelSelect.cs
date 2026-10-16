@@ -23,17 +23,18 @@ namespace FallingWizard.EditorTools
 
         const int CanvasSortingOrder = 0;
 
+        const float PipFontSize = 32f;
+
         static readonly Vector2 MapSize = new Vector2(1080f, 1080f);
 
         static readonly Vector2 PipSize = new Vector2(360f, 72f);
-        const float PipFontSize = 32f;
 
         static readonly Vector2 TopOfTheMap = new Vector2(0.5f, 0.85f);
         static readonly Vector2 MiddleOfTheMap = new Vector2(0.5f, 0.5f);
         static readonly Vector2 BottomOfTheMap = new Vector2(0.5f, 0.15f);
 
         [MenuItem("Falling Wizard/Build Level Select Scene")]
-        public static void Build()
+        static void Build()
         {
             if (AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath) != null)
             {
@@ -48,6 +49,18 @@ namespace FallingWizard.EditorTools
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects,
                 NewSceneMode.Single);
 
+            BuildCanvas();
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene, ScenePath);
+            AddToBuildSettings();
+
+            Debug.Log($"Level Select built at {ScenePath} and added to Build Settings. Drag your " +
+                      "tower map into the Tower Map's Source Image, then move the pips onto it.");
+        }
+
+        static void BuildCanvas()
+        {
             Canvas canvas = Ui.CreateCanvas(Game.LevelSelectScene, CanvasSortingOrder);
 
             AddBlackScreen(canvas.transform);
@@ -61,13 +74,6 @@ namespace FallingWizard.EditorTools
                 AddPip(map, "Mid Pip", MidLevelScene, Loc.Keys.LevelsMid, MiddleOfTheMap),
                 AddPip(map, "Bottom Pip", BottomLevelScene, Loc.Keys.LevelsBottom, BottomOfTheMap),
             };
-
-            EditorSceneManager.MarkSceneDirty(scene);
-            EditorSceneManager.SaveScene(scene, ScenePath);
-            AddToBuildSettings();
-
-            Debug.Log($"Level Select built at {ScenePath} and added to Build Settings. Drag your " +
-                      "tower map into the Tower Map's Source Image, then move the pips onto it.");
         }
 
         static void AddBlackScreen(Transform canvas)
@@ -96,10 +102,10 @@ namespace FallingWizard.EditorTools
             Button pip = Ui.CreateButton(Loc.Get(key), map, PipSize.x, PipSize.y, PipFontSize);
             pip.name = name;
 
-            var rect = (RectTransform)pip.transform;
-            rect.anchorMin = onTheMap;
-            rect.anchorMax = onTheMap;
-            rect.anchoredPosition = Vector2.zero;
+            var pipTransform = (RectTransform)pip.transform;
+            pipTransform.anchorMin = onTheMap;
+            pipTransform.anchorMax = onTheMap;
+            pipTransform.anchoredPosition = Vector2.zero;
 
             var label = pip.GetComponentInChildren<TextMeshProUGUI>();
             label.gameObject.AddComponent<LocalizedText>().key = key;
@@ -111,8 +117,11 @@ namespace FallingWizard.EditorTools
         {
             var scenes = new List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
 
-            if (scenes.Exists(entry => entry.path == ScenePath))
-                return;
+            foreach (EditorBuildSettingsScene entry in scenes)
+            {
+                if (entry.path == ScenePath)
+                    return;
+            }
 
             scenes.Add(new EditorBuildSettingsScene(ScenePath, true));
             EditorBuildSettings.scenes = scenes.ToArray();

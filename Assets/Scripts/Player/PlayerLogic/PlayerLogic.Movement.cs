@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using FallingWizard.Core;
 using UnityEngine;
 
 namespace FallingWizard.Player
@@ -9,11 +10,12 @@ namespace FallingWizard.Player
         [Serializable]
         public class Movement
         {
-            const float MinGravityScale = 0.01f;
+            public const float MinGravityScale = 0.01f;
 
             const int LayerCount = 32;
 
-            static readonly Vector2 MinGroundCheck = new Vector2(0.05f, 0.01f);
+            const float MinGroundCheckWidth = 0.05f;
+            const float MinGroundCheckThickness = 0.01f;
 
             const float MinTravelSpeed = 0.1f;
 
@@ -22,20 +24,28 @@ namespace FallingWizard.Player
             const float StepClearance = 0.02f;
 
             const float ClimbInset = 0.05f;
+            const float HeadroomCheckWidthFactor = 0.6f;
 
             const float ArcClearance = 0.15f;
+            public const float MinArcStep = 0.005f;
 
             const float GroundlessWarning = 3f;
             const float NearbyGround = 1f;
 
-            static readonly List<Collider2D> Overlaps = new List<Collider2D>(8);
-            static readonly List<RaycastHit2D> Rays = new List<RaycastHit2D>(4);
+            const float KineticEnergyFactor = 2f;
 
-            [NonSerialized] ContactFilter2D arcFilter = new ContactFilter2D
-            {
-                useTriggers = true,
-                useLayerMask = true,
-            };
+            const float Half = 0.5f;
+            const float BothSides = 2f;
+
+            static readonly Vector2 MinGroundCheck =
+                new Vector2(MinGroundCheckWidth, MinGroundCheckThickness);
+
+            static readonly Color ClimbProbeColour = new Color(0.98f, 0.86f, 0.42f);
+            static readonly Color StandingRoomColour = new Color(0.4f, 1f, 0.5f, 0.8f);
+            static readonly Color HeadroomColour = new Color(0.4f, 1f, 0.5f, 0.5f);
+
+            static readonly List<Collider2D> Overlaps = new List<Collider2D>();
+            static readonly List<RaycastHit2D> Rays = new List<RaycastHit2D>();
 
             [Header("Speed")]
             [Tooltip("Top speed at a normal run, in boxes per second. Running off a ledge drops you.")]
@@ -93,7 +103,7 @@ namespace FallingWizard.Player
             [Header("Ground Check")]
             [Tooltip("Which layers count as solid ground. Must NOT include the wizard's own layer, " +
                      "or they will stand on their own collider. Defaults to Ground.")]
-            public LayerMask groundLayers = 1 << 6;
+            public LayerMask groundLayers = Layers.GroundMask;
 
             [Tooltip("Where the feet probe sits, relative to the wizard's middle.")]
             public Vector2 groundCheckOffset = new Vector2(0f, -0.596875f);
@@ -106,7 +116,7 @@ namespace FallingWizard.Player
             [Min(0f)] public float groundCheckSkin = 0.05f;
 
             [Tooltip("Thickness the refitted probe gets.")]
-            [Min(0.01f)] public float groundCheckThickness = 0.1f;
+            [Min(MinGroundCheckThickness)] public float groundCheckThickness = 0.1f;
 
             [Tooltip("Fraction of the collider's width the refitted probe gets.")]
             [Range(0.1f, 1f)] public float groundCheckWidthFactor = 0.9f;
@@ -197,11 +207,11 @@ namespace FallingWizard.Player
             [NonSerialized] float highestPoint;
             [NonSerialized] float pendingFallDistance;
             [NonSerialized] bool hasLanded;
-            [NonSerialized] bool rising;
+            [NonSerialized] bool isRising;
             [NonSerialized] int airJumpsUsed;
 
-            [NonSerialized] bool everGrounded;
-            [NonSerialized] bool warnedGroundless;
+            [NonSerialized] bool hasEverBeenGrounded;
+            [NonSerialized] bool hasWarnedGroundless;
             [NonSerialized] float groundlessFor;
 
             [NonSerialized] Vector2 wind;
@@ -213,24 +223,9 @@ namespace FallingWizard.Player
 
             [NonSerialized] Vector2 groundNormal = Vector2.up;
             [NonSerialized] float groundAngle;
-            [NonSerialized] bool climbedLastStep;
+            [NonSerialized] bool isClimbingRamp;
 
-
-            public enum ClimbRefusal
-            {
-                None,
-                NotStanding,
-                NoWall,
-                NothingOnTop,
-                TooTall,
-                NoRoomOnTop,
-                NoHeadroom,
-            }
-
-            public ClimbRefusal WhyNoClimb { get; private set; }
-
-            public float ClimbRise { get; private set; }
-            public float ClimbCanReach { get; private set; }
+            [NonSerialized] float approachVelocityX;
 
             [NonSerialized] Vector2 standBox;
             [NonSerialized] Vector2 headBox;
@@ -238,53 +233,59 @@ namespace FallingWizard.Player
             [NonSerialized] Vector2 climbProbeBox;
             [NonSerialized] Vector2 climbProbeSize;
             [NonSerialized] float climbFaceY;
-            [NonSerialized] bool climbFaceFound;
+            [NonSerialized] bool hasFoundClimbFace;
+
+            [NonSerialized] ContactFilter2D arcFilter = new ContactFilter2D
+            {
+                useTriggers = true,
+                useLayerMask = true,
+            };
+
+            public ClimbRefusal WhyNoClimb { get; private set; }
+
+            public float ClimbRise { get; private set; }
+            public float ClimbReach { get; private set; }
 
             public bool IsGrounded { get; private set; }
 
             public Collider2D StandingOn { get; private set; }
 
-            public int Airtime { get; private set; }
             public bool IsAtEdge { get; private set; }
-
-            [NonSerialized] float approachVelocityX;
 
             public float ApproachSpeed => Mathf.Abs(approachVelocityX);
 
             public int TravelDirection =>
                 Mathf.Abs(approachVelocityX) > MinTravelSpeed
-                    ? (approachVelocityX < 0f ? -1 : 1)
+                    ? GetDirectionOf(approachVelocityX)
                     : Facing;
 
             public int Facing { get; private set; } = 1;
             public Vector2 Position => body == null ? Vector2.zero : body.position;
-            public Vector2 Wind => wind;
             public Transform Rig => body == null ? null : body.transform;
-            public float FeetY => Position.y + groundCheckOffset.y;
 
             public Vector2 Footing => hull != null
                 ? new Vector2(hull.bounds.center.x, hull.bounds.min.y)
                 : new Vector2(Position.x, FeetY + groundCheckSkin);
 
-            float HalfWidth => hull != null
-                ? hull.bounds.extents.x
-                : (groundCheckWidthFactor > 0f
-                    ? groundCheckSize.x / groundCheckWidthFactor * 0.5f
-                    : 0f);
+            public float HorizontalSpeed => body == null ? 0f : Mathf.Abs(body.linearVelocityX);
+            public Vector2 Velocity => body == null ? Vector2.zero : body.linearVelocity;
+
+            float FeetY => Position.y + groundCheckOffset.y;
+
+            Vector2 ArcStart => new Vector2(Position.x, FeetY + ArcClearance);
 
             Vector2 ProbeOrigin => body.position + groundCheckOffset;
-            ContactFilter2D GroundFilter => new ContactFilter2D
-            {
-                useLayerMask = true,
-                layerMask = groundLayers,
-                useTriggers = false,
-            };
+
+            ContactFilter2D GroundFilter => Layers.MakeSolidOnlyFilter(groundLayers);
 
             float BaseGravity => Mathf.Abs(Physics2D.gravity.y) * baseGravityScale;
 
-            public float HorizontalSpeed => body == null ? 0f : Mathf.Abs(body.linearVelocityX);
-            public Vector2 Velocity => body == null ? Vector2.zero : body.linearVelocity;
-            public float VerticalSpeed => body == null ? 0f : body.linearVelocityY;
+            bool IsOnRamp =>
+                IsGrounded && groundAngle > flatSlopeAngle && groundAngle <= maxSlopeAngle;
+
+            bool IsOnMovingPlatform => platformVelocity != Vector2.zero;
+
+            float WindGrip => windLift + BaseGravity * fallGravityMultiplier;
 
             public void Attach(Rigidbody2D rigidbody2d, Transform wizardArt, Collider2D hitbox)
             {
@@ -295,18 +296,6 @@ namespace FallingWizard.Player
                 highestPoint = body.position.y;
 
                 ApplySurfaceFriction();
-            }
-
-            void ApplySurfaceFriction()
-            {
-                if (body == null)
-                    return;
-
-                body.sharedMaterial = new PhysicsMaterial2D("Wizard Contact")
-                {
-                    friction = surfaceFriction,
-                    bounciness = 0f,
-                };
             }
 
             public void BufferJump(bool jumpPressedThisFrame, float deltaTime)
@@ -325,10 +314,10 @@ namespace FallingWizard.Player
                 SenseGround(fixedDeltaTime);
                 Run(command, stats, fixedDeltaTime);
 
-                StepUp(command, stats);
+                StepUpSmallLedges(command, stats);
 
-                TryJump(stats);
-                ApplyShortHop(command.JumpHeld);
+                JumpIfBuffered(stats);
+                ApplyShortHop(command.IsJumpHeld);
 
                 ApplyFallGravity(stats);
                 ApplyWindLift(fixedDeltaTime);
@@ -350,27 +339,25 @@ namespace FallingWizard.Player
                 wind = Vector2.zero;
                 grip = 1f;
                 platformVelocity = Vector2.zero;
-                climbedLastStep = false;
+                isClimbingRamp = false;
             }
 
             public void BeginFallFrom(float height)
             {
                 highestPoint = height;
-
-                if (IsGrounded)
-                    Airtime++;
-
                 IsGrounded = false;
                 coyoteTimer = 0f;
-                rising = false;
+                isRising = false;
             }
+
+            public void UseBaseGravity() => body.gravityScale = baseGravityScale;
 
             public void ApplyWind(Vector2 target, float rampup, float groundScale, float fixedDeltaTime)
             {
                 float sidewaysScale = IsGrounded ? groundScale : 1f;
-                var felt = new Vector2(target.x * sidewaysScale, target.y);
+                var feltWind = new Vector2(target.x * sidewaysScale, target.y);
                 float rate = rampup > 0f ? rampup : windDecay;
-                wind = Vector2.MoveTowards(wind, felt, rate * fixedDeltaTime);
+                wind = Vector2.MoveTowards(wind, feltWind, rate * fixedDeltaTime);
             }
 
             public void SetGrip(float value) => grip = Mathf.Clamp01(value);
@@ -383,9 +370,9 @@ namespace FallingWizard.Player
                     return;
 
                 body.linearVelocity += velocity;
-                rising = false;
+                isRising = false;
 
-                climbedLastStep = false;
+                isClimbingRamp = false;
 
                 lockout = Mathf.Max(lockout, controlLockout);
             }
@@ -398,14 +385,13 @@ namespace FallingWizard.Player
 
             public void Launch(float heightInBoxes, float sideways, bool resetsFall)
             {
-                body.linearVelocityY =
-                    Mathf.Sqrt(2f * BaseGravity * Mathf.Max(0f, heightInBoxes));
+                body.linearVelocityY = GetSpeedToRise(Mathf.Max(0f, heightInBoxes));
 
                 if (sideways != 0f)
                     body.linearVelocityX += sideways;
 
-                rising = false;
-                climbedLastStep = false;
+                isRising = false;
+                isClimbingRamp = false;
 
                 if (!resetsFall)
                     return;
@@ -435,75 +421,7 @@ namespace FallingWizard.Player
                 groundCheckSize = Vector2.Max(groundCheckSize, MinGroundCheck);
                 flatSlopeAngle = Mathf.Min(flatSlopeAngle, maxSlopeAngle);
 
-                int playerLayer = LayerMask.NameToLayer("Player");
-                if (playerLayer >= 0 && (groundLayers.value & (1 << playerLayer)) != 0)
-                    Debug.LogWarning("Movement.groundLayers includes the Player layer, so the " +
-                                     "wizard will try to stand on their own collider.");
-
-                if (stepHeight >= 1f)
-                    Debug.LogWarning("Movement.stepHeight is a whole box or more, and a painted " +
-                                     "tile is half that, so the wizard now walks up two-tile " +
-                                     "walls on their own and the staff has almost nothing left " +
-                                     "to climb. Keep it under 1.");
-
-                if (stepHeight > 0f && ledgeCheckDepth <= 1f)
-                    Debug.LogWarning("Movement.ledgeCheckDepth is one box or less, so the top of " +
-                                     "every step down reads as a cliff and a walking wizard " +
-                                     "refuses to take it. Keep it above 1.");
-            }
-
-            public void DrawGizmos(Vector2 origin)
-            {
-                Gizmos.color = Color.cyan;
-                Gizmos.DrawWireCube(origin + groundCheckOffset, groundCheckSize);
-
-                Gizmos.color = Color.yellow;
-                Vector2 probe = origin + groundCheckOffset + new Vector2(Facing * ledgeCheckAhead, 0f);
-                Gizmos.DrawLine(probe, probe + Vector2.down * ledgeCheckDepth);
-
-                if (stepHeight <= 0f)
-                    return;
-
-                Gizmos.color = Color.green;
-                float soles = origin.y + groundCheckOffset.y + groundCheckSkin;
-                var ahead = new Vector2(origin.x + groundCheckOffset.x + Facing * stepReach, soles);
-                Gizmos.DrawLine(ahead, ahead + Vector2.up * stepHeight);
-
-                if (climbProbeSize.y > 0f)
-                {
-                    Gizmos.color = WhyNoClimb == ClimbRefusal.NoWall
-                        ? Color.red
-                        : new Color(0.98f, 0.86f, 0.42f);
-
-                    Gizmos.DrawWireCube(climbProbeBox, climbProbeSize);
-
-                    if (climbFaceFound)
-                        Gizmos.DrawLine(
-                            new Vector2(climbProbeBox.x - climbProbeSize.x, climbFaceY),
-                            new Vector2(climbProbeBox.x + climbProbeSize.x, climbFaceY));
-                }
-
-                bool measured = WhyNoClimb == ClimbRefusal.None ||
-                                WhyNoClimb == ClimbRefusal.NoRoomOnTop ||
-                                WhyNoClimb == ClimbRefusal.NoHeadroom;
-
-                if (hull == null || !measured)
-                    return;
-
-                Gizmos.color = WhyNoClimb == ClimbRefusal.NoRoomOnTop
-                    ? Color.red
-                    : new Color(0.4f, 1f, 0.5f, 0.8f);
-
-                Gizmos.DrawWireCube(standBox, hull.bounds.size);
-
-                if (headBoxSize.y <= 0f)
-                    return;
-
-                Gizmos.color = WhyNoClimb == ClimbRefusal.NoHeadroom
-                    ? Color.red
-                    : new Color(0.4f, 1f, 0.5f, 0.5f);
-
-                Gizmos.DrawWireCube(headBox, headBoxSize);
+                WarnAboutRiskySettings();
             }
 
             public bool TryFindLedgeEdge(out float edgeX)
@@ -513,26 +431,10 @@ namespace FallingWizard.Player
                 if (!IsGrounded || !IsAtEdge)
                     return false;
 
-                float footing = 0f;
-                float air = ledgeCheckAhead;
+                if (!TryFindFooting(out float footing))
+                    return false;
 
-                if (!HasGroundAt(footing))
-                {
-                    footing = -groundCheckSize.x * 0.5f;
-
-                    if (!HasGroundAt(footing))
-                        return false;
-                }
-
-                for (int step = 0; step < edgeSearchSteps; step++)
-                {
-                    float middle = (footing + air) * 0.5f;
-
-                    if (HasGroundAt(middle))
-                        footing = middle;
-                    else
-                        air = middle;
-                }
+                float air = CloseInOnTheLip(footing);
 
                 if (HasGroundAt(air))
                     return false;
@@ -558,132 +460,216 @@ namespace FallingWizard.Player
                 IsAtEdge = IsGrounded && !HasGroundAt(ledgeCheckAhead);
 
                 if (IsGrounded)
-                {
-                    if (!wasGrounded)
-                    {
-                        pendingFallDistance = Mathf.Max(0f, highestPoint - body.position.y);
-                        hasLanded = true;
-                    }
-
-                    coyoteTimer = coyoteTime;
-                    highestPoint = body.position.y;
-                    airJumpsUsed = 0;
-                    rising = false;
-                }
+                    UpdateWhileGrounded(wasGrounded);
                 else
-                {
-                    if (wasGrounded)
-                        Airtime++;
-
-                    coyoteTimer -= fixedDeltaTime;
-                    highestPoint = Mathf.Max(highestPoint, body.position.y);
-                }
+                    UpdateWhileInTheAir(fixedDeltaTime);
             }
 
-            void WatchForMissingGround(float fixedDeltaTime)
+            public bool TryFindClimbAt(Bounds hook, out Vector2 lip, out Vector2 landing)
             {
-                if (IsGrounded)
-                {
-                    everGrounded = true;
-                    return;
-                }
+                lip = Vector2.zero;
+                landing = Vector2.zero;
 
-                if (everGrounded || warnedGroundless)
-                    return;
+                if (!TryStartMeasuringClimb(hook))
+                    return false;
 
-                groundlessFor += fixedDeltaTime;
-                if (groundlessFor < GroundlessWarning)
-                    return;
+                Bounds box = hull.bounds;
 
-                warnedGroundless = true;
+                ClimbReach = hook.max.y - box.min.y;
 
-                if (GroundIsNearby())
-                {
-                    Debug.LogWarning(
-                        $"The wizard has not found the ground in {GroundlessWarning:0} seconds, " +
-                        "but there IS something on the right layer within a box of their feet - " +
-                        "so the mask is fine and the probe is missing it. Two usual causes: " +
-                        "groundCheckOffset sits the probe below the surface instead of across " +
-                        "it, or the ground is a CompositeCollider2D set to Outlines, which is a " +
-                        "zero-thickness line the probe can sit underneath. Switch the composite " +
-                        "to Polygons, or raise groundCheckOffset until the probe straddles the " +
-                        "wizard's feet.");
+                if (!TryFindClimbLip(box, hook, out lip))
+                    return false;
 
-                    return;
-                }
+                var hullOnTop = new Vector2(
+                    lip.x + Facing * (box.extents.x + StepClearance),
+                    lip.y + box.extents.y + StepClearance);
 
-                Debug.LogWarning(
-                    $"The wizard has not found the ground in {GroundlessWarning:0} seconds, and " +
-                    "there is nothing on the right layer anywhere near them. " +
-                    $"Movement.groundLayers is set to [{LayerNames(groundLayers)}], and anything " +
-                    "they are meant to stand on must be on one of those layers - tilemaps " +
-                    "included, which start on Default. Jumping, ledge detection and the staff " +
-                    "all read this one mask.");
+                if (!HasRoomOnTop(box, hullOnTop) || !HasHeadroom(box, hullOnTop))
+                    return false;
+
+                landing = hullOnTop + (body.position - (Vector2)box.center);
+                WhyNoClimb = ClimbRefusal.None;
+                return true;
             }
 
-            bool GroundIsNearby()
+            public bool WouldTumbleThroughHazard(Vector2 launch, ArcSettings look)
             {
-                Vector2 wide = groundCheckSize + Vector2.one * NearbyGround;
+                if (body == null)
+                    return false;
 
-                return Physics2D.OverlapBox(
-                    body.position + groundCheckOffset, wide, 0f, GroundFilter, Overlaps) > 0;
+                arcFilter.layerMask = look.Layers;
+                return FlyAndWatchForHazards(launch, look);
             }
 
-            static string LayerNames(LayerMask mask)
+            public static int GetDirectionOf(float value) => value < 0f ? -1 : 1;
+
+            void ApplySurfaceFriction()
             {
-                var listed = new List<string>();
-
-                for (int layer = 0; layer < LayerCount; layer++)
-                {
-                    if ((mask.value & (1 << layer)) == 0)
-                        continue;
-
-                    string name = LayerMask.LayerToName(layer);
-                    listed.Add(string.IsNullOrEmpty(name) ? layer.ToString() : name);
-                }
-
-                return listed.Count > 0 ? string.Join(", ", listed) : "nothing";
-            }
-
-            bool HasGroundAt(float ahead)
-            {
-                Vector2 probe = ProbeOrigin + new Vector2(Facing * ahead, 0f);
-                return Physics2D.Raycast(probe, Vector2.down, GroundFilter, Rays, ledgeCheckDepth) > 0;
-            }
-
-            void SenseSlope()
-            {
-                groundNormal = Vector2.up;
-                groundAngle = 0f;
-
-                if (!IsGrounded || body == null)
+                if (body == null)
                     return;
 
-                float lift = Mathf.Max(SlopeProbeLift, groundCheckSize.y);
-                float half = groundCheckSize.x * 0.5f;
-
-                for (int i = -1; i <= 1; i++)
+                body.sharedMaterial = new PhysicsMaterial2D("Wizard Contact")
                 {
-                    var from = new Vector2(ProbeOrigin.x + i * half, ProbeOrigin.y + lift);
-
-                    if (Physics2D.Raycast(from, Vector2.down, GroundFilter, Rays,
-                            lift + slopeProbeDepth) <= 0)
-                        continue;
-
-                    Vector2 normal = Rays[0].normal;
-                    float angle = Vector2.Angle(normal, Vector2.up);
-
-                    if (angle > groundAngle && angle <= maxSlopeAngle)
-                    {
-                        groundAngle = angle;
-                        groundNormal = normal;
-                    }
-                }
+                    friction = surfaceFriction,
+                    bounciness = 0f,
+                };
             }
 
-            bool OnRamp => IsGrounded && groundAngle > flatSlopeAngle && groundAngle <= maxSlopeAngle;
+            void UpdateFacing(float steer)
+            {
+                if (IsSteering(steer))
+                    Facing = GetDirectionOf(steer);
 
-            bool TryFindLip(int direction, out float top)
+                if (art != null)
+                    art.localScale = new Vector3(Facing * Mathf.Abs(art.localScale.x),
+                        art.localScale.y, art.localScale.z);
+            }
+
+            bool IsSteering(float steer) => Mathf.Abs(steer) > steerDeadzone;
+
+            void Run(Command command, Modifiers stats, float fixedDeltaTime)
+            {
+                if (lockout > 0f)
+                    return;
+
+                float steer = stats.IsRooted ? 0f : command.Steer;
+                float topSpeed = command.IsWalking ? walkSpeed : runSpeed;
+                float targetSpeed = GetTargetSpeed(command, stats, steer, topSpeed);
+                float rate = GetSpeedChangeRate(stats, steer);
+
+                if (TryRunAlongRamp(targetSpeed, topSpeed * stats.MoveSpeedMultiplier,
+                        rate * fixedDeltaTime))
+                    return;
+
+                RunHorizontally(targetSpeed, rate * fixedDeltaTime);
+            }
+
+            float GetTargetSpeed(Command command, Modifiers stats, float steer, float topSpeed)
+            {
+                float targetSpeed = steer * topSpeed * stats.MoveSpeedMultiplier;
+
+                if (!IsGrounded)
+                    targetSpeed *= stats.AirSpeedMultiplier;
+
+                if (command.IsWalking && IsGrounded && IsAtEdge && IsSteering(steer))
+                    targetSpeed = 0f;
+
+                targetSpeed += wind.x;
+                return targetSpeed;
+            }
+
+            float GetSpeedChangeRate(Modifiers stats, float steer)
+            {
+                bool steering = IsSteering(steer);
+                float rate = steering ? acceleration : groundFriction;
+
+                if (!IsGrounded)
+                    rate *= airControl *
+                            (steering ? stats.AirControlMultiplier : stats.AirDragMultiplier);
+                else
+                    rate *= grip;
+
+                return rate;
+            }
+
+            bool TryRunAlongRamp(float targetSpeed, float topSpeed, float change)
+            {
+                bool wasClimbing = isClimbingRamp;
+                isClimbingRamp = false;
+
+                if (!IsOnRamp)
+                {
+                    TakeBackLeftoverClimb(wasClimbing, topSpeed);
+                    return false;
+                }
+
+                if (isRising || body.linearVelocityY > topSpeed)
+                    return false;
+
+                RunAlongRamp(targetSpeed, topSpeed, change);
+                return true;
+            }
+
+            void TakeBackLeftoverClimb(bool wasClimbing, float topSpeed)
+            {
+                if (wasClimbing && IsGrounded && !isRising &&
+                    body.linearVelocityY > 0f && body.linearVelocityY <= topSpeed)
+                    body.linearVelocityY = 0f;
+            }
+
+            void RunAlongRamp(float targetSpeed, float topSpeed, float change)
+            {
+                var along = new Vector2(groundNormal.y, -groundNormal.x);
+
+                if (along.x < 0f)
+                    along = -along;
+
+                float lean = Mathf.Max(along.x, Mathf.Cos(maxSlopeAngle * Mathf.Deg2Rad));
+
+                float cap = topSpeed / lean;
+
+                float carried = Mathf.Clamp(
+                    Vector2.Dot(body.linearVelocity, along), -cap, cap);
+
+                float speed = Mathf.MoveTowards(carried, targetSpeed / lean, change / lean);
+
+                body.linearVelocity = along * speed;
+                isClimbingRamp = speed * along.y > 0f;
+            }
+
+            void RunHorizontally(float targetSpeed, float change)
+            {
+                float speedOverTheGround = body.linearVelocityX - platformVelocity.x;
+
+                body.linearVelocityX = platformVelocity.x +
+                    Mathf.MoveTowards(speedOverTheGround, targetSpeed, change);
+
+                if (IsGrounded && IsOnMovingPlatform && !isRising)
+                    body.linearVelocityY = platformVelocity.y;
+            }
+
+            void StepUpSmallLedges(Command command, Modifiers stats)
+            {
+                if (!CanStepUp(stats))
+                    return;
+
+                float steer = command.Steer;
+
+                if (!IsSteering(steer))
+                    return;
+
+                int direction = GetDirectionOf(steer);
+
+                if (!TryFindStepLip(direction, out float lipTop))
+                    return;
+
+                Bounds box = hull.bounds;
+                float rise = lipTop - box.min.y;
+
+                if (rise <= StepClearance || rise > stepHeight)
+                    return;
+
+                if (!HasRoomToHop(box))
+                    return;
+
+                Launch(rise + hopClearance, hopForward * direction, true);
+            }
+
+            bool CanStepUp(Modifiers stats)
+            {
+                if (stepHeight <= 0f || body == null || hull == null)
+                    return false;
+
+                if (lockout > 0f || stats.IsRooted)
+                    return false;
+
+                if (coyoteTimer <= 0f || body.linearVelocityY > 0f)
+                    return false;
+
+                return true;
+            }
+
+            bool TryFindStepLip(int direction, out float top)
             {
                 top = 0f;
 
@@ -700,224 +686,15 @@ namespace FallingWizard.Player
                 return true;
             }
 
-            float FaceUnder(Bounds hull2d, Bounds hook, float lipY)
+            bool HasRoomToHop(Bounds box)
             {
-                var from = new Vector2(hull2d.center.x, lipY - ClimbInset);
-                float reach = Mathf.Abs(hook.center.x - from.x) + hook.size.x;
+                var overhead = new Vector2(box.center.x, box.max.y + hopClearance * Half);
+                var overheadSize = new Vector2(box.size.x - StepClearance * BothSides, hopClearance);
 
-                if (Physics2D.Raycast(from, new Vector2(Facing, 0f), GroundFilter, Rays, reach) > 0 &&
-                    Rays[0].distance > 0f)
-                    return Rays[0].point.x;
-
-                return hook.center.x;
+                return Physics2D.OverlapBox(overhead, overheadSize, 0f, GroundFilter, Overlaps) <= 0;
             }
 
-            public bool TryFindClimbAt(Bounds hook, out Vector2 lip, out Vector2 landing)
-            {
-                lip = Vector2.zero;
-                landing = Vector2.zero;
-
-                ClimbRise = 0f;
-                climbFaceFound = false;
-                climbProbeBox = hook.center;
-                climbProbeSize = hook.size;
-
-                if (body == null || hull == null || (!IsGrounded && !catchLedgesInTheAir))
-                {
-                    WhyNoClimb = ClimbRefusal.NotStanding;
-                    climbProbeSize = Vector2.zero;
-                    return false;
-                }
-
-                Bounds box = hull.bounds;
-
-                ClimbCanReach = hook.max.y - box.min.y;
-
-                if (Physics2D.OverlapBox(hook.center, hook.size, 0f, GroundFilter, Overlaps) <= 0)
-                {
-                    WhyNoClimb = ClimbRefusal.NoWall;
-                    return false;
-                }
-
-                var from = new Vector2(hook.center.x, hook.max.y + ClimbInset);
-
-                if (Physics2D.Raycast(from, Vector2.down, GroundFilter, Rays,
-                        hook.size.y + ClimbInset * 2f) <= 0)
-                {
-                    WhyNoClimb = ClimbRefusal.NothingOnTop;
-                    return false;
-                }
-
-                if (Rays[0].distance <= 0f)
-                {
-                    WhyNoClimb = ClimbRefusal.TooTall;
-                    return false;
-                }
-
-                float lipY = Rays[0].point.y;
-
-                lip = new Vector2(FaceUnder(box, hook, lipY), lipY);
-
-                ClimbRise = lip.y - box.min.y;
-                climbFaceY = lip.y;
-                climbFaceFound = true;
-
-                var hullOnTop = new Vector2(
-                    lip.x + Facing * (box.extents.x + StepClearance),
-                    lip.y + box.extents.y + StepClearance);
-
-                standBox = hullOnTop;
-
-                var standing = (Vector2)box.size - Vector2.one * (StepClearance * 2f);
-
-                if (Physics2D.OverlapBox(hullOnTop, standing, 0f, GroundFilter, Overlaps) > 0)
-                {
-                    WhyNoClimb = ClimbRefusal.NoRoomOnTop;
-                    return false;
-                }
-
-                float headroom = hullOnTop.y + box.extents.y - box.max.y;
-
-                headBox = new Vector2(box.center.x, box.max.y + headroom * 0.5f);
-                headBoxSize = new Vector2(box.size.x * 0.6f, Mathf.Max(0f, headroom));
-
-                if (headroom > 0f &&
-                    Physics2D.OverlapBox(headBox, headBoxSize, 0f, GroundFilter, Overlaps) > 0)
-                {
-                    WhyNoClimb = ClimbRefusal.NoHeadroom;
-                    return false;
-                }
-
-                landing = hullOnTop + (body.position - (Vector2)box.center);
-                WhyNoClimb = ClimbRefusal.None;
-                return true;
-            }
-
-            void UpdateFacing(float steer)
-            {
-                if (Mathf.Abs(steer) > steerDeadzone)
-                    Facing = steer < 0f ? -1 : 1;
-
-                if (art != null)
-                    art.localScale = new Vector3(Facing * Mathf.Abs(art.localScale.x),
-                        art.localScale.y, art.localScale.z);
-            }
-
-            bool StepUp(Command command, Modifiers stats)
-            {
-                if (stepHeight <= 0f || body == null || hull == null)
-                    return false;
-
-                if (lockout > 0f || stats.Rooted)
-                    return false;
-
-                if (coyoteTimer <= 0f || body.linearVelocityY > 0f)
-                    return false;
-
-                float steer = command.Steer;
-
-                if (Mathf.Abs(steer) <= steerDeadzone)
-                    return false;
-
-                int direction = steer < 0f ? -1 : 1;
-
-                if (!TryFindLip(direction, out float lipTop))
-                    return false;
-
-                Bounds box = hull.bounds;
-                float rise = lipTop - box.min.y;
-
-                if (rise <= StepClearance || rise > stepHeight)
-                    return false;
-
-                var overhead = new Vector2(box.center.x, box.max.y + hopClearance * 0.5f);
-                var overheadSize = new Vector2(box.size.x - StepClearance * 2f, hopClearance);
-
-                if (Physics2D.OverlapBox(overhead, overheadSize, 0f, GroundFilter, Overlaps) > 0)
-                    return false;
-
-                Launch(rise + hopClearance, hopForward * direction, true);
-                return true;
-            }
-
-            void Run(Command command, Modifiers stats, float fixedDeltaTime)
-            {
-                if (lockout > 0f)
-                    return;
-
-                float steer = stats.Rooted ? 0f : command.Steer;
-                float topSpeed = command.Walk ? walkSpeed : runSpeed;
-                float targetSpeed = steer * topSpeed * stats.MoveSpeedMultiplier;
-
-                if (!IsGrounded)
-                    targetSpeed *= stats.AirSpeedMultiplier;
-
-                if (command.Walk && IsGrounded && IsAtEdge && Mathf.Abs(steer) > steerDeadzone)
-                    targetSpeed = 0f;
-
-                targetSpeed += wind.x;
-
-                bool steering = Mathf.Abs(steer) > steerDeadzone;
-                float rate = steering ? acceleration : groundFriction;
-
-                if (!IsGrounded)
-                    rate *= airControl *
-                            (steering ? stats.AirControlMultiplier : stats.AirDragMultiplier);
-                else
-                    rate *= grip;
-
-                if (TryRunAlongRamp(targetSpeed, topSpeed * stats.MoveSpeedMultiplier,
-                        rate * fixedDeltaTime))
-                    return;
-
-                float speedOverTheGround = body.linearVelocityX - platformVelocity.x;
-
-                body.linearVelocityX = platformVelocity.x +
-                    Mathf.MoveTowards(speedOverTheGround, targetSpeed, rate * fixedDeltaTime);
-
-                if (IsGrounded && IsOnMovingPlatform && !rising)
-                    body.linearVelocityY = platformVelocity.y;
-            }
-
-            bool IsOnMovingPlatform => platformVelocity != Vector2.zero;
-
-            bool TryRunAlongRamp(float targetSpeed, float topSpeed, float change)
-            {
-                bool wasClimbing = climbedLastStep;
-                climbedLastStep = false;
-
-                if (!OnRamp)
-                {
-                    if (wasClimbing && IsGrounded && !rising &&
-                        body.linearVelocityY > 0f && body.linearVelocityY <= topSpeed)
-                        body.linearVelocityY = 0f;
-
-                    return false;
-                }
-
-                if (rising || body.linearVelocityY > topSpeed)
-                    return false;
-
-                var along = new Vector2(groundNormal.y, -groundNormal.x);
-
-                if (along.x < 0f)
-                    along = -along;
-
-                float lean = Mathf.Max(along.x, Mathf.Cos(maxSlopeAngle * Mathf.Deg2Rad));
-
-                float cap = topSpeed / lean;
-
-                float carried = Mathf.Clamp(
-                    Vector2.Dot(body.linearVelocity, along), -cap, cap);
-
-                float speed = Mathf.MoveTowards(carried, targetSpeed / lean, change / lean);
-
-                body.linearVelocity = along * speed;
-                climbedLastStep = speed * along.y > 0f;
-                return true;
-            }
-
-            void TryJump(Modifiers stats)
+            void JumpIfBuffered(Modifiers stats)
             {
                 if (!canJump)
                     return;
@@ -933,21 +710,23 @@ namespace FallingWizard.Player
 
                 bufferTimer = 0f;
                 coyoteTimer = 0f;
-                rising = true;
+                isRising = true;
 
-                body.linearVelocityY =
-                    Mathf.Sqrt(2f * BaseGravity * jumpHeight * stats.JumpHeightMultiplier);
+                body.linearVelocityY = GetSpeedToRise(jumpHeight * stats.JumpHeightMultiplier);
             }
+
+            float GetSpeedToRise(float height) =>
+                Mathf.Sqrt(KineticEnergyFactor * BaseGravity * height);
 
             void ApplyShortHop(bool jumpHeld)
             {
-                if (!rising || jumpHeld)
+                if (!isRising || jumpHeld)
                     return;
 
                 if (body.linearVelocityY > 0f)
                     body.linearVelocityY *= shortHopMultiplier;
 
-                rising = false;
+                isRising = false;
             }
 
             void ApplyFallGravity(Modifiers stats)
@@ -960,15 +739,13 @@ namespace FallingWizard.Player
                     ? baseGravityScale * fallGravityMultiplier * floatiness
                     : baseGravityScale;
 
-                float terminalSpeed = TerminalFall(floatiness);
+                float terminalSpeed = GetTerminalFallSpeed(floatiness);
                 if (body.linearVelocityY < -terminalSpeed)
                     body.linearVelocityY = -terminalSpeed;
             }
 
-            float TerminalFall(float floatiness) =>
+            float GetTerminalFallSpeed(float floatiness) =>
                 Mathf.Max(maxFallSpeed * floatiness, -wind.y);
-
-            float WindGrip => windLift + BaseGravity * fallGravityMultiplier;
 
             void ApplyWindLift(float fixedDeltaTime)
             {
@@ -979,91 +756,421 @@ namespace FallingWizard.Player
                     Mathf.MoveTowards(body.linearVelocityY, wind.y, WindGrip * fixedDeltaTime);
             }
 
-            public int PredictArc(Vector2 launch, Modifiers stats, in ArcSettings look,
-                List<Vector2> into, out ArcEnd end)
+            void WarnAboutRiskySettings()
             {
-                into.Clear();
-                end = default;
+                int playerLayer = LayerMask.NameToLayer("Player");
+                if (playerLayer >= 0 && IsLayerInMask(playerLayer, groundLayers))
+                    Debug.LogWarning("Movement.groundLayers includes the Player layer, so the " +
+                                     "wizard will try to stand on their own collider.");
 
-                if (body == null)
-                    return 0;
+                if (stepHeight >= 1f)
+                    Debug.LogWarning("Movement.stepHeight is a whole box or more, and a painted " +
+                                     "tile is half that, so the wizard now walks up two-tile " +
+                                     "walls on their own and the staff has almost nothing left " +
+                                     "to climb. Keep it under 1.");
 
-                arcFilter.layerMask = look.Layers;
+                if (stepHeight > 0f && ledgeCheckDepth <= 1f)
+                    Debug.LogWarning("Movement.ledgeCheckDepth is one box or less, so the top of " +
+                                     "every step down reads as a cliff and a walking wizard " +
+                                     "refuses to take it. Keep it above 1.");
+            }
 
-                float floatiness = stats != null ? stats.FallSpeedMultiplier : 1f;
-                float terminal = TerminalFall(floatiness);
-                float step = Mathf.Max(0.005f, look.Step);
-                float updraught = wind.y;
-                float windGrip = WindGrip;
+            static bool IsLayerInMask(int layer, LayerMask mask) =>
+                (mask.value & (1 << layer)) != 0;
 
-                var point = new Vector2(body.position.x, FeetY + ArcClearance);
+            bool TryFindFooting(out float footing)
+            {
+                footing = 0f;
+
+                if (HasGroundAt(footing))
+                    return true;
+
+                footing = -groundCheckSize.x * Half;
+                return HasGroundAt(footing);
+            }
+
+            bool HasGroundAt(float ahead)
+            {
+                Vector2 probe = ProbeOrigin + new Vector2(Facing * ahead, 0f);
+                return Physics2D.Raycast(probe, Vector2.down, GroundFilter, Rays, ledgeCheckDepth) > 0;
+            }
+
+            float CloseInOnTheLip(float footing)
+            {
+                float air = ledgeCheckAhead;
+
+                for (int step = 0; step < edgeSearchSteps; step++)
+                {
+                    float halfway = (footing + air) * Half;
+
+                    if (HasGroundAt(halfway))
+                        footing = halfway;
+                    else
+                        air = halfway;
+                }
+
+                return air;
+            }
+
+            void SenseSlope()
+            {
+                groundNormal = Vector2.up;
+                groundAngle = 0f;
+
+                if (!IsGrounded || body == null)
+                    return;
+
+                float lift = Mathf.Max(SlopeProbeLift, groundCheckSize.y);
+                float halfWidth = groundCheckSize.x * Half;
+
+                for (int i = -1; i <= 1; i++)
+                {
+                    var from = new Vector2(ProbeOrigin.x + i * halfWidth, ProbeOrigin.y + lift);
+                    MeasureSlopeAt(from, lift);
+                }
+            }
+
+            void MeasureSlopeAt(Vector2 from, float lift)
+            {
+                if (Physics2D.Raycast(from, Vector2.down, GroundFilter, Rays,
+                        lift + slopeProbeDepth) <= 0)
+                    return;
+
+                Vector2 normal = Rays[0].normal;
+                float angle = Vector2.Angle(normal, Vector2.up);
+
+                if (angle > groundAngle && angle <= maxSlopeAngle)
+                {
+                    groundAngle = angle;
+                    groundNormal = normal;
+                }
+            }
+
+            void WatchForMissingGround(float fixedDeltaTime)
+            {
+                if (IsGrounded)
+                {
+                    hasEverBeenGrounded = true;
+                    return;
+                }
+
+                if (hasEverBeenGrounded || hasWarnedGroundless)
+                    return;
+
+                groundlessFor += fixedDeltaTime;
+                if (groundlessFor < GroundlessWarning)
+                    return;
+
+                hasWarnedGroundless = true;
+
+                if (IsGroundNearby())
+                    WarnProbeMissesTheGround();
+                else
+                    WarnNothingOnTheGroundLayers();
+            }
+
+            bool IsGroundNearby()
+            {
+                Vector2 nearbySize = groundCheckSize + Vector2.one * NearbyGround;
+
+                return Physics2D.OverlapBox(
+                    ProbeOrigin, nearbySize, 0f, GroundFilter, Overlaps) > 0;
+            }
+
+            void WarnProbeMissesTheGround()
+            {
+                Debug.LogWarning(
+                    $"The wizard has not found the ground in {GroundlessWarning:0} seconds, " +
+                    "but there IS something on the right layer within a box of their feet - " +
+                    "so the mask is fine and the probe is missing it. Two usual causes: " +
+                    "groundCheckOffset sits the probe below the surface instead of across " +
+                    "it, or the ground is a CompositeCollider2D set to Outlines, which is a " +
+                    "zero-thickness line the probe can sit underneath. Switch the composite " +
+                    "to Polygons, or raise groundCheckOffset until the probe straddles the " +
+                    "wizard's feet.");
+            }
+
+            void WarnNothingOnTheGroundLayers()
+            {
+                Debug.LogWarning(
+                    $"The wizard has not found the ground in {GroundlessWarning:0} seconds, and " +
+                    "there is nothing on the right layer anywhere near them. " +
+                    $"Movement.groundLayers is set to [{ListLayerNames(groundLayers)}], and anything " +
+                    "they are meant to stand on must be on one of those layers - tilemaps " +
+                    "included, which start on Default. Jumping, ledge detection and the staff " +
+                    "all read this one mask.");
+            }
+
+            static string ListLayerNames(LayerMask mask)
+            {
+                var listed = new List<string>();
+
+                for (int layer = 0; layer < LayerCount; layer++)
+                {
+                    if (!IsLayerInMask(layer, mask))
+                        continue;
+
+                    string name = LayerMask.LayerToName(layer);
+                    listed.Add(string.IsNullOrEmpty(name) ? layer.ToString() : name);
+                }
+
+                return listed.Count > 0 ? string.Join(", ", listed) : "nothing";
+            }
+
+            void UpdateWhileGrounded(bool wasGrounded)
+            {
+                if (!wasGrounded)
+                {
+                    pendingFallDistance = Mathf.Max(0f, highestPoint - body.position.y);
+                    hasLanded = true;
+                }
+
+                coyoteTimer = coyoteTime;
+                highestPoint = body.position.y;
+                airJumpsUsed = 0;
+                isRising = false;
+            }
+
+            void UpdateWhileInTheAir(float fixedDeltaTime)
+            {
+                coyoteTimer -= fixedDeltaTime;
+                highestPoint = Mathf.Max(highestPoint, body.position.y);
+            }
+
+            bool TryStartMeasuringClimb(Bounds hook)
+            {
+                ClimbRise = 0f;
+                hasFoundClimbFace = false;
+                climbProbeBox = hook.center;
+                climbProbeSize = hook.size;
+
+                if (body == null || hull == null || (!IsGrounded && !catchLedgesInTheAir))
+                {
+                    WhyNoClimb = ClimbRefusal.NotStanding;
+                    climbProbeSize = Vector2.zero;
+                    return false;
+                }
+
+                return true;
+            }
+
+            bool TryFindClimbLip(Bounds box, Bounds hook, out Vector2 lip)
+            {
+                lip = Vector2.zero;
+
+                if (Physics2D.OverlapBox(hook.center, hook.size, 0f, GroundFilter, Overlaps) <= 0)
+                {
+                    WhyNoClimb = ClimbRefusal.NoWall;
+                    return false;
+                }
+
+                if (!TryFindTopOfWall(hook, out float lipY))
+                    return false;
+
+                lip = new Vector2(FindFaceUnderLip(box, hook, lipY), lipY);
+
+                ClimbRise = lip.y - box.min.y;
+                climbFaceY = lip.y;
+                hasFoundClimbFace = true;
+                return true;
+            }
+
+            bool TryFindTopOfWall(Bounds hook, out float top)
+            {
+                top = 0f;
+
+                var from = new Vector2(hook.center.x, hook.max.y + ClimbInset);
+
+                if (Physics2D.Raycast(from, Vector2.down, GroundFilter, Rays,
+                        hook.size.y + ClimbInset * BothSides) <= 0)
+                {
+                    WhyNoClimb = ClimbRefusal.NothingOnTop;
+                    return false;
+                }
+
+                if (Rays[0].distance <= 0f)
+                {
+                    WhyNoClimb = ClimbRefusal.TooTall;
+                    return false;
+                }
+
+                top = Rays[0].point.y;
+                return true;
+            }
+
+            float FindFaceUnderLip(Bounds box, Bounds hook, float lipY)
+            {
+                var from = new Vector2(box.center.x, lipY - ClimbInset);
+                float reach = Mathf.Abs(hook.center.x - from.x) + hook.size.x;
+
+                if (Physics2D.Raycast(from, new Vector2(Facing, 0f), GroundFilter, Rays, reach) > 0 &&
+                    Rays[0].distance > 0f)
+                    return Rays[0].point.x;
+
+                return hook.center.x;
+            }
+
+            bool HasRoomOnTop(Bounds box, Vector2 hullOnTop)
+            {
+                standBox = hullOnTop;
+
+                var standingSize = (Vector2)box.size - Vector2.one * (StepClearance * BothSides);
+
+                if (Physics2D.OverlapBox(hullOnTop, standingSize, 0f, GroundFilter, Overlaps) > 0)
+                {
+                    WhyNoClimb = ClimbRefusal.NoRoomOnTop;
+                    return false;
+                }
+
+                return true;
+            }
+
+            bool HasHeadroom(Bounds box, Vector2 hullOnTop)
+            {
+                float headroom = hullOnTop.y + box.extents.y - box.max.y;
+
+                headBox = new Vector2(box.center.x, box.max.y + headroom * Half);
+                headBoxSize = new Vector2(
+                    box.size.x * HeadroomCheckWidthFactor, Mathf.Max(0f, headroom));
+
+                if (headroom > 0f &&
+                    Physics2D.OverlapBox(headBox, headBoxSize, 0f, GroundFilter, Overlaps) > 0)
+                {
+                    WhyNoClimb = ClimbRefusal.NoHeadroom;
+                    return false;
+                }
+
+                return true;
+            }
+
+            bool FlyAndWatchForHazards(Vector2 launch, ArcSettings look)
+            {
+                float step = Mathf.Max(MinArcStep, look.Step);
+                Vector2 point = ArcStart;
                 Vector2 velocity = launch;
-
                 float travelled = 0f;
-                float flown = 0f;
-
-                bool crossed = false;
-                Collider2D met = null;
-
-                into.Add(point);
+                bool crossesHazard = false;
 
                 for (int i = 0; i < look.Steps && travelled < look.Distance; i++)
                 {
-                    float gravity = velocity.y < 0f
-                        ? BaseGravity * fallGravityMultiplier * floatiness
-                        : BaseGravity;
+                    velocity.y -= BaseGravity * step;
+                    Vector2 leg = velocity * step;
 
-                    velocity.y -= gravity * step;
+                    if (TryLandAlong(point, leg, ref crossesHazard))
+                        return crossesHazard;
 
-                    if (velocity.y < -terminal)
-                        velocity.y = -terminal;
-
-                    if (updraught != 0f)
-                        velocity.y = Mathf.MoveTowards(velocity.y, updraught, windGrip * step);
-
-                    Vector2 next = point + velocity * step;
-                    Vector2 leg = next - point;
-                    float length = leg.magnitude;
-
-                    if (length > Mathf.Epsilon)
-                    {
-                        int found = Physics2D.Raycast(point, leg / length, arcFilter, Rays, length);
-
-                        for (int hit = 0; hit < found; hit++)
-                        {
-                            Collider2D what = Rays[hit].collider;
-
-                            if ((groundLayers.value & (1 << what.gameObject.layer)) != 0)
-                            {
-                                end = new ArcEnd
-                                {
-                                    Point = Rays[hit].point,
-                                    Stopped = true,
-                                    Hazard = crossed,
-                                    What = crossed ? met : what,
-                                    Seconds = flown + step,
-                                };
-
-                                into.Add(end.Point);
-                                return into.Count;
-                            }
-
-                            if (crossed)
-                                continue;
-
-                            crossed = true;
-                            met = what;
-                        }
-                    }
-
-                    travelled += length;
-                    flown += step;
-                    point = next;
-                    into.Add(point);
+                    travelled += leg.magnitude;
+                    point += leg;
                 }
 
-                end = new ArcEnd { Point = point, Hazard = crossed, What = met, Seconds = flown };
-                return into.Count;
+                return crossesHazard;
+            }
+
+            bool TryLandAlong(Vector2 from, Vector2 leg, ref bool crossesHazard)
+            {
+                float length = leg.magnitude;
+
+                if (length <= Mathf.Epsilon)
+                    return false;
+
+                int found = Physics2D.Raycast(from, leg / length, arcFilter, Rays, length);
+
+                for (int hit = 0; hit < found; hit++)
+                {
+                    if (IsLayerInMask(Rays[hit].collider.gameObject.layer, groundLayers))
+                        return true;
+
+                    crossesHazard = true;
+                }
+
+                return false;
+            }
+
+            public void DrawGizmos(Vector2 origin)
+            {
+                DrawGroundProbe(origin);
+                DrawLedgeProbe(origin);
+
+                if (stepHeight <= 0f)
+                    return;
+
+                DrawStepProbe(origin);
+
+                if (climbProbeSize.y > 0f)
+                    DrawClimbProbe();
+
+                DrawRoomOnTop();
+            }
+
+            void DrawGroundProbe(Vector2 origin)
+            {
+                Gizmos.color = Color.cyan;
+                Gizmos.DrawWireCube(origin + groundCheckOffset, groundCheckSize);
+            }
+
+            void DrawLedgeProbe(Vector2 origin)
+            {
+                Gizmos.color = Color.yellow;
+                Vector2 probe = origin + groundCheckOffset + new Vector2(Facing * ledgeCheckAhead, 0f);
+                Gizmos.DrawLine(probe, probe + Vector2.down * ledgeCheckDepth);
+            }
+
+            void DrawStepProbe(Vector2 origin)
+            {
+                Gizmos.color = Color.green;
+                float soles = origin.y + groundCheckOffset.y + groundCheckSkin;
+                var stepProbe = new Vector2(origin.x + groundCheckOffset.x + Facing * stepReach, soles);
+                Gizmos.DrawLine(stepProbe, stepProbe + Vector2.up * stepHeight);
+            }
+
+            void DrawClimbProbe()
+            {
+                Gizmos.color = WhyNoClimb == ClimbRefusal.NoWall
+                    ? Color.red
+                    : ClimbProbeColour;
+
+                Gizmos.DrawWireCube(climbProbeBox, climbProbeSize);
+
+                if (hasFoundClimbFace)
+                    Gizmos.DrawLine(
+                        new Vector2(climbProbeBox.x - climbProbeSize.x, climbFaceY),
+                        new Vector2(climbProbeBox.x + climbProbeSize.x, climbFaceY));
+            }
+
+            void DrawRoomOnTop()
+            {
+                bool measured = WhyNoClimb == ClimbRefusal.None ||
+                                WhyNoClimb == ClimbRefusal.NoRoomOnTop ||
+                                WhyNoClimb == ClimbRefusal.NoHeadroom;
+
+                if (hull == null || !measured)
+                    return;
+
+                Gizmos.color = WhyNoClimb == ClimbRefusal.NoRoomOnTop
+                    ? Color.red
+                    : StandingRoomColour;
+
+                Gizmos.DrawWireCube(standBox, hull.bounds.size);
+
+                if (headBoxSize.y <= 0f)
+                    return;
+
+                Gizmos.color = WhyNoClimb == ClimbRefusal.NoHeadroom
+                    ? Color.red
+                    : HeadroomColour;
+
+                Gizmos.DrawWireCube(headBox, headBoxSize);
+            }
+
+            public enum ClimbRefusal
+            {
+                None,
+                NotStanding,
+                NoWall,
+                NothingOnTop,
+                TooTall,
+                NoRoomOnTop,
+                NoHeadroom,
             }
 
             public struct ArcSettings
@@ -1072,17 +1179,6 @@ namespace FallingWizard.Player
                 public float Step;
                 public int Steps;
                 public float Distance;
-            }
-
-            public struct ArcEnd
-            {
-                public Vector2 Point;
-                public bool Stopped;
-
-                public bool Hazard;
-                public Collider2D What;
-
-                public float Seconds;
             }
         }
     }

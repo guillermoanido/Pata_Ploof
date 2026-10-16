@@ -6,6 +6,13 @@ namespace FallingWizard.World
 {
     public abstract class Hazard : PlayerTrigger
     {
+        protected const float RunningOnly = 3f;
+
+        protected const float Epsilon = 0.0001f;
+
+        protected const float UnselectedGizmo = 0.5f;
+        protected const float SelectedGizmo = 1f;
+
         [Header("Hazard")]
         [Tooltip("Hazards are things you pass straight through that do something to you on the " +
                  "way, rather than things you bump into. Applied on Awake, so ticking this fixes " +
@@ -54,11 +61,9 @@ namespace FallingWizard.World
 
         [NonSerialized] float readyAt;
 
-        public void Disarm(float seconds) => readyAt = Time.time + Mathf.Max(0f, seconds);
-
         protected virtual bool IsDangerousNow => true;
 
-        protected abstract void Affect(PlayerLogic wizard);
+        protected override bool IsContinuous => everyStep;
 
         protected virtual void Awake()
         {
@@ -68,22 +73,39 @@ namespace FallingWizard.World
                 hitbox.isTrigger = passThrough;
         }
 
-        protected override bool Continuous => everyStep;
+        public void Disarm(float seconds) => readyAt = Time.time + Mathf.Max(0f, seconds);
+
+        protected abstract void Affect(PlayerLogic wizard);
 
         protected sealed override void OnPlayerEntered(PlayerCharacter wizard) => Catch(wizard);
 
         protected override void OnPlayerInside(PlayerCharacter wizard, float fixedDeltaTime) =>
             Catch(wizard);
 
+        protected bool CanAffect(PlayerCharacter wizard)
+        {
+            PlayerLogic logic = wizard.Logic;
+
+            return logic.health.IsAlive &&
+                   (affectsOnStaff || logic.State != PlayerState.OnStaff) &&
+                   (affectsRagdolled || logic.State != PlayerState.Ragdoll);
+        }
+
+        protected static Color MakeFaded(Color colour, float strength)
+        {
+            colour.a *= strength;
+            return colour;
+        }
+
         void Catch(PlayerCharacter wizard)
         {
-            if (Time.time < readyAt || !IsDangerousNow || !Allowed(wizard))
+            if (Time.time < readyAt || !IsDangerousNow || !CanAffect(wizard))
                 return;
 
             if (wizard.Logic.movement.ApproachSpeed < minimumSpeed)
                 return;
 
-            if (ignoresWalking && Walking(wizard))
+            if (ignoresWalking && IsWalking(wizard))
                 return;
 
             readyAt = Time.time + rearmDelay;
@@ -94,20 +116,11 @@ namespace FallingWizard.World
                 wizard.Logic.Hurt(damage);
         }
 
-        static bool Walking(PlayerCharacter wizard)
+        static bool IsWalking(PlayerCharacter wizard)
         {
             PlayerLogic logic = wizard.Logic;
 
-            return logic.Steering.Walk && logic.movement.IsGrounded;
-        }
-
-        protected bool Allowed(PlayerCharacter wizard)
-        {
-            PlayerLogic logic = wizard.Logic;
-
-            return logic.health.IsAlive &&
-                   (affectsOnStaff || logic.State != PlayerState.OnStaff) &&
-                   (affectsRagdolled || logic.State != PlayerState.Ragdoll);
+            return logic.Steering.IsWalking && logic.movement.IsGrounded;
         }
     }
 }

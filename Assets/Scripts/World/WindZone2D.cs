@@ -6,17 +6,12 @@ namespace FallingWizard.World
 {
     public class WindZone2D : Hazard
     {
-        const float Epsilon = 0.0001f;
-
         const float ArrowLengthPerBox = 0.25f;
         const float ArrowLengthOfZone = 0.4f;
         const float ArrowSpreadOfZone = 0.3f;
         const float ArrowHeadLength = 0.4f;
         const float ArrowHeadWidth = 0.25f;
         const int ArrowRows = 1;
-
-        const float UnselectedGizmo = 0.5f;
-        const float SelectedGizmo = 1f;
 
         static readonly Color ZoneColour = new Color(0.55f, 0.85f, 1f, 0.35f);
         static readonly Color ArrowColour = new Color(0.55f, 0.85f, 1f, 0.9f);
@@ -46,12 +41,9 @@ namespace FallingWizard.World
                  "which is what you want while laying a level out.")]
         public bool alwaysShowArrows = true;
 
-        protected override bool Continuous => true;
+        protected Vector2 WorldPush => TurnWithThisObject(push);
 
-        public Vector2 WorldPush => TurnedWithThisObject(push);
-
-        protected Vector2 TurnedWithThisObject(Vector2 direction) =>
-            transform.rotation * direction;
+        protected override bool IsContinuous => true;
 
         protected virtual void Reset()
         {
@@ -64,11 +56,14 @@ namespace FallingWizard.World
 
         protected override void OnPlayerInside(PlayerCharacter wizard, float fixedDeltaTime)
         {
-            if (!Allowed(wizard))
+            if (!CanAffect(wizard))
                 return;
 
             wizard.Logic.Push(WorldPush * Haste.WorldScale, rampup, groundScale);
         }
+
+        protected Vector2 TurnWithThisObject(Vector2 direction) =>
+            transform.rotation * direction;
 
         void OnDrawGizmos()
         {
@@ -87,9 +82,14 @@ namespace FallingWizard.World
 
             Bounds zone = shape.bounds;
 
-            Gizmos.color = Faded(ZoneColour, strength);
+            Gizmos.color = MakeFaded(ZoneColour, strength);
             Gizmos.DrawWireCube(zone.center, zone.size);
 
+            DrawArrowRows(zone, strength);
+        }
+
+        void DrawArrowRows(Bounds zone, float strength)
+        {
             Vector2 way = WorldPush.normalized;
             Vector2 across = new Vector2(-way.y, way.x);
 
@@ -99,26 +99,25 @@ namespace FallingWizard.World
                                      narrow * ArrowLengthOfZone);
             float spread = narrow * ArrowSpreadOfZone;
 
-            Gizmos.color = Faded(ArrowColour, strength);
+            Gizmos.color = MakeFaded(ArrowColour, strength);
 
             for (int row = -ArrowRows; row <= ArrowRows; row++)
             {
                 Vector2 middle = (Vector2)zone.center + across * (spread * row);
-                Vector2 tip = middle + way * length;
-
-                Gizmos.DrawLine(middle - way * length, tip);
-                Vector2 barb = tip - way * (length * ArrowHeadLength);
-                Vector2 flare = across * (length * ArrowHeadWidth);
-
-                Gizmos.DrawLine(tip, barb + flare);
-                Gizmos.DrawLine(tip, barb - flare);
+                DrawArrow(middle, way, across, length);
             }
         }
 
-        static Color Faded(Color colour, float strength)
+        static void DrawArrow(Vector2 middle, Vector2 way, Vector2 across, float length)
         {
-            colour.a *= strength;
-            return colour;
+            Vector2 tip = middle + way * length;
+
+            Gizmos.DrawLine(middle - way * length, tip);
+            Vector2 barb = tip - way * (length * ArrowHeadLength);
+            Vector2 flare = across * (length * ArrowHeadWidth);
+
+            Gizmos.DrawLine(tip, barb + flare);
+            Gizmos.DrawLine(tip, barb - flare);
         }
     }
 }

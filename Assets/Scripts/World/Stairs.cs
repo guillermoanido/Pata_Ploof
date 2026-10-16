@@ -1,12 +1,9 @@
 using FallingWizard.Player;
-using UnityEngine;
 
 namespace FallingWizard.World
 {
     public class Stairs : Hazard
     {
-        const float RunningOnly = 3f;
-
         const float TumbleCooldown = 1f;
 
         void Reset()
@@ -18,6 +15,6 @@ namespace FallingWizard.World
             everyStep = true;
         }
 
-        protected override void Affect(PlayerLogic wizard) => wizard.Trip();
+        protected override void Affect(PlayerLogic wizard) => wizard.TryTrip();
     }
 }

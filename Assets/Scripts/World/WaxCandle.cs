@@ -79,7 +79,9 @@ namespace FallingWizard.World
             float reach = dropPrefab != null ? dropPrefab.maxFallDistance : LongestFallShown;
             Vector3 landing = spout + Vector3.down * reach;
 
-            if (Physics2D.Raycast(spout, Vector2.down, GroundFilter(), Hits, reach) > 0)
+            ContactFilter2D ground = Layers.MakeSolidOnlyFilter(PickGroundLayers());
+
+            if (Physics2D.Raycast(spout, Vector2.down, ground, Hits, reach) > 0)
                 landing.y = Hits[0].point.y;
 
             Gizmos.color = SpoutColour;
@@ -87,19 +89,14 @@ namespace FallingWizard.World
             Gizmos.DrawLine(spout, landing);
         }
 
-        ContactFilter2D GroundFilter()
+        LayerMask PickGroundLayers()
         {
             LayerMask ground = Layers.GroundMask;
 
             if (dropPrefab != null)
                 ground = dropPrefab.groundLayers;
 
-            return new ContactFilter2D
-            {
-                useLayerMask = true,
-                layerMask = ground,
-                useTriggers = false,
-            };
+            return ground;
         }
     }
 }

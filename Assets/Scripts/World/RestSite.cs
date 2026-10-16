@@ -46,66 +46,70 @@ namespace FallingWizard.World
                  "switches itself off. Leave it empty and nothing changes when it is reached.")]
         public GameObject litLook;
 
-        public Vector2 RespawnPoint => (Vector2)transform.position + respawnOffset;
+        Vector2 RespawnPoint => (Vector2)transform.position + respawnOffset;
+
+        bool IsLive =>
+            Progress.IsCheckpointHere &&
+            (Progress.CheckpointPoint - RespawnPoint).sqrMagnitude < SamePlace * SamePlace;
 
         void Reset() => GetComponent<Collider2D>().isTrigger = true;
 
         void Awake() => ShowLitLook(IsLive);
 
-        void OnDrawGizmosSelected()
-        {
-            Gizmos.color = MarkerColour;
-            Gizmos.DrawWireSphere(RespawnPoint, MarkerRadius);
-        }
-
         protected override void OnPlayerEntered(PlayerCharacter wizard)
         {
-            if (Screens.ModalOpen)
+            if (Screens.IsModalOpen)
                 return;
 
-            bool first = !IsLive;
+            bool isNewlyReached = !IsLive;
 
             Progress.MarkCheckpoint(RespawnPoint);
 
             foreach (RestSite other in FindObjectsByType<RestSite>(FindObjectsSortMode.None))
                 other.ShowLitLook(other == this);
 
-            if (first && reachedEffect != null)
+            if (isNewlyReached && reachedEffect != null)
                 Instantiate(reachedEffect, transform.position, Quaternion.identity);
 
-            Offer(wizard);
+            OfferChoices(wizard);
         }
 
-        void Offer(PlayerCharacter wizard)
+        void ShowLitLook(bool lit)
+        {
+            if (litLook != null)
+                litLook.SetActive(lit);
+        }
+
+        void OfferChoices(PlayerCharacter wizard)
         {
             ChoiceScreen screen = ChoiceScreen.Open(Loc.Text(titleKey, title),
                                                     Loc.Text(blurbKey, blurb));
 
             screen.Status(Loc.Format(Loc.Keys.RestStatus, Progress.CarriedWisps, Progress.Wisps));
 
-            screen.Choice(Loc.Get(Loc.Keys.RestPressOn), () =>
-            {
-                wizard.Logic.RestoreHealth();
-                wizard.Logic.spellbook.ResetForRun();
-                screen.Close();
-            });
+            screen.Choice(Loc.Get(Loc.Keys.RestPressOn), () => RestAndPressOn(wizard, screen));
 
-            screen.Choice(Loc.Format(Loc.Keys.RestTurnBack, Progress.CarriedWisps), () =>
-                screen.CloseThen(() =>
-                {
-                    Progress.EndRun();
-                    SkillScreen.Open(Game.LoadFirstLevel);
-                }));
+            screen.Choice(Loc.Format(Loc.Keys.RestTurnBack, Progress.CarriedWisps),
+                          () => screen.CloseThen(TurnBack));
         }
 
-        bool IsLive =>
-            Progress.CheckpointIsHere &&
-            (Progress.CheckpointPoint - RespawnPoint).sqrMagnitude < SamePlace * SamePlace;
-
-        void ShowLitLook(bool lit)
+        void RestAndPressOn(PlayerCharacter wizard, ChoiceScreen screen)
         {
-            if (litLook != null)
-                litLook.SetActive(lit);
+            wizard.Logic.RestoreHealth();
+            wizard.Logic.spellbook.ResetForRun();
+            screen.Close();
+        }
+
+        void TurnBack()
+        {
+            Progress.EndRun();
+            SkillScreen.Open(Game.LoadFirstLevel);
+        }
+
+        void OnDrawGizmosSelected()
+        {
+            Gizmos.color = MarkerColour;
+            Gizmos.DrawWireSphere(RespawnPoint, MarkerRadius);
         }
     }
 }

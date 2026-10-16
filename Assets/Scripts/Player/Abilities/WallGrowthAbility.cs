@@ -6,7 +6,9 @@ namespace FallingWizard.Player
     [CreateAssetMenu(menuName = "Falling Wizard/Abilities/Wall Growth", fileName = "Wall Growth")]
     public class WallGrowthAbility : Ability
     {
-        const float MinGrown = 0.01f;
+        const float SmallestScale = 0.01f;
+
+        const float Half = 0.5f;
 
         [Header("Wall")]
         [Tooltip("Spawned as the block, and required - with this empty the spell will not cast. " +
@@ -47,7 +49,7 @@ namespace FallingWizard.Player
             wizard.State == PlayerState.Normal &&
             wizard.movement.IsGrounded &&
             wizard.spellbook.StateOf<Growth>(this).wall == null &&
-            FindCell(wizard, out _, out _);
+            TryFindCell(wizard, out _, out _);
 
         public override string WhyNot(PlayerLogic wizard)
         {
@@ -64,7 +66,7 @@ namespace FallingWizard.Player
             if (wizard.spellbook.StateOf<Growth>(this).wall != null)
                 return "your last block is still standing";
 
-            if (FindCell(wizard, out _, out _))
+            if (TryFindCell(wizard, out _, out _))
                 return null;
 
             return $"no lip within {reachInTiles} tiles ahead of you, or the tile past it is " +
@@ -73,19 +75,20 @@ namespace FallingWizard.Player
 
         public override bool OnCast(PlayerLogic wizard)
         {
-            if (!FindCell(wizard, out Vector2Int cell, out float top))
+            if (!TryFindCell(wizard, out Vector2Int cell, out float top))
                 return false;
 
             Growth growth = wizard.spellbook.StateOf<Growth>(this);
 
-            growth.wall = SpawnWall(new Vector2(TileGrid.CentreOf(cell).x, top - size.y * 0.5f));
-            growth.body = Body(growth.wall);
+            growth.wall = SpawnWall(new Vector2(TileGrid.CentreOf(cell).x, top - size.y * Half));
             growth.age = 0f;
 
-            if (growth.body != null)
-                growth.body.localPosition = Vector3.zero;
+            Transform body = FindBody(growth.wall);
 
-            Shape(growth, growTime <= 0f ? 1f : 0f);
+            if (body != null)
+                body.localPosition = Vector3.zero;
+
+            ScaleWall(growth, growTime <= 0f ? 1f : 0f);
             return true;
         }
 
@@ -98,16 +101,16 @@ namespace FallingWizard.Player
 
             growth.age += fixedDeltaTime;
 
-            Shape(growth, growTime <= 0f ? 1f : Mathf.Clamp01(growth.age / growTime));
+            ScaleWall(growth, growTime <= 0f ? 1f : Mathf.Clamp01(growth.age / growTime));
         }
 
-        public override void OnEnded(PlayerLogic wizard) => Clear(wizard);
+        public override void OnEnded(PlayerLogic wizard) => RemoveWall(wizard);
 
-        public override void OnRunReset(PlayerLogic wizard) => Clear(wizard);
+        public override void OnRunReset(PlayerLogic wizard) => RemoveWall(wizard);
 
-        public override void OnUnequipped(PlayerLogic wizard) => Clear(wizard);
+        public override void OnUnequipped(PlayerLogic wizard) => RemoveWall(wizard);
 
-        void Clear(PlayerLogic wizard)
+        void RemoveWall(PlayerLogic wizard)
         {
             Growth growth = wizard.spellbook.StateOf<Growth>(this);
 
@@ -115,33 +118,33 @@ namespace FallingWizard.Player
                 Destroy(growth.wall);
 
             growth.wall = null;
-            growth.body = null;
             growth.age = 0f;
         }
 
-        bool FindCell(PlayerLogic wizard, out Vector2Int cell, out float top)
+        bool TryFindCell(PlayerLogic wizard, out Vector2Int cell, out float top)
         {
-            PlayerLogic.Movement walk = wizard.movement;
-            Vector2Int stood = TileGrid.StandingCell(walk);
+            PlayerLogic.Movement movement = wizard.movement;
+            Vector2Int standingCell = TileGrid.StandingCell(movement);
 
             cell = default;
             top = 0f;
 
-            if (!TileGrid.FloorRowUnder(stood, walk.groundLayers, out int floorRow))
+            if (!TileGrid.TryFindFloorRowUnder(standingCell, movement.groundLayers, out int floorRow))
                 return false;
 
             for (int step = 0; step <= reachInTiles; step++)
             {
-                int x = stood.x + walk.Facing * step;
+                int column = standingCell.x + movement.Facing * step;
 
-                if (TileGrid.IsSolid(new Vector2Int(x, floorRow), walk.groundLayers))
+                if (TileGrid.IsSolid(new Vector2Int(column, floorRow), movement.groundLayers))
                     continue;
 
-                cell = new Vector2Int(x + walk.Facing * outFromEdge, floorRow + 1 + liftInTiles);
+                cell = new Vector2Int(column + movement.Facing * outFromEdge,
+                    floorRow + 1 + liftInTiles);
 
-                top = walk.Footing.y + (cell.y - floorRow);
+                top = movement.Footing.y + (cell.y - floorRow);
 
-                return TileGrid.IsFree(cell, walk.groundLayers);
+                return TileGrid.IsFree(cell, movement.groundLayers);
             }
 
             return false;
@@ -149,28 +152,27 @@ namespace FallingWizard.Player
 
         GameObject SpawnWall(Vector2 anchor)
         {
-            GameObject grown = Instantiate(wallPrefab, anchor, Quaternion.identity);
-            grown.name = displayName;
-            return grown;
+            GameObject wall = Instantiate(wallPrefab, anchor, Quaternion.identity);
+            wall.name = displayName;
+            return wall;
         }
 
-        static Transform Body(GameObject wall) =>
+        static Transform FindBody(GameObject wall) =>
             wall != null && wall.transform.childCount > 0 ? wall.transform.GetChild(0) : null;
 
-        void Shape(Growth growth, float grown)
+        void ScaleWall(Growth growth, float progress)
         {
             if (growth.wall == null)
                 return;
 
             growth.wall.transform.localScale = new Vector3(
-                Mathf.Max(MinGrown, size.x * grown),
-                Mathf.Max(MinGrown, size.y * grown), 1f);
+                Mathf.Max(SmallestScale, size.x * progress),
+                Mathf.Max(SmallestScale, size.y * progress), 1f);
         }
 
-        public class Growth
+        class Growth
         {
             public GameObject wall;
-            public Transform body;
             public float age;
         }
     }

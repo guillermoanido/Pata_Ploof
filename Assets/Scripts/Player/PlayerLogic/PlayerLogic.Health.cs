@@ -23,14 +23,13 @@ namespace FallingWizard.Player
             [NonSerialized] int baseHealth = LeastHealth;
             [NonSerialized] int bonus;
 
-            public int Max => baseHealth + bonus;
-            public int Bonus => bonus;
             public int Current { get; private set; }
             public bool IsAlive => Current > 0;
             public bool IsInvulnerable => Time.time < invulnerableUntil;
 
-            public int Room => Mathf.Max(0, maxBonusHearts - bonus);
-            public bool HasRoomToGrow => Room > 0;
+            public int RoomForBonusHearts => Mathf.Max(0, maxBonusHearts - bonus);
+
+            int Max => baseHealth + bonus;
 
             public void SetBaseHealth(int hearts)
             {

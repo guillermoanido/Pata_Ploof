@@ -1,7 +1,6 @@
 #if UNITY_EDITOR
 using System.Collections.Generic;
 using FallingWizard.Localization;
-using FallingWizard.UI;
 using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -35,9 +34,9 @@ namespace FallingWizard.EditorTools
         [MenuItem("Falling Wizard/Attach Localized Text To Menus")]
         static void Attach()
         {
-            int done = AttachInPrefab() + AttachInScene();
+            int labelsWired = AttachInPrefab() + AttachInScene();
 
-            Debug.Log($"Localized Text: {done} label(s) wired up. Anything already carrying one " +
+            Debug.Log($"Localized Text: {labelsWired} label(s) wired up. Anything already carrying one " +
                       "was left alone, so this is safe to run again. What each label reads is " +
                       $"set in {TextBook.AssetPath}, not here.");
         }
@@ -52,13 +51,13 @@ namespace FallingWizard.EditorTools
                 return 0;
             }
 
-            int done = Wire(root);
+            int labelsWired = Wire(root);
 
-            if (done > 0)
+            if (labelsWired > 0)
                 PrefabUtility.SaveAsPrefabAsset(root, PauseMenuPrefab);
 
             PrefabUtility.UnloadPrefabContents(root);
-            return done;
+            return labelsWired;
         }
 
         static int AttachInScene()
@@ -71,21 +70,21 @@ namespace FallingWizard.EditorTools
                 return 0;
             }
 
-            int done = 0;
+            int labelsWired = 0;
 
             foreach (GameObject root in scene.GetRootGameObjects())
-                done += Wire(root);
+                labelsWired += Wire(root);
 
-            if (done > 0)
+            if (labelsWired > 0)
                 EditorSceneManager.SaveScene(scene);
 
             EditorSceneManager.CloseScene(scene, true);
-            return done;
+            return labelsWired;
         }
 
         static int Wire(GameObject root)
         {
-            int done = 0;
+            int labelsWired = 0;
 
             foreach (TMP_Text label in root.GetComponentsInChildren<TMP_Text>(true))
             {
@@ -96,10 +95,10 @@ namespace FallingWizard.EditorTools
                     continue;
 
                 label.gameObject.AddComponent<LocalizedText>().key = key;
-                done++;
+                labelsWired++;
             }
 
-            return done;
+            return labelsWired;
         }
     }
 }

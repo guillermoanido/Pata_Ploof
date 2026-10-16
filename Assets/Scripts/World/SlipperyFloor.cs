@@ -6,12 +6,8 @@ namespace FallingWizard.World
 {
     public class SlipperyFloor : Hazard
     {
-        const float Epsilon = 0.0001f;
-
-        const float UnselectedGizmo = 0.5f;
-        const float SelectedGizmo = 1f;
-
         const int SkidMarks = 6;
+        const int SkidRows = 2;
         const float SkidLengthOfZone = 0.3f;
         const float SkidLowRow = 0.25f;
         const float SkidHighRow = 0.6f;
@@ -43,9 +39,9 @@ namespace FallingWizard.World
                  "grip, so ice draws long streaks and a damp flagstone draws stubs.")]
         public bool alwaysShowSkids = true;
 
-        [NonSerialized] bool warnedAboutSpeedGate;
+        [NonSerialized] bool hasWarnedAboutSpeedGate;
 
-        protected override bool Continuous => true;
+        protected override bool IsContinuous => true;
 
         void Reset()
         {
@@ -67,7 +63,7 @@ namespace FallingWizard.World
 
         protected override void OnPlayerInside(PlayerCharacter wizard, float fixedDeltaTime)
         {
-            if (!Allowed(wizard))
+            if (!CanAffect(wizard))
                 return;
 
             wizard.Logic.Slicken(grip);
@@ -75,10 +71,10 @@ namespace FallingWizard.World
 
         void WarnAboutSpeedGate()
         {
-            if (minimumSpeed <= 0f || warnedAboutSpeedGate)
+            if (minimumSpeed <= 0f || hasWarnedAboutSpeedGate)
                 return;
 
-            warnedAboutSpeedGate = true;
+            hasWarnedAboutSpeedGate = true;
 
             Debug.LogWarning(
                 $"{name}: SlipperyFloor.minimumSpeed is {minimumSpeed}, but a slippery floor " +
@@ -106,7 +102,7 @@ namespace FallingWizard.World
 
             Bounds zone = shape.bounds;
 
-            Gizmos.color = Faded(ZoneColour, strength);
+            Gizmos.color = MakeFaded(ZoneColour, strength);
             Gizmos.DrawWireCube(zone.center, zone.size);
 
             float slide = 1f - Mathf.Clamp01(grip);
@@ -114,24 +110,23 @@ namespace FallingWizard.World
             if (slide <= Epsilon)
                 return;
 
+            DrawSkidMarks(zone, slide, strength);
+        }
+
+        static void DrawSkidMarks(Bounds zone, float slide, float strength)
+        {
             float length = zone.size.x * SkidLengthOfZone * slide;
             float spacing = zone.size.x / (SkidMarks + 1);
 
-            Gizmos.color = Faded(SkidColour, strength);
+            Gizmos.color = MakeFaded(SkidColour, strength);
 
             for (int i = 1; i <= SkidMarks; i++)
             {
-                float lift = zone.size.y * (i % 2 == 0 ? SkidHighRow : SkidLowRow);
+                float lift = zone.size.y * (i % SkidRows == 0 ? SkidHighRow : SkidLowRow);
 
                 var from = new Vector2(zone.min.x + spacing * i, zone.min.y + lift);
                 Gizmos.DrawLine(from, from + Vector2.right * length);
             }
-        }
-
-        static Color Faded(Color colour, float strength)
-        {
-            colour.a *= strength;
-            return colour;
         }
     }
 }

@@ -4,12 +4,21 @@ using UnityEngine.InputSystem;
 
 namespace FallingWizard.Core
 {
-    [DefaultExecutionOrder(-200)]
+    [DefaultExecutionOrder(RunBeforeEverythingElse)]
     public class Cheats : MonoBehaviour
     {
-        static Cheats instance;
+        const int RunBeforeEverythingElse = -200;
 
-        public static bool Active { get; private set; }
+        const int LabelFontSize = 18;
+        const float LabelWidth = 300f;
+        const float LabelHeight = 30f;
+        const float LabelTopMargin = 8f;
+        const float LabelRightMargin = 20f;
+
+        static readonly Color LabelColour = new Color(1f, 0.82f, 0.25f);
+
+        static Cheats instance;
+        static bool isActive;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Install()
@@ -17,57 +26,60 @@ namespace FallingWizard.Core
             if (instance != null)
                 return;
 
-            var go = new GameObject("Cheats") { hideFlags = HideFlags.HideAndDontSave };
-            instance = go.AddComponent<Cheats>();
-            DontDestroyOnLoad(go);
+            var cheatsObject = new GameObject("Cheats") { hideFlags = HideFlags.HideAndDontSave };
+            instance = cheatsObject.AddComponent<Cheats>();
+            DontDestroyOnLoad(cheatsObject);
         }
 
         void Update()
         {
-            Keyboard keys = Keyboard.current;
+            Keyboard keyboard = Keyboard.current;
 
-            if (keys != null && keys.mKey.wasPressedThisFrame)
+            if (keyboard != null && keyboard.mKey.wasPressedThisFrame)
                 Toggle();
 
-            if (!Active)
-                return;
-
-            PlayerCharacter wizard = PlayerCharacter.Instance;
-
-            if (wizard != null)
-                wizard.Logic.Invulnerable = true;
-        }
-
-        void Toggle()
-        {
-            Active = !Active;
-            Progress.FreeSpending = Active;
-
-            PlayerCharacter wizard = PlayerCharacter.Instance;
-
-            if (wizard != null)
-                wizard.Logic.Invulnerable = Active;
-
-            Debug.Log(Active
-                ? "CHEATS ON - god mode, and every wisp cost is free. Press M again to turn them off."
-                : "CHEATS OFF - damage and wisp costs are back to normal.");
+            if (isActive)
+                SetWizardInvulnerable(true);
         }
 
         void OnGUI()
         {
-            if (!Active)
+            if (!isActive)
                 return;
 
             var style = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 18,
+                fontSize = LabelFontSize,
                 fontStyle = FontStyle.Bold,
                 alignment = TextAnchor.UpperRight,
             };
 
-            style.normal.textColor = new Color(1f, 0.82f, 0.25f);
+            style.normal.textColor = LabelColour;
 
-            GUI.Label(new Rect(Screen.width - 320f, 8f, 300f, 30f), "CHEATS ON  (M)", style);
+            var area = new Rect(Screen.width - (LabelWidth + LabelRightMargin), LabelTopMargin,
+                                LabelWidth, LabelHeight);
+
+            GUI.Label(area, "CHEATS ON  (M)", style);
+        }
+
+        void Toggle()
+        {
+            isActive = !isActive;
+            Progress.IsSpendingFree = isActive;
+
+            SetWizardInvulnerable(isActive);
+
+            Debug.Log(isActive
+                ? "CHEATS ON - god mode, and every wisp cost is free. Press M again to turn them off."
+                : "CHEATS OFF - damage and wisp costs are back to normal.");
+        }
+
+        void SetWizardInvulnerable(bool invulnerable)
+        {
+            PlayerCharacter wizard = PlayerCharacter.Instance;
+
+            if (wizard != null)
+                wizard.Logic.Invulnerable = invulnerable;
         }
     }
 }

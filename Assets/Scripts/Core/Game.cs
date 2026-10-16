@@ -5,21 +5,23 @@ namespace FallingWizard.Core
 {
     public static class Game
     {
-        public const string MainMenuScene = "Main Menu";
-        public const string CutsceneScene = "Cutscene";
         public const string FirstLevelScene = "Level 1";
         public const string LevelSelectScene = "Level Select";
 
+        const string MainMenuScene = "Main Menu";
+        const string CutsceneScene = "Cutscene";
+
         public static bool IsPaused { get; private set; }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetOnPlay() => ClearPause();
 
         public static void SetPaused(bool paused)
         {
             if (IsPaused == paused)
                 return;
 
-            IsPaused = paused;
-            Time.timeScale = paused ? 0f : 1f;
-            AudioListener.pause = paused;
+            ApplyPause(paused);
         }
 
         public static void LoadMainMenu() => Load(MainMenuScene);
@@ -68,14 +70,13 @@ namespace FallingWizard.Core
             SceneManager.LoadScene(sceneName);
         }
 
-        static void ClearPause()
-        {
-            IsPaused = false;
-            Time.timeScale = 1f;
-            AudioListener.pause = false;
-        }
+        static void ClearPause() => ApplyPause(false);
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetOnPlay() => ClearPause();
+        static void ApplyPause(bool paused)
+        {
+            IsPaused = paused;
+            Time.timeScale = paused ? 0f : 1f;
+            AudioListener.pause = paused;
+        }
     }
 }

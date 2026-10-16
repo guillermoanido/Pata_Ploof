@@ -15,7 +15,7 @@ namespace FallingWizard.World
 
         protected override StaysTaken StaysTaken => StaysTaken.OnceBanked;
 
-        protected override bool Take(PlayerCharacter wizard)
+        protected override bool TryTake(PlayerCharacter wizard)
         {
             Progress.CarryWisps(amount);
             return true;

@@ -44,22 +44,15 @@ namespace FallingWizard.World
 
         [NonSerialized] Rigidbody2D body;
         [NonSerialized] float hungFor;
-        [NonSerialized] float fallen;
-        [NonSerialized] bool falling;
-        [NonSerialized] bool gone;
+        [NonSerialized] float distanceFallen;
+        [NonSerialized] bool isFalling;
+        [NonSerialized] bool isGone;
 
-        public bool IsFalling => falling;
+        protected override bool IsDangerousNow => isFalling;
 
-        protected override bool IsDangerousNow => IsFalling;
+        protected override bool IsContinuous => true;
 
-        protected override bool Continuous => true;
-
-        ContactFilter2D GroundFilter => new ContactFilter2D
-        {
-            useLayerMask = true,
-            layerMask = groundLayers,
-            useTriggers = false,
-        };
+        ContactFilter2D GroundFilter => Layers.MakeSolidOnlyFilter(groundLayers);
 
         void Reset()
         {
@@ -67,9 +60,9 @@ namespace FallingWizard.World
             affectsOnStaff = true;
             affectsRagdolled = true;
 
-            var rigidBody = GetComponent<Rigidbody2D>();
-            rigidBody.bodyType = RigidbodyType2D.Kinematic;
-            rigidBody.interpolation = RigidbodyInterpolation2D.Interpolate;
+            var dropBody = GetComponent<Rigidbody2D>();
+            dropBody.bodyType = RigidbodyType2D.Kinematic;
+            dropBody.interpolation = RigidbodyInterpolation2D.Interpolate;
         }
 
         protected override void Awake()
@@ -81,10 +74,10 @@ namespace FallingWizard.World
 
         void FixedUpdate()
         {
-            if (gone)
+            if (isGone)
                 return;
 
-            if (!falling)
+            if (!isFalling)
             {
                 HangOneStep();
                 return;
@@ -93,36 +86,36 @@ namespace FallingWizard.World
             FallOneStep();
         }
 
+        protected override void Affect(PlayerLogic wizard) => Splash(body.position);
+
         void HangOneStep()
         {
             hungFor += Haste.FixedDeltaTime;
 
             if (hungFor >= hangSeconds)
-                falling = true;
+                isFalling = true;
         }
 
         void FallOneStep()
         {
-            float step = fallSpeed * Haste.FixedDeltaTime;
+            float distance = fallSpeed * Haste.FixedDeltaTime;
 
-            if (Physics2D.Raycast(body.position, Vector2.down, GroundFilter, Hits, step) > 0)
+            if (Physics2D.Raycast(body.position, Vector2.down, GroundFilter, Hits, distance) > 0)
             {
                 Splash(Hits[0].point);
                 return;
             }
 
-            body.MovePosition(body.position + Vector2.down * step);
-            fallen += step;
+            body.MovePosition(body.position + Vector2.down * distance);
+            distanceFallen += distance;
 
-            if (fallen > maxFallDistance)
+            if (distanceFallen > maxFallDistance)
                 Vanish();
         }
 
-        protected override void Affect(PlayerLogic wizard) => Splash(body.position);
-
         void Splash(Vector2 point)
         {
-            if (gone)
+            if (isGone)
                 return;
 
             if (splashEffect != null)
@@ -133,8 +126,8 @@ namespace FallingWizard.World
 
         void Vanish()
         {
-            gone = true;
-            falling = false;
+            isGone = true;
+            isFalling = false;
             Destroy(gameObject);
         }
     }

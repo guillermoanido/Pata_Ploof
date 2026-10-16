@@ -46,7 +46,7 @@ namespace FallingWizard.World
         [NonSerialized] Rigidbody2D body;
         [NonSerialized] Vector2 start;
         [NonSerialized] float along;
-        [NonSerialized] bool headingOut = true;
+        [NonSerialized] bool isHeadingOut = true;
         [NonSerialized] float pauseLeft;
 
         float PathLength => Mathf.Max(ShortestPath, travel.magnitude);
@@ -59,9 +59,9 @@ namespace FallingWizard.World
 
         void Reset()
         {
-            var rigidbody2d = GetComponent<Rigidbody2D>();
-            rigidbody2d.bodyType = RigidbodyType2D.Kinematic;
-            rigidbody2d.interpolation = RigidbodyInterpolation2D.Interpolate;
+            var platformBody = GetComponent<Rigidbody2D>();
+            platformBody.bodyType = RigidbodyType2D.Kinematic;
+            platformBody.interpolation = RigidbodyInterpolation2D.Interpolate;
 
             gameObject.layer = Layers.Ground;
         }
@@ -72,7 +72,7 @@ namespace FallingWizard.World
             start = body.position;
 
             along = startAlong;
-            headingOut = along < 1f;
+            isHeadingOut = along < 1f;
 
             PlaceAt(PointAlong(along));
             WarnIfNotOnGround();
@@ -97,7 +97,7 @@ namespace FallingWizard.World
                 return;
             }
 
-            float end = headingOut ? 1f : 0f;
+            float end = isHeadingOut ? 1f : 0f;
             along = Mathf.MoveTowards(along, end, speed * Haste.FixedDeltaTime / PathLength);
 
             if (Mathf.Approximately(along, end))
@@ -106,7 +106,7 @@ namespace FallingWizard.World
 
         void TurnAround()
         {
-            headingOut = !headingOut;
+            isHeadingOut = !isHeadingOut;
             pauseLeft = pauseSeconds;
         }
 

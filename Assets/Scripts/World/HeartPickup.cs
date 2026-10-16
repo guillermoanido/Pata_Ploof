@@ -21,9 +21,9 @@ namespace FallingWizard.World
 
         protected override StaysTaken StaysTaken => StaysTaken.ForGood;
 
-        protected override bool Take(PlayerCharacter wizard)
+        protected override bool TryTake(PlayerCharacter wizard)
         {
-            if (wizard.Logic.GrowHeart(hearts))
+            if (wizard.Logic.TryGrowHeart(hearts))
                 return true;
 
             Progress.CarryWisps(wispsIfFull);

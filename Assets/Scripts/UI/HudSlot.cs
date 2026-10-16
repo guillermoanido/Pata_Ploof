@@ -27,8 +27,8 @@ namespace FallingWizard.UI
 
         [NonSerialized] InputAction shownAction;
         [NonSerialized] string shownScheme;
-        [NonSerialized] bool shownWanted;
-        [NonSerialized] bool everShown;
+        [NonSerialized] bool wasWanted;
+        [NonSerialized] bool hasShownBefore;
         [NonSerialized] Sprite emptyIcon;
 
         void Awake()
@@ -37,72 +37,108 @@ namespace FallingWizard.UI
                 emptyIcon = icon.sprite;
         }
 
-        public void Show(PlayerLogic.Spellbook.Slot spell, PlayerHud hud, PlayerLogic wizard)
+        public void Show(PlayerLogic.Spellbook.Slot slot, PlayerHud hud, PlayerLogic wizard)
         {
-            bool filled = spell.Ability != null;
+            bool filled = slot.Ability != null;
 
-            ShowButton(spell, hud.showButtons);
+            ShowButton(slot, hud.showButtons);
 
             gameObject.SetActive(filled || hud.showEmptySlots);
 
             if (!gameObject.activeSelf)
                 return;
 
-            if (icon != null)
-            {
-                icon.sprite = filled ? spell.Ability.IconFor(wizard) : emptyIcon;
+            ShowIcon(slot, hud, wizard, filled);
+            ShowUses(slot, filled);
+            ShowCharge(slot, hud, wizard, filled);
+        }
 
-                Color state = !filled ? hud.emptyTint
-                            : spell.IsReady ? hud.readyTint
-                            : hud.notReadyTint;
+        public void ShowButton(PlayerLogic.Spellbook.Slot slot, bool show)
+        {
+            if (button == null)
+                return;
 
-                icon.color = filled ? state * spell.Ability.IconTintFor(wizard) : state;
-            }
+            bool passive = slot.Ability != null && slot.Ability.IsPassive;
+            bool wanted = show && slot.Action != null && !passive;
+            string scheme = Core.Controls.Scheme;
 
-            if (uses != null)
-            {
-                bool counted = filled && spell.Ability.usesPerLevel > 0;
+            if (IsAlreadyShowing(wanted, slot.Action, scheme))
+                return;
 
-                uses.enabled = counted;
-                uses.text = counted ? spell.UsesLeft.ToString() : string.Empty;
-            }
+            hasShownBefore = true;
+            wasWanted = wanted;
+            shownAction = slot.Action;
+            shownScheme = scheme;
 
+            button.enabled = wanted;
+
+            button.text = wanted ? Core.Controls.Glyph(slot.Action) : string.Empty;
+        }
+
+        void ShowIcon(PlayerLogic.Spellbook.Slot slot, PlayerHud hud, PlayerLogic wizard,
+            bool filled)
+        {
+            if (icon == null)
+                return;
+
+            icon.sprite = filled ? slot.Ability.IconFor(wizard) : emptyIcon;
+
+            Color tint = PickIconTint(slot, hud, filled);
+
+            icon.color = filled ? tint * slot.Ability.IconTintFor(wizard) : tint;
+        }
+
+        Color PickIconTint(PlayerLogic.Spellbook.Slot slot, PlayerHud hud, bool filled)
+        {
+            if (!filled)
+                return hud.emptyTint;
+
+            if (slot.IsReady)
+                return hud.readyTint;
+
+            return hud.notReadyTint;
+        }
+
+        void ShowUses(PlayerLogic.Spellbook.Slot slot, bool filled)
+        {
+            if (uses == null)
+                return;
+
+            bool counted = filled && slot.Ability.usesPerLevel > 0;
+
+            uses.enabled = counted;
+            uses.text = counted ? slot.UsesLeft.ToString() : string.Empty;
+        }
+
+        void ShowCharge(PlayerLogic.Spellbook.Slot slot, PlayerHud hud, PlayerLogic wizard,
+            bool filled)
+        {
             if (charge == null)
                 return;
 
-            float own = filled ? spell.Ability.ChargeFor(wizard) : -1f;
-            bool winding = own >= 0f;
+            float windup = filled ? slot.Ability.ChargeFor(wizard) : Ability.NotCharging;
+            bool winding = windup >= 0f;
 
-            float fill = winding ? own
-                       : spell.IsLit ? spell.LitProgress
-                       : spell.CooldownLeft > 0f ? spell.CooldownProgress
-                       : 0f;
+            float fill = winding ? windup : MeasureRunOrCooldown(slot);
 
             charge.color = winding ? hud.windupTint : hud.chargeTint;
             charge.enabled = filled && fill > 0f;
             charge.fillAmount = fill;
         }
 
-        public void ShowButton(PlayerLogic.Spellbook.Slot spell, bool show)
+        float MeasureRunOrCooldown(PlayerLogic.Spellbook.Slot slot)
         {
-            if (button == null)
-                return;
+            if (slot.IsLit)
+                return slot.LitProgress;
 
-            bool passive = spell.Ability != null && spell.Ability.IsPassive;
-            bool wanted = show && spell.Action != null && !passive;
-            string scheme = Core.Controls.Scheme;
+            if (slot.CooldownLeft > 0f)
+                return slot.CooldownProgress;
 
-            if (everShown && wanted == shownWanted && spell.Action == shownAction && scheme == shownScheme)
-                return;
-
-            everShown = true;
-            shownWanted = wanted;
-            shownAction = spell.Action;
-            shownScheme = scheme;
-
-            button.enabled = wanted;
-
-            button.text = wanted ? Core.Controls.Glyph(spell.Action) : string.Empty;
+            return 0f;
         }
+
+        bool IsAlreadyShowing(bool wanted, InputAction action, string scheme) =>
+            hasShownBefore && wanted == wasWanted && action == shownAction &&
+            scheme == shownScheme;
     }
 }

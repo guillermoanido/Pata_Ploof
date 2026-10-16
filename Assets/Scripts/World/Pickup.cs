@@ -11,6 +11,8 @@ namespace FallingWizard.World
     {
         const float KeySteps = 4f;
 
+        const float FullCircle = Mathf.PI * 2f;
+
         [Header("Identity")]
         [Tooltip("Leave empty and this pickup is remembered by where it stands, which survives " +
                  "renaming it and re-parenting it. Moving it makes it a new pickup. Fill it in " +
@@ -38,9 +40,16 @@ namespace FallingWizard.World
 
         protected abstract StaysTaken StaysTaken { get; }
 
-        protected abstract bool Take(PlayerCharacter wizard);
+        string Key
+        {
+            get
+            {
+                if (key == null)
+                    key = BuildKey();
 
-        public string Key => key ??= NameIt();
+                return key;
+            }
+        }
 
         void Reset() => GetComponent<Collider2D>().isTrigger = true;
 
@@ -60,13 +69,13 @@ namespace FallingWizard.World
             if (visual == null || bobHeight <= 0f || bobSpeed <= 0f)
                 return;
 
-            float rise = Mathf.Sin(Time.time * bobSpeed * Mathf.PI * 2f) * bobHeight;
+            float rise = Mathf.Sin(Time.time * bobSpeed * FullCircle) * bobHeight;
             visual.localPosition = restingPoint + new Vector3(0f, rise, 0f);
         }
 
         protected sealed override void OnPlayerEntered(PlayerCharacter wizard)
         {
-            if (!wizard.Logic.health.IsAlive || !Take(wizard))
+            if (!wizard.Logic.health.IsAlive || !TryTake(wizard))
                 return;
 
             Progress.MarkFound(Key, StaysTaken);
@@ -77,7 +86,9 @@ namespace FallingWizard.World
             Destroy(gameObject);
         }
 
-        string NameIt()
+        protected abstract bool TryTake(PlayerCharacter wizard);
+
+        string BuildKey()
         {
             string scene = SceneManager.GetActiveScene().name;
 

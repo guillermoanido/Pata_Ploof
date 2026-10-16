@@ -20,17 +20,41 @@ namespace FallingWizard.Localization
         const string EnglishCode = "en";
         const string SpanishCode = "es";
 
-        public static event Action Changed;
+        static readonly HashSet<string> WarnedKeys = new HashSet<string>();
 
-        static readonly HashSet<string> Warned = new HashSet<string>();
+        public static event Action Changed;
 
         public static Language Language { get; private set; } = Language.English;
 
-        public static string NameOf(Language language) =>
-            TextBook.TryFind(LanguageNamePrefix + language.ToString().ToLowerInvariant(),
-                             language, out string name)
-                ? name
-                : language.ToString();
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetOnPlay()
+        {
+            Changed = null;
+            WarnedKeys.Clear();
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        static void Load()
+        {
+            if (!GameSettings.IsLoaded)
+                GameSettings.Load();
+
+            string saved = GameSettings.Language;
+
+            Language = string.IsNullOrEmpty(saved) ? ReadSystemLanguage() : ParseLanguageCode(saved);
+
+            TextBook.Load();
+        }
+
+        public static string NameOf(Language language)
+        {
+            string key = LanguageNamePrefix + language.ToString().ToLowerInvariant();
+
+            if (TextBook.TryFind(key, language, out string name))
+                return name;
+
+            return language.ToString();
+        }
 
         public static void Set(Language language)
         {
@@ -38,9 +62,9 @@ namespace FallingWizard.Localization
                 return;
 
             Language = language;
-            Warned.Clear();
+            WarnedKeys.Clear();
 
-            GameSettings.Language = CodeFor(language);
+            GameSettings.Language = GetLanguageCode(language);
             GameSettings.Save();
 
             Changed?.Invoke();
@@ -51,7 +75,7 @@ namespace FallingWizard.Localization
             if (string.IsNullOrEmpty(key))
                 return string.Empty;
 
-            if (Find(key, out string text))
+            if (TryFind(key, out string text))
                 return text;
 
             Warn(key, $"Nothing in {TextBook.AssetPath} is keyed '{key}', so the key itself is " +
@@ -63,7 +87,7 @@ namespace FallingWizard.Localization
 
         public static string Text(string key, string fallback)
         {
-            if (!string.IsNullOrEmpty(key) && Find(key, out string text))
+            if (!string.IsNullOrEmpty(key) && TryFind(key, out string text))
                 return text;
 
             return fallback;
@@ -83,9 +107,26 @@ namespace FallingWizard.Localization
             return Fill(key, english, values) ?? english;
         }
 
-        static bool Find(string key, out string text) =>
+        static Language ReadSystemLanguage() =>
+            Application.systemLanguage == SystemLanguage.Spanish
+                ? Language.Spanish
+                : Language.English;
+
+        static Language ParseLanguageCode(string code) =>
+            code == SpanishCode ? Language.Spanish : Language.English;
+
+        static string GetLanguageCode(Language language) =>
+            language == Language.Spanish ? SpanishCode : EnglishCode;
+
+        static bool TryFind(string key, out string text) =>
             TextBook.TryFind(key, Language, out text) ||
             TextBook.TryFind(key, Language.English, out text);
+
+        static void Warn(string key, string message)
+        {
+            if (WarnedKeys.Add(key))
+                Debug.LogWarning(message);
+        }
 
         static string Fill(string key, string pattern, object[] values)
         {
@@ -100,43 +141,6 @@ namespace FallingWizard.Localization
                           $"number it may use is {{{values.Length - 1}}}.");
                 return null;
             }
-        }
-
-        static void Warn(string key, string message)
-        {
-            if (Warned.Add(key))
-                Debug.LogWarning(message);
-        }
-
-        static string CodeFor(Language language) =>
-            language == Language.Spanish ? SpanishCode : EnglishCode;
-
-        static Language FromCode(string code) =>
-            code == SpanishCode ? Language.Spanish : Language.English;
-
-        static Language FromSystem() =>
-            Application.systemLanguage == SystemLanguage.Spanish
-                ? Language.Spanish
-                : Language.English;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        public static void Load()
-        {
-            if (!GameSettings.Loaded)
-                GameSettings.Load();
-
-            string saved = GameSettings.Language;
-
-            Language = string.IsNullOrEmpty(saved) ? FromSystem() : FromCode(saved);
-
-            TextBook.Load();
-        }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void Reset()
-        {
-            Changed = null;
-            Warned.Clear();
         }
 
         public static class Keys

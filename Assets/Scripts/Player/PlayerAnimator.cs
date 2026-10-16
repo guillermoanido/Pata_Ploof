@@ -2,9 +2,11 @@ using UnityEngine;
 
 namespace FallingWizard.Player
 {
-    [DefaultExecutionOrder(50)]
+    [DefaultExecutionOrder(RunAfterTheWizard)]
     public class PlayerAnimator : MonoBehaviour
     {
+        const int RunAfterTheWizard = 50;
+
         public const int ModeGround = 0;
         public const int ModeStaff = 1;
         public const int ModeRagdoll = 2;
@@ -39,10 +41,10 @@ namespace FallingWizard.Player
         Animator animator;
 
         int lastHealth;
-        int variant;
+        int chosenRagdollVariant;
         bool wasOnStaff;
         bool wasRagdolling;
-        bool wasRagdollGrounded;
+        bool wasDownOnTheFloor;
 
         void Awake()
         {
@@ -70,87 +72,17 @@ namespace FallingWizard.Player
         void Update()
         {
             PlayerLogic wizard = character.Logic;
-            PlayerLogic.Movement walk = wizard.movement;
 
             ShowHealth(wizard.health);
 
             if (animator == null)
                 return;
 
-            int mode = !wizard.health.IsAlive ? ModeDead
-                     : wizard.State == PlayerState.Ragdoll ? ModeRagdoll
-                     : wizard.State == PlayerState.OnStaff ? ModeStaff
-                     : ModeGround;
+            int mode = ChooseMode(wizard);
 
-            bool grounded = wizard.State != PlayerState.OnVine && walk.IsGrounded;
-            bool moving = mode == ModeGround && grounded && walk.HorizontalSpeed > standStillSpeed;
-
-            bool walking = wizard.Steering.Walk;
-
-            animator.SetInteger(ModeId, mode);
-            animator.SetBool(GroundedId, grounded);
-            animator.SetBool(MovingId, moving);
-            animator.SetBool(WalkingId, walking);
-            animator.SetFloat(SpeedId, CycleRate(wizard, walk, walking));
-            animator.SetFloat(ClimbRateId, ClimbRate(wizard, mode));
-
+            SetAnimatorParameters(wizard, mode);
             WatchForAClimbStarting(wizard, mode);
-            WatchForATumble(mode, walk);
-        }
-
-        float CycleRate(PlayerLogic wizard, PlayerLogic.Movement walk, bool walking)
-        {
-            float top = (walking ? walk.walkSpeed : walk.runSpeed) * wizard.Stats.MoveSpeedMultiplier;
-
-            if (top <= Mathf.Epsilon)
-                return 1f;
-
-            return Mathf.Clamp(walk.HorizontalSpeed / top, cycleRateRange.x, cycleRateRange.y);
-        }
-
-        float ClimbRate(PlayerLogic wizard, int mode)
-        {
-            if (mode != ModeStaff || !wizard.HasPole)
-                return 0f;
-
-            Staff.Pole pole = wizard.Pole;
-            float lean = wizard.Steering.Lean;
-
-            if (Mathf.Abs(lean) <= pole.leanThreshold)
-                return 0f;
-
-            if ((lean > 0f && pole.AtTop) || (lean < 0f && pole.AtBottom))
-                return 0f;
-
-            return Mathf.Sign(lean);
-        }
-
-        void WatchForAClimbStarting(PlayerLogic wizard, int mode)
-        {
-            bool onStaff = mode == ModeStaff;
-
-            if (onStaff && !wasOnStaff)
-                animator.SetTrigger(wizard.HasPole && wizard.Pole.IsClimbing
-                    ? ClimbUpId
-                    : ClimbDownId);
-
-            wasOnStaff = onStaff;
-        }
-
-        void WatchForATumble(int mode, PlayerLogic.Movement walk)
-        {
-            bool ragdolling = mode == ModeRagdoll;
-
-            bool downOnTheFloor = ragdolling && walk.IsGrounded;
-
-            if ((ragdolling && !wasRagdolling) || (downOnTheFloor && !wasRagdollGrounded))
-            {
-                variant = ragdollVariants <= 1 ? 0 : (variant + 1) % ragdollVariants;
-                animator.SetInteger(RagdollVariantId, variant);
-            }
-
-            wasRagdolling = ragdolling;
-            wasRagdollGrounded = downOnTheFloor;
+            WatchForATumble(mode, wizard.movement);
         }
 
         void ShowHealth(PlayerLogic.Health health)
@@ -195,7 +127,97 @@ namespace FallingWizard.Player
 
             wasOnStaff = false;
             wasRagdolling = false;
-            wasRagdollGrounded = false;
+            wasDownOnTheFloor = false;
+        }
+
+        static int ChooseMode(PlayerLogic wizard)
+        {
+            if (!wizard.health.IsAlive)
+                return ModeDead;
+
+            if (wizard.State == PlayerState.Ragdoll)
+                return ModeRagdoll;
+
+            if (wizard.State == PlayerState.OnStaff)
+                return ModeStaff;
+
+            return ModeGround;
+        }
+
+        void SetAnimatorParameters(PlayerLogic wizard, int mode)
+        {
+            PlayerLogic.Movement movement = wizard.movement;
+
+            bool grounded = wizard.State != PlayerState.OnVine && movement.IsGrounded;
+            bool moving = mode == ModeGround && grounded && movement.HorizontalSpeed > standStillSpeed;
+
+            bool walking = wizard.Steering.IsWalking;
+
+            animator.SetInteger(ModeId, mode);
+            animator.SetBool(GroundedId, grounded);
+            animator.SetBool(MovingId, moving);
+            animator.SetBool(WalkingId, walking);
+            animator.SetFloat(SpeedId, CalculateCycleRate(wizard, movement, walking));
+            animator.SetFloat(ClimbRateId, CalculateClimbRate(wizard, mode));
+        }
+
+        float CalculateCycleRate(PlayerLogic wizard, PlayerLogic.Movement movement, bool walking)
+        {
+            float topSpeed = (walking ? movement.walkSpeed : movement.runSpeed) *
+                             wizard.Stats.MoveSpeedMultiplier;
+
+            if (topSpeed <= Mathf.Epsilon)
+                return 1f;
+
+            return Mathf.Clamp(movement.HorizontalSpeed / topSpeed, cycleRateRange.x, cycleRateRange.y);
+        }
+
+        float CalculateClimbRate(PlayerLogic wizard, int mode)
+        {
+            if (mode != ModeStaff || !wizard.HasPole)
+                return 0f;
+
+            Staff.Pole pole = wizard.Pole;
+            float lean = wizard.Steering.Lean;
+
+            if (Mathf.Abs(lean) <= pole.leanThreshold)
+                return 0f;
+
+            if ((lean > 0f && pole.IsAtTop) || (lean < 0f && pole.IsAtBottom))
+                return 0f;
+
+            return Mathf.Sign(lean);
+        }
+
+        void WatchForAClimbStarting(PlayerLogic wizard, int mode)
+        {
+            bool onStaff = mode == ModeStaff;
+
+            if (onStaff && !wasOnStaff)
+                animator.SetTrigger(wizard.HasPole && wizard.Pole.IsClimbing
+                    ? ClimbUpId
+                    : ClimbDownId);
+
+            wasOnStaff = onStaff;
+        }
+
+        void WatchForATumble(int mode, PlayerLogic.Movement movement)
+        {
+            bool ragdolling = mode == ModeRagdoll;
+
+            bool downOnTheFloor = ragdolling && movement.IsGrounded;
+
+            if ((ragdolling && !wasRagdolling) || (downOnTheFloor && !wasDownOnTheFloor))
+            {
+                chosenRagdollVariant = ragdollVariants <= 1
+                    ? 0
+                    : (chosenRagdollVariant + 1) % ragdollVariants;
+
+                animator.SetInteger(RagdollVariantId, chosenRagdollVariant);
+            }
+
+            wasRagdolling = ragdolling;
+            wasDownOnTheFloor = downOnTheFloor;
         }
     }
 }

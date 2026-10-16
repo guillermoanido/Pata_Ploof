@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using FallingWizard.Core;
 using TMPro;
 using UnityEngine;
@@ -12,24 +11,25 @@ namespace FallingWizard.UI
     {
         const int DefaultSortingOrder = 200;
 
+        const float BothSides = 2f;
+
         const float PanelWidth = 760f;
         const float PanelPadding = 40f;
         const float PanelSpacing = 16f;
+        const float InnerWidth = PanelWidth - PanelPadding * BothSides;
 
         const float ButtonWidth = 640f;
         const float ButtonHeight = 68f;
         const float ButtonFontSize = 28f;
 
-        const float TitleSize = 56f;
+        const float TitleFontSize = 56f;
         const float TitleHeight = 70f;
 
-        const float BlurbSize = 26f;
+        const float BlurbFontSize = 26f;
         const float BlurbHeight = 72f;
 
-        const float StatusSize = 28f;
+        const float StatusFontSize = 28f;
         const float StatusHeight = 40f;
-
-        readonly List<Button> buttons = new List<Button>();
 
         RectTransform column;
         TextMeshProUGUI status;
@@ -47,24 +47,6 @@ namespace FallingWizard.UI
             return screen;
         }
 
-        void Build(string title, string blurb)
-        {
-            Ui.Shroud(transform);
-
-            column = Ui.Sheet("Panel", transform, Ui.Panel, PanelWidth,
-                PanelPadding, PanelSpacing);
-
-            float inner = PanelWidth - PanelPadding * 2f;
-
-            Ui.Label(title, column, TitleSize, inner, TitleHeight);
-
-            if (!string.IsNullOrEmpty(blurb))
-                Ui.Label(blurb, column, BlurbSize, inner, BlurbHeight).color = Ui.FadedInk;
-
-            status = Ui.Label(string.Empty, column, StatusSize, inner, StatusHeight);
-            status.color = Ui.Wisp;
-        }
-
         public ChoiceScreen Status(string text)
         {
             if (status != null)
@@ -73,18 +55,16 @@ namespace FallingWizard.UI
             return this;
         }
 
-        public ChoiceScreen Choice(string text, Action chosen, bool enabled = true)
+        public ChoiceScreen Choice(string text, Action onChosen, bool isEnabled = true)
         {
             Button button = Ui.CreateButton(text, column, ButtonWidth, ButtonHeight,
                 ButtonFontSize);
-            button.interactable = enabled;
+            button.interactable = isEnabled;
 
-            if (enabled && chosen != null)
-                button.onClick.AddListener(() => chosen());
+            if (isEnabled && onChosen != null)
+                button.onClick.AddListener(() => onChosen());
 
-            buttons.Add(button);
-
-            if (enabled && EventSystem.current != null &&
+            if (isEnabled && EventSystem.current != null &&
                 EventSystem.current.currentSelectedGameObject == null)
                 EventSystem.current.SetSelectedGameObject(button.gameObject);
 
@@ -103,6 +83,23 @@ namespace FallingWizard.UI
             Screens.Release();
             Destroy(gameObject);
             next?.Invoke();
+        }
+
+        void Build(string title, string blurb)
+        {
+            Ui.CreateShroud(transform);
+
+            column = Ui.CreateSheet("Panel", transform, Ui.Panel, PanelWidth,
+                PanelPadding, PanelSpacing);
+
+            Ui.CreateLabel(title, column, TitleFontSize, InnerWidth, TitleHeight);
+
+            if (!string.IsNullOrEmpty(blurb))
+                Ui.CreateLabel(blurb, column, BlurbFontSize, InnerWidth, BlurbHeight).color =
+                    Ui.FadedInk;
+
+            status = Ui.CreateLabel(string.Empty, column, StatusFontSize, InnerWidth, StatusHeight);
+            status.color = Ui.Wisp;
         }
     }
 }

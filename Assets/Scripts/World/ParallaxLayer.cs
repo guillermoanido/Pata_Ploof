@@ -5,6 +5,10 @@ namespace FallingWizard.World
     [RequireComponent(typeof(SpriteRenderer))]
     public class ParallaxLayer : MonoBehaviour
     {
+        const float Half = 0.5f;
+
+        const int BothSides = 2;
+
         [Header("Distance")]
         [Tooltip("How much this sticks to the camera as it pans sideways. 0 is world-locked and " +
                  "slides fully past you; 1 is welded to the camera and never appears to move.")]
@@ -24,12 +28,14 @@ namespace FallingWizard.World
                  "sheet wider than the screen; go up if yours is narrow.")]
         [Range(1, 9)] public int copies = 3;
 
-        Camera eye;
+        Camera mainCamera;
         SpriteRenderer art;
 
         Vector3 origin;
-        Vector3 eyeOrigin;
+        Vector3 cameraOrigin;
         float width;
+
+        bool IsRepeating => repeatForever && width > 0f;
 
         void Awake()
         {
@@ -38,65 +44,71 @@ namespace FallingWizard.World
 
             width = art.sprite != null ? art.bounds.size.x : 0f;
 
-            if (repeatForever && width > 0f)
+            if (IsRepeating)
                 BuildCopies();
         }
 
         void LateUpdate()
         {
-            if (!FindEye())
+            if (!TryFindCamera())
                 return;
 
-            Vector3 travel = eye.transform.position - eyeOrigin;
+            Vector3 cameraPosition = mainCamera.transform.position;
+            Vector3 travel = cameraPosition - cameraOrigin;
 
-            float x = origin.x + travel.x * parallax;
-            float y = origin.y + travel.y * verticalParallax;
+            float newX = origin.x + travel.x * parallax;
+            float newY = origin.y + travel.y * verticalParallax;
 
-            if (repeatForever && width > 0f)
+            if (IsRepeating)
             {
-                float half = width * 0.5f;
-                float drift = Mathf.Repeat(eye.transform.position.x - x + half, width) - half;
-                x = eye.transform.position.x - drift;
+                float halfWidth = width * Half;
+                float drift = Mathf.Repeat(cameraPosition.x - newX + halfWidth, width) - halfWidth;
+                newX = cameraPosition.x - drift;
             }
 
-            transform.position = new Vector3(x, y, origin.z);
+            transform.position = new Vector3(newX, newY, origin.z);
         }
 
         void BuildCopies()
         {
-            int side = Mathf.Max(0, (copies - 1) / 2);
+            int copiesPerSide = Mathf.Max(0, (copies - 1) / BothSides);
 
-            for (int step = -side; step <= side; step++)
+            for (int step = -copiesPerSide; step <= copiesPerSide; step++)
             {
                 if (step == 0)
                     continue;
 
-                var clone = new GameObject($"{name} {step:+#;-#}");
-                clone.transform.SetParent(transform, false);
-                clone.transform.localPosition = new Vector3(width * step, 0f, 0f);
-
-                var copy = clone.AddComponent<SpriteRenderer>();
-                copy.sprite = art.sprite;
-                copy.color = art.color;
-                copy.flipX = art.flipX;
-                copy.flipY = art.flipY;
-                copy.material = art.sharedMaterial;
-                copy.sortingLayerID = art.sortingLayerID;
-                copy.sortingOrder = art.sortingOrder;
+                BuildCopy(step);
             }
         }
 
-        bool FindEye()
+        void BuildCopy(int step)
         {
-            if (eye != null)
+            var copyObject = new GameObject($"{name} {step:+#;-#}");
+            copyObject.transform.SetParent(transform, false);
+            copyObject.transform.localPosition = new Vector3(width * step, 0f, 0f);
+
+            var copyArt = copyObject.AddComponent<SpriteRenderer>();
+            copyArt.sprite = art.sprite;
+            copyArt.color = art.color;
+            copyArt.flipX = art.flipX;
+            copyArt.flipY = art.flipY;
+            copyArt.material = art.sharedMaterial;
+            copyArt.sortingLayerID = art.sortingLayerID;
+            copyArt.sortingOrder = art.sortingOrder;
+        }
+
+        bool TryFindCamera()
+        {
+            if (mainCamera != null)
                 return true;
 
-            eye = Camera.main;
+            mainCamera = Camera.main;
 
-            if (eye == null)
+            if (mainCamera == null)
                 return false;
 
-            eyeOrigin = eye.transform.position;
+            cameraOrigin = mainCamera.transform.position;
             return true;
         }
     }

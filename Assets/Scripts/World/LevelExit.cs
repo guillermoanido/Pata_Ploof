@@ -1,5 +1,6 @@
 using FallingWizard.Core;
 using FallingWizard.Player;
+using FallingWizard.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -17,7 +18,7 @@ namespace FallingWizard.World
 
         protected override void OnPlayerEntered(PlayerCharacter wizard)
         {
-            if (UI.Screens.ModalOpen || !wizard.Logic.health.IsAlive)
+            if (Screens.IsModalOpen || !wizard.Logic.health.IsAlive)
                 return;
 
             if (banksWisps)

@@ -1,4 +1,3 @@
-using FallingWizard.Core;
 using TMPro;
 using UnityEngine;
 

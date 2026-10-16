@@ -9,53 +9,58 @@ namespace FallingWizard.EditorTools
 {
     public static class BuildPlayerAnimator
     {
-        const string ClipFolder = "Assets/Animations";
+        const string ParentFolder = "Assets";
+        const string ClipFolderName = "Animations";
+        const string ClipFolder = ParentFolder + "/" + ClipFolderName;
         const string ControllerPath = ClipFolder + "/Player.controller";
 
         const int FramesPerSecond = 12;
         const int DefaultRagdollVariants = 4;
 
-        class Clip
-        {
-            public string State;
-            public bool Loops;
-
-            public string Path => $"{ClipFolder}/{State.Replace(" ", string.Empty)}.anim";
-        }
+        const string RagdollStatePrefix = "Ragdoll";
 
         static readonly Clip[] Clips =
         {
-            new Clip { State = "Idle",        Loops = true },
-            new Clip { State = "Walk",        Loops = true },
-            new Clip { State = "Run",         Loops = true },
-            new Clip { State = "Falling",     Loops = true },
-            new Clip { State = "Climb Up",    Loops = false },
-            new Clip { State = "Climb Down",  Loops = false },
-            new Clip { State = "Climb",       Loops = true },
-            new Clip { State = "Take Damage", Loops = false },
-            new Clip { State = "Hat Change",  Loops = false },
-            new Clip { State = "Death",       Loops = false },
+            new Clip { State = "Idle",        IsLooping = true },
+            new Clip { State = "Walk",        IsLooping = true },
+            new Clip { State = "Run",         IsLooping = true },
+            new Clip { State = "Falling",     IsLooping = true },
+            new Clip { State = "Climb Up",    IsLooping = false },
+            new Clip { State = "Climb Down",  IsLooping = false },
+            new Clip { State = "Climb",       IsLooping = true },
+            new Clip { State = "Take Damage", IsLooping = false },
+            new Clip { State = "Hat Change",  IsLooping = false },
+            new Clip { State = "Death",       IsLooping = false },
         };
 
-        const string RagdollClipPrefix = "Ragdoll";
+        static readonly BoolCondition IsGrounded = new BoolCondition("Grounded", true);
+        static readonly BoolCondition IsNotGrounded = new BoolCondition("Grounded", false);
+        static readonly BoolCondition IsMoving = new BoolCondition("Moving", true);
+        static readonly BoolCondition IsNotMoving = new BoolCondition("Moving", false);
+        static readonly BoolCondition IsWalking = new BoolCondition("Walking", true);
+        static readonly BoolCondition IsNotWalking = new BoolCondition("Walking", false);
+
+        static readonly Vector3 IdlePosition = new Vector3(300f, 0f);
+        static readonly Vector3 WalkPosition = new Vector3(560f, -80f);
+        static readonly Vector3 RunPosition = new Vector3(560f, 80f);
+        static readonly Vector3 FallingPosition = new Vector3(300f, 180f);
+        static readonly Vector3 ClimbUpPosition = new Vector3(-40f, -140f);
+        static readonly Vector3 ClimbDownPosition = new Vector3(-40f, -60f);
+        static readonly Vector3 ClimbPosition = new Vector3(180f, -100f);
+        static readonly Vector3 HurtPosition = new Vector3(300f, 300f);
+        static readonly Vector3 DeathPosition = new Vector3(300f, 380f);
+        static readonly Vector3 HatChangePosition = new Vector3(300f, 460f);
+        static readonly Vector3 FirstRagdollPosition = new Vector3(760f, -100f);
+        static readonly Vector3 RagdollSpacing = new Vector3(0f, 70f);
 
         [MenuItem("Falling Wizard/Build Player Animator")]
-        public static void Build()
+        static void Build()
         {
             int variants = ReadVariantCount();
 
             EnsureFolder();
 
-            var motions = new Dictionary<string, AnimationClip>();
-
-            foreach (Clip clip in Clips)
-                motions[clip.State] = LoadOrCreateClip(clip);
-
-            for (int i = 0; i < variants; i++)
-            {
-                var ragdoll = new Clip { State = $"{RagdollClipPrefix} {i}", Loops = false };
-                motions[ragdoll.State] = LoadOrCreateClip(ragdoll);
-            }
+            Dictionary<string, AnimationClip> motions = LoadOrCreateClips(variants);
 
             BuildController(motions, variants);
 
@@ -78,121 +83,61 @@ namespace FallingWizard.EditorTools
         static void EnsureFolder()
         {
             if (!AssetDatabase.IsValidFolder(ClipFolder))
-                AssetDatabase.CreateFolder("Assets", "Animations");
+                AssetDatabase.CreateFolder(ParentFolder, ClipFolderName);
         }
 
-        static AnimationClip LoadOrCreateClip(Clip spec)
+        static Dictionary<string, AnimationClip> LoadOrCreateClips(int variants)
         {
-            var existing = AssetDatabase.LoadAssetAtPath<AnimationClip>(spec.Path);
+            var motions = new Dictionary<string, AnimationClip>();
+
+            foreach (Clip clip in Clips)
+                motions[clip.State] = LoadOrCreateClip(clip);
+
+            for (int i = 0; i < variants; i++)
+            {
+                var ragdoll = new Clip { State = RagdollStateName(i), IsLooping = false };
+                motions[ragdoll.State] = LoadOrCreateClip(ragdoll);
+            }
+
+            return motions;
+        }
+
+        static AnimationClip LoadOrCreateClip(Clip clip)
+        {
+            var existing = AssetDatabase.LoadAssetAtPath<AnimationClip>(clip.Path);
 
             if (existing != null)
                 return existing;
 
-            var clip = new AnimationClip { frameRate = FramesPerSecond };
+            var created = new AnimationClip { frameRate = FramesPerSecond };
 
-            AnimationClipSettings settings = AnimationUtility.GetAnimationClipSettings(clip);
-            settings.loopTime = spec.Loops;
-            AnimationUtility.SetAnimationClipSettings(clip, settings);
+            AnimationClipSettings settings = AnimationUtility.GetAnimationClipSettings(created);
+            settings.loopTime = clip.IsLooping;
+            AnimationUtility.SetAnimationClipSettings(created, settings);
 
-            AssetDatabase.CreateAsset(clip, spec.Path);
-            return clip;
+            AssetDatabase.CreateAsset(created, clip.Path);
+            return created;
         }
 
-        static AnimatorController BuildController(Dictionary<string, AnimationClip> motions, int variants)
+        static string RagdollStateName(int variant) => $"{RagdollStatePrefix} {variant}";
+
+        static void BuildController(Dictionary<string, AnimationClip> motions, int variants)
         {
             AnimatorController controller = LoadEmptyController();
-
-            controller.AddParameter("Mode", AnimatorControllerParameterType.Int);
-            controller.AddParameter("Grounded", AnimatorControllerParameterType.Bool);
-            controller.AddParameter("Moving", AnimatorControllerParameterType.Bool);
-            controller.AddParameter("Walking", AnimatorControllerParameterType.Bool);
-            controller.AddParameter("Speed", AnimatorControllerParameterType.Float);
-            controller.AddParameter("ClimbRate", AnimatorControllerParameterType.Float);
-            controller.AddParameter("ClimbUp", AnimatorControllerParameterType.Trigger);
-            controller.AddParameter("ClimbDown", AnimatorControllerParameterType.Trigger);
-            controller.AddParameter("RagdollVariant", AnimatorControllerParameterType.Int);
-            controller.AddParameter("Hurt", AnimatorControllerParameterType.Trigger);
-            controller.AddParameter("HatChanged", AnimatorControllerParameterType.Trigger);
+            AddParameters(controller);
 
             AnimatorStateMachine graph = controller.layers[0].stateMachine;
+            MainStates states = AddMainStates(graph, motions);
 
-            AnimatorState idle = AddState(graph, motions, "Idle", new Vector3(300, 0));
-            AnimatorState walk = AddState(graph, motions, "Walk", new Vector3(560, -80), "Speed");
-            AnimatorState run = AddState(graph, motions, "Run", new Vector3(560, 80), "Speed");
-            AnimatorState falling = AddState(graph, motions, "Falling", new Vector3(300, 180));
-            AnimatorState climbUp = AddState(graph, motions, "Climb Up", new Vector3(-40, -140));
-            AnimatorState climbDown = AddState(graph, motions, "Climb Down", new Vector3(-40, -60));
-            AnimatorState climb = AddState(graph, motions, "Climb", new Vector3(180, -100), "ClimbRate");
-            AnimatorState hurt = AddState(graph, motions, "Take Damage", new Vector3(300, 300));
-            AnimatorState death = AddState(graph, motions, "Death", new Vector3(300, 380));
-            AnimatorState hatChange = AddState(graph, motions, "Hat Change", new Vector3(300, 460));
-
-            graph.defaultState = idle;
-
-            Go(idle, walk, ("Moving", true), ("Walking", true));
-            Go(idle, run, ("Moving", true), ("Walking", false));
-            Go(walk, run, ("Walking", false));
-            Go(run, walk, ("Walking", true));
-            Go(walk, idle, ("Moving", false));
-            Go(run, idle, ("Moving", false));
-
-            Go(idle, falling, ("Grounded", false));
-            Go(walk, falling, ("Grounded", false));
-            Go(run, falling, ("Grounded", false));
-
-            GoOnLanding(falling, idle, motions, ("Moving", false));
-            GoOnLanding(falling, walk, motions, ("Moving", true), ("Walking", true));
-            GoOnLanding(falling, run, motions, ("Moving", true), ("Walking", false));
-
-            OnFinishing(climbUp, climb);
-            OnFinishing(climbDown, climb);
-
-            AnimatorStateTransition offThePole = climb.AddTransition(idle);
-            offThePole.hasExitTime = false;
-            offThePole.duration = 0f;
-            offThePole.AddCondition(AnimatorConditionMode.NotEqual, PlayerAnimator.ModeStaff, "Mode");
-
-            OnFinishing(hurt, idle);
-            OnFinishing(hatChange, idle);
-
-            Interrupt(graph, death, t =>
-                t.AddCondition(AnimatorConditionMode.Equals, PlayerAnimator.ModeDead, "Mode"));
-
-            for (int i = 0; i < variants; i++)
-            {
-                AnimatorState pose = AddState(graph, motions, $"{RagdollClipPrefix} {i}",
-                    new Vector3(760, -100 + i * 70));
-
-                int variant = i;
-                Interrupt(graph, pose, t =>
-                {
-                    t.AddCondition(AnimatorConditionMode.Equals, PlayerAnimator.ModeRagdoll, "Mode");
-                    t.AddCondition(AnimatorConditionMode.Equals, variant, "RagdollVariant");
-                });
-
-                AnimatorStateTransition backUp = pose.AddTransition(idle);
-                backUp.hasExitTime = false;
-                backUp.duration = 0f;
-                backUp.AddCondition(AnimatorConditionMode.Equals, PlayerAnimator.ModeGround, "Mode");
-            }
-
-            Interrupt(graph, climbUp, t => t.AddCondition(AnimatorConditionMode.If, 0f, "ClimbUp"));
-            Interrupt(graph, climbDown, t => t.AddCondition(AnimatorConditionMode.If, 0f, "ClimbDown"));
-
-            Interrupt(graph, hurt, t =>
-            {
-                t.AddCondition(AnimatorConditionMode.If, 0f, "Hurt");
-                t.AddCondition(AnimatorConditionMode.Equals, PlayerAnimator.ModeGround, "Mode");
-            });
-
-            Interrupt(graph, hatChange, t =>
-            {
-                t.AddCondition(AnimatorConditionMode.If, 0f, "HatChanged");
-                t.AddCondition(AnimatorConditionMode.Equals, PlayerAnimator.ModeGround, "Mode");
-            });
+            AddWalkingTransitions(states);
+            AddFallingTransitions(states);
+            AddClimbingTransitions(states);
+            AddReactionEndings(states);
+            AddDeathInterrupt(graph, states.Death);
+            AddRagdollStates(graph, motions, variants, states.Idle);
+            AddTriggerInterrupts(graph, states);
 
             EditorUtility.SetDirty(controller);
-            return controller;
         }
 
         static AnimatorController LoadEmptyController()
@@ -216,12 +161,118 @@ namespace FallingWizard.EditorTools
             return controller;
         }
 
-        static AnimatorState AddState(AnimatorStateMachine graph,
-            Dictionary<string, AnimationClip> motions, string name, Vector3 at, string speedParameter = null)
+        static void AddParameters(AnimatorController controller)
         {
-            AnimatorState state = graph.AddState(name, at);
+            controller.AddParameter("Mode", AnimatorControllerParameterType.Int);
+            controller.AddParameter("Grounded", AnimatorControllerParameterType.Bool);
+            controller.AddParameter("Moving", AnimatorControllerParameterType.Bool);
+            controller.AddParameter("Walking", AnimatorControllerParameterType.Bool);
+            controller.AddParameter("Speed", AnimatorControllerParameterType.Float);
+            controller.AddParameter("ClimbRate", AnimatorControllerParameterType.Float);
+            controller.AddParameter("ClimbUp", AnimatorControllerParameterType.Trigger);
+            controller.AddParameter("ClimbDown", AnimatorControllerParameterType.Trigger);
+            controller.AddParameter("RagdollVariant", AnimatorControllerParameterType.Int);
+            controller.AddParameter("Hurt", AnimatorControllerParameterType.Trigger);
+            controller.AddParameter("HatChanged", AnimatorControllerParameterType.Trigger);
+        }
 
-            state.motion = motions.TryGetValue(name, out AnimationClip clip) ? clip : null;
+        static MainStates AddMainStates(AnimatorStateMachine graph, Dictionary<string, AnimationClip> motions)
+        {
+            var states = new MainStates
+            {
+                Idle = AddState(graph, motions, "Idle", IdlePosition),
+                Walk = AddState(graph, motions, "Walk", WalkPosition, "Speed"),
+                Run = AddState(graph, motions, "Run", RunPosition, "Speed"),
+                Falling = AddState(graph, motions, "Falling", FallingPosition),
+                ClimbUp = AddState(graph, motions, "Climb Up", ClimbUpPosition),
+                ClimbDown = AddState(graph, motions, "Climb Down", ClimbDownPosition),
+                Climb = AddState(graph, motions, "Climb", ClimbPosition, "ClimbRate"),
+                Hurt = AddState(graph, motions, "Take Damage", HurtPosition),
+                Death = AddState(graph, motions, "Death", DeathPosition),
+                HatChange = AddState(graph, motions, "Hat Change", HatChangePosition),
+            };
+
+            graph.defaultState = states.Idle;
+            return states;
+        }
+
+        static void AddWalkingTransitions(MainStates states)
+        {
+            Go(states.Idle, states.Walk, IsMoving, IsWalking);
+            Go(states.Idle, states.Run, IsMoving, IsNotWalking);
+            Go(states.Walk, states.Run, IsNotWalking);
+            Go(states.Run, states.Walk, IsWalking);
+            Go(states.Walk, states.Idle, IsNotMoving);
+            Go(states.Run, states.Idle, IsNotMoving);
+        }
+
+        static void AddFallingTransitions(MainStates states)
+        {
+            Go(states.Idle, states.Falling, IsNotGrounded);
+            Go(states.Walk, states.Falling, IsNotGrounded);
+            Go(states.Run, states.Falling, IsNotGrounded);
+
+            GoOnLanding(states.Falling, states.Idle, IsNotMoving);
+            GoOnLanding(states.Falling, states.Walk, IsMoving, IsWalking);
+            GoOnLanding(states.Falling, states.Run, IsMoving, IsNotWalking);
+        }
+
+        static void AddClimbingTransitions(MainStates states)
+        {
+            GoOnFinishing(states.ClimbUp, states.Climb);
+            GoOnFinishing(states.ClimbDown, states.Climb);
+
+            AnimatorStateTransition offThePole = Go(states.Climb, states.Idle);
+            offThePole.AddCondition(AnimatorConditionMode.NotEqual, PlayerAnimator.ModeStaff, "Mode");
+        }
+
+        static void AddReactionEndings(MainStates states)
+        {
+            GoOnFinishing(states.Hurt, states.Idle);
+            GoOnFinishing(states.HatChange, states.Idle);
+        }
+
+        static void AddDeathInterrupt(AnimatorStateMachine graph, AnimatorState death)
+        {
+            AnimatorStateTransition dying = Interrupt(graph, death);
+            RequireMode(dying, PlayerAnimator.ModeDead);
+        }
+
+        static void AddRagdollStates(AnimatorStateMachine graph, Dictionary<string, AnimationClip> motions,
+            int variants, AnimatorState idle)
+        {
+            for (int i = 0; i < variants; i++)
+            {
+                Vector3 position = FirstRagdollPosition + RagdollSpacing * i;
+                AnimatorState pose = AddState(graph, motions, RagdollStateName(i), position);
+
+                AnimatorStateTransition tumble = Interrupt(graph, pose);
+                RequireMode(tumble, PlayerAnimator.ModeRagdoll);
+                tumble.AddCondition(AnimatorConditionMode.Equals, i, "RagdollVariant");
+
+                AnimatorStateTransition backUp = Go(pose, idle);
+                RequireMode(backUp, PlayerAnimator.ModeGround);
+            }
+        }
+
+        static void AddTriggerInterrupts(AnimatorStateMachine graph, MainStates states)
+        {
+            InterruptOnTrigger(graph, states.ClimbUp, "ClimbUp");
+            InterruptOnTrigger(graph, states.ClimbDown, "ClimbDown");
+
+            AnimatorStateTransition hurt = InterruptOnTrigger(graph, states.Hurt, "Hurt");
+            RequireMode(hurt, PlayerAnimator.ModeGround);
+
+            AnimatorStateTransition hatChange = InterruptOnTrigger(graph, states.HatChange, "HatChanged");
+            RequireMode(hatChange, PlayerAnimator.ModeGround);
+        }
+
+        static AnimatorState AddState(AnimatorStateMachine graph,
+            Dictionary<string, AnimationClip> motions, string name, Vector3 position, string speedParameter = null)
+        {
+            AnimatorState state = graph.AddState(name, position);
+
+            state.motion = motions.TryGetValue(name, out AnimationClip motion) ? motion : null;
 
             state.writeDefaultValues = false;
 
@@ -234,34 +285,25 @@ namespace FallingWizard.EditorTools
             return state;
         }
 
-        static void Go(AnimatorState from, AnimatorState to, params (string Parameter, bool Wanted)[] conditions)
+        static AnimatorStateTransition Go(AnimatorState from, AnimatorState to, params BoolCondition[] conditions)
         {
             AnimatorStateTransition transition = from.AddTransition(to);
 
-            transition.hasExitTime = false;
-            transition.duration = 0f;
+            MakeInstant(transition);
+            AddConditions(transition, conditions);
 
-            foreach ((string parameter, bool wanted) in conditions)
-                transition.AddCondition(wanted ? AnimatorConditionMode.If : AnimatorConditionMode.IfNot,
-                    0f, parameter);
+            return transition;
         }
 
-        static void GoOnLanding(AnimatorState from, AnimatorState to,
-            Dictionary<string, AnimationClip> motions, params (string Parameter, bool Wanted)[] conditions)
+        static void GoOnLanding(AnimatorState from, AnimatorState to, params BoolCondition[] conditions)
         {
-            AnimatorStateTransition transition = from.AddTransition(to);
+            AnimatorStateTransition transition = Go(from, to, IsGrounded);
 
-            transition.hasExitTime = false;
-            transition.duration = 0f;
-            transition.AddCondition(AnimatorConditionMode.If, 0f, "Grounded");
-            transition.AddCondition(AnimatorConditionMode.Equals, PlayerAnimator.ModeGround, "Mode");
-
-            foreach ((string parameter, bool wanted) in conditions)
-                transition.AddCondition(wanted ? AnimatorConditionMode.If : AnimatorConditionMode.IfNot,
-                    0f, parameter);
+            RequireMode(transition, PlayerAnimator.ModeGround);
+            AddConditions(transition, conditions);
         }
 
-        static void OnFinishing(AnimatorState from, AnimatorState to)
+        static void GoOnFinishing(AnimatorState from, AnimatorState to)
         {
             AnimatorStateTransition transition = from.AddTransition(to);
 
@@ -270,16 +312,71 @@ namespace FallingWizard.EditorTools
             transition.duration = 0f;
         }
 
-        static void Interrupt(AnimatorStateMachine graph, AnimatorState to,
-            System.Action<AnimatorStateTransition> conditions)
+        static AnimatorStateTransition Interrupt(AnimatorStateMachine graph, AnimatorState to)
         {
             AnimatorStateTransition transition = graph.AddAnyStateTransition(to);
 
-            transition.hasExitTime = false;
-            transition.duration = 0f;
+            MakeInstant(transition);
             transition.canTransitionToSelf = false;
 
-            conditions(transition);
+            return transition;
+        }
+
+        static AnimatorStateTransition InterruptOnTrigger(AnimatorStateMachine graph, AnimatorState to,
+            string trigger)
+        {
+            AnimatorStateTransition transition = Interrupt(graph, to);
+            transition.AddCondition(AnimatorConditionMode.If, 0f, trigger);
+            return transition;
+        }
+
+        static void RequireMode(AnimatorStateTransition transition, int mode) =>
+            transition.AddCondition(AnimatorConditionMode.Equals, mode, "Mode");
+
+        static void AddConditions(AnimatorStateTransition transition, BoolCondition[] conditions)
+        {
+            foreach (BoolCondition condition in conditions)
+                transition.AddCondition(condition.Mode, 0f, condition.Parameter);
+        }
+
+        static void MakeInstant(AnimatorStateTransition transition)
+        {
+            transition.hasExitTime = false;
+            transition.duration = 0f;
+        }
+
+        class Clip
+        {
+            public string State;
+            public bool IsLooping;
+
+            public string Path => $"{ClipFolder}/{State.Replace(" ", string.Empty)}.anim";
+        }
+
+        class BoolCondition
+        {
+            public string Parameter { get; }
+            public AnimatorConditionMode Mode { get; }
+
+            public BoolCondition(string parameter, bool isWanted)
+            {
+                Parameter = parameter;
+                Mode = isWanted ? AnimatorConditionMode.If : AnimatorConditionMode.IfNot;
+            }
+        }
+
+        class MainStates
+        {
+            public AnimatorState Idle;
+            public AnimatorState Walk;
+            public AnimatorState Run;
+            public AnimatorState Falling;
+            public AnimatorState ClimbUp;
+            public AnimatorState ClimbDown;
+            public AnimatorState Climb;
+            public AnimatorState Hurt;
+            public AnimatorState Death;
+            public AnimatorState HatChange;
         }
     }
 }

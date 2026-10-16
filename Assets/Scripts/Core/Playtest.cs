@@ -5,9 +5,11 @@ using UnityEngine;
 
 namespace FallingWizard.Core
 {
-    [DefaultExecutionOrder(-100)]
+    [DefaultExecutionOrder(RunBeforeTheWizardWakes)]
     public class Playtest : MonoBehaviour
     {
+        const int RunBeforeTheWizardWakes = -100;
+
         [Header("Playtest")]
         [Tooltip("Tick a spell and press Play with it already learned and in a slot, so you can " +
                  "try it without earning it first. Untick this whole component to play the game " +
@@ -49,51 +51,29 @@ namespace FallingWizard.Core
 
         void Reset()
         {
-            book = Resources.Load<AbilityBook>(AbilityBook.ResourcePath);
-            Sync();
+            book = LoadBook();
+            SyncWithTheBook();
         }
 
         void OnValidate()
         {
             if (book != null)
             {
-                Sync();
+                SyncWithTheBook();
                 return;
             }
 
 #if UNITY_EDITOR
-            UnityEditor.EditorApplication.delayCall += () =>
-            {
-                if (this == null || book != null)
-                    return;
-
-                book = Resources.Load<AbilityBook>(AbilityBook.ResourcePath);
-
-                if (book == null)
-                    return;
-
-                Sync();
-                UnityEditor.EditorUtility.SetDirty(this);
-            };
+            UnityEditor.EditorApplication.delayCall += LoadTheMissingBook;
 #endif
         }
 
         void Awake()
         {
-            if (!active)
+            if (!active || !TryFindBook())
                 return;
 
-            if (book == null)
-                book = Resources.Load<AbilityBook>(AbilityBook.ResourcePath);
-
-            if (book == null)
-            {
-                Debug.LogError("Playtest has no spellbook, so it cannot hand anything out. Put " +
-                               "Assets/Resources/Spellbook.asset in its Book field.", this);
-                return;
-            }
-
-            if (Progress.SandboxSeeded && !redealOnEveryLoad)
+            if (Progress.IsSandboxSeeded && !redealOnEveryLoad)
             {
                 if (announce)
                     Debug.Log("Playtest already dealt this session - keeping the loadout you " +
@@ -106,11 +86,42 @@ namespace FallingWizard.Core
             Progress.GiveWisps(wisps);
             Progress.SetHearts(bonusHearts);
 
-            Reserve();
-            Hand();
+            EquipLockedSpells();
+            BringTickedSpells();
         }
 
-        void Reserve()
+        static AbilityBook LoadBook() => Resources.Load<AbilityBook>(AbilityBook.ResourcePath);
+
+#if UNITY_EDITOR
+        void LoadTheMissingBook()
+        {
+            if (this == null || book != null)
+                return;
+
+            book = LoadBook();
+
+            if (book == null)
+                return;
+
+            SyncWithTheBook();
+            UnityEditor.EditorUtility.SetDirty(this);
+        }
+#endif
+
+        bool TryFindBook()
+        {
+            if (book == null)
+                book = LoadBook();
+
+            if (book != null)
+                return true;
+
+            Debug.LogError("Playtest has no spellbook, so it cannot hand anything out. Put " +
+                           "Assets/Resources/Spellbook.asset in its Book field.", this);
+            return false;
+        }
+
+        void EquipLockedSpells()
         {
             foreach (Ability spell in book.spells)
             {
@@ -122,9 +133,9 @@ namespace FallingWizard.Core
             }
         }
 
-        void Hand()
+        void BringTickedSpells()
         {
-            var carried = new List<string>();
+            var brought = new List<string>();
             var missed = new List<string>();
 
             foreach (Pick pick in spells)
@@ -133,29 +144,33 @@ namespace FallingWizard.Core
                     continue;
 
                 if (pick.bring || learnEverything)
-                {
-                    Progress.Grant(pick.spell.Key);
-
-                    if (pick.rank > 1)
-                        Progress.SetRank(pick.spell.Key,
-                            Mathf.Min(pick.rank, pick.spell.MaxRank));
-                }
+                    pick.Learn();
 
                 if (!pick.bring || pick.spell.locked)
                     continue;
 
-                int slot = Progress.FirstEmptySlot();
-
-                if (slot < 0)
-                {
-                    missed.Add(pick.spell.displayName);
-                    continue;
-                }
-
-                Progress.Equip(slot, pick.spell.Key);
-                carried.Add($"{pick.spell.displayName} in slot {slot + 1}");
+                PutInFirstEmptySlot(pick, brought, missed);
             }
 
+            LogWhatWasBrought(brought, missed);
+        }
+
+        void PutInFirstEmptySlot(Pick pick, List<string> brought, List<string> missed)
+        {
+            int slot = Progress.FirstEmptySlot();
+
+            if (slot == Progress.NoSlot)
+            {
+                missed.Add(pick.spell.displayName);
+                return;
+            }
+
+            Progress.Equip(slot, pick.spell.Key);
+            brought.Add($"{pick.spell.displayName} in slot {slot + 1}");
+        }
+
+        void LogWhatWasBrought(List<string> brought, List<string> missed)
+        {
             if (missed.Count > 0)
                 Debug.LogWarning($"Playtest could not find a slot for {string.Join(", ", missed)}. " +
                                  "There are four buttons and the Staff is welded to one of them, " +
@@ -167,13 +182,13 @@ namespace FallingWizard.Core
             if (spells.Count == 0)
                 Debug.LogWarning("Playtest has an empty spell list. Press the Book field's picker " +
                                  "or re-add the component to fill it in.", this);
-            else if (carried.Count == 0)
+            else if (brought.Count == 0)
                 Debug.Log("Playtest brought nothing - no boxes are ticked.", this);
             else
-                Debug.Log($"Playtest brought {string.Join(", ", carried)}.", this);
+                Debug.Log($"Playtest brought {string.Join(", ", brought)}.", this);
         }
 
-        void Sync()
+        void SyncWithTheBook()
         {
             if (book == null)
                 return;
@@ -185,12 +200,21 @@ namespace FallingWizard.Core
                 if (spell == null)
                     continue;
 
-                Pick had = spells.Find(pick => pick.spell == spell);
+                Pick existing = FindPickFor(spell);
 
-                kept.Add(had ?? new Pick { spell = spell });
+                kept.Add(existing ?? new Pick { spell = spell });
             }
 
             spells = kept;
+        }
+
+        Pick FindPickFor(Ability spell)
+        {
+            foreach (Pick pick in spells)
+                if (pick.spell == spell)
+                    return pick;
+
+            return null;
         }
 
         [Serializable]
@@ -204,6 +228,15 @@ namespace FallingWizard.Core
             [Min(1)] public int rank = 1;
 
             public Ability spell;
+
+            public void Learn()
+            {
+                Progress.Grant(spell.Key);
+
+                if (rank > 1)
+                    Progress.SetRank(spell.Key,
+                        Mathf.Min(rank, spell.MaxRank));
+            }
         }
     }
 }

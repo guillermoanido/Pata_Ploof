@@ -17,6 +17,12 @@ namespace FallingWizard.Player
         [Tooltip("Owned from the first frame of a new game, free. The Staff belongs here.")]
         public List<Ability> known = new List<Ability>();
 
+        void OnValidate()
+        {
+            WarnAboutSharedFixedSlots();
+            WarnAboutKitSpellsMissingFromCatalogue();
+        }
+
         public Ability Find(string key)
         {
             if (string.IsNullOrEmpty(key))
@@ -29,7 +35,7 @@ namespace FallingWizard.Player
             return null;
         }
 
-        void OnValidate()
+        void WarnAboutSharedFixedSlots()
         {
             for (int i = 0; i < spells.Count; i++)
             {
@@ -47,7 +53,10 @@ namespace FallingWizard.Player
                                          $"{spell.fixedSlot}, so one will push the other out.", this);
                 }
             }
+        }
 
+        void WarnAboutKitSpellsMissingFromCatalogue()
+        {
             foreach (Ability spell in known)
             {
                 if (spell != null && !spells.Contains(spell))

@@ -4,13 +4,29 @@
     "bonusHearts": 1,
     "loadout": [
         "staff",
-        "",
-        "",
-        ""
+        "fling",
+        "wall",
+        "vine"
     ],
     "ranks": [
         {
+            "key": "fling",
+            "rank": 2
+        },
+        {
+            "key": "glide",
+            "rank": 1
+        },
+        {
             "key": "staff",
+            "rank": 1
+        },
+        {
+            "key": "vine",
+            "rank": 1
+        },
+        {
+            "key": "wall",
             "rank": 1
         }
     ],

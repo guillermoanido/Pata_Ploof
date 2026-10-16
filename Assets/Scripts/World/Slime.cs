@@ -35,9 +35,9 @@ namespace FallingWizard.World
             int onward = wizard.movement.TravelDirection;
 
             if (ragdolls)
-                wizard.Trip();
+                wizard.TryTrip();
 
-            wizard.Bounce(bounceHeight, onward * shove, resetsFall);
+            wizard.TryBounce(bounceHeight, onward * shove, resetsFall);
         }
     }
 }

@@ -6,12 +6,18 @@ namespace FallingWizard.Player
     [CreateAssetMenu(menuName = "Falling Wizard/Abilities/Mage Hand", fileName = "Mage Hand")]
     public class MageHandAbility : Ability
     {
+        const float ShortestGrasp = 0.1f;
+
+        const float LongestGrasp = 1.2f;
+
+        const float WidestSwing = 89f;
+
         [Header("Grasp")]
         [Tooltip("How far a grab is allowed to MOVE you, in boxes, measured to the point on the " +
                  "arc you would actually end up at. One box is one mage. Keep it under about 1.2: " +
                  "above that no grab can finish inside a single physics step, and the swing " +
                  "reads its own overshoot as having hit a wall and throws your speed away.")]
-        [Range(0.1f, 1.2f)] public float graspRange = 1f;
+        [Range(ShortestGrasp, LongestGrasp)] public float graspRange = 1f;
 
         [Tooltip("Pressing again while hanging lets go. Off means only Jump lets go, which frees " +
                  "the button up but makes a mistimed grab harder to undo.")]
@@ -31,7 +37,8 @@ namespace FallingWizard.Player
 
             VineAnchor vine = VineAnchor.Nearest(wizard.movement.Position);
 
-            return vine != null && wizard.GrabSnapDistance(Spec(wizard, vine)) <= graspRange;
+            return vine != null &&
+                   wizard.GrabSnapDistance(DescribeHold(wizard, vine)) <= graspRange;
         }
 
         public override string WhyNot(PlayerLogic wizard)
@@ -45,20 +52,7 @@ namespace FallingWizard.Player
             if (!wizard.CanGrabVine)
                 return "you only just let go of one";
 
-            VineAnchor vine = VineAnchor.Nearest(wizard.movement.Position);
-
-            if (vine == null)
-                return VineAnchor.All.Count == 0
-                    ? "there is not a single Vine in this scene"
-                    : "no vine is close enough - look for a knot that has started glowing";
-
-            float snap = wizard.GrabSnapDistance(Spec(wizard, vine));
-
-            if (snap > graspRange)
-                return $"the hand would have to drag you {snap:0.0} boxes to reach it - get " +
-                       $"level with the rope rather than standing over where it is tied";
-
-            return null;
+            return WhyNoVineIsInReach(wizard);
         }
 
         public override bool OnCast(PlayerLogic wizard)
@@ -71,7 +65,7 @@ namespace FallingWizard.Player
 
             VineAnchor vine = VineAnchor.Nearest(wizard.movement.Position);
 
-            if (vine == null || !wizard.TryGrabVine(Spec(wizard, vine)))
+            if (vine == null || !wizard.TryGrabVine(DescribeHold(wizard, vine)))
                 return false;
 
             vine.CallDown();
@@ -86,18 +80,14 @@ namespace FallingWizard.Player
 
         protected override void Validate()
         {
-            graspRange = Mathf.Clamp(graspRange, 0.1f, 1.2f);
+            graspRange = Mathf.Clamp(graspRange, ShortestGrasp, LongestGrasp);
 
-            if (tiers != null)
-                foreach (Tier tier in tiers)
-                    tier?.Validate();
-
-            CheckTiers(tiers != null ? tiers.Length : 0);
+            ValidateTiers(tiers);
         }
 
-        PlayerLogic.Vine.Hold Spec(PlayerLogic wizard, VineAnchor vine)
+        PlayerLogic.Vine.Hold DescribeHold(PlayerLogic wizard, VineAnchor vine)
         {
-            Tier tier = TierFor(tiers, wizard.spellbook.RankOf(this)) ?? new Tier();
+            Tier tier = PickTier(tiers, wizard);
 
             return new PlayerLogic.Vine.Hold
             {
@@ -108,6 +98,24 @@ namespace FallingWizard.Player
                 ClimbSpeed = tier.climbSpeed,
                 SnapLimit = graspRange,
             };
+        }
+
+        string WhyNoVineIsInReach(PlayerLogic wizard)
+        {
+            VineAnchor vine = VineAnchor.Nearest(wizard.movement.Position);
+
+            if (vine == null)
+                return VineAnchor.All.Count == 0
+                    ? "there is not a single Vine in this scene"
+                    : "no vine is close enough - look for a knot that has started glowing";
+
+            float snap = wizard.GrabSnapDistance(DescribeHold(wizard, vine));
+
+            if (snap > graspRange)
+                return $"the hand would have to drag you {snap:0.0} boxes to reach it - get " +
+                       $"level with the rope rather than standing over where it is tied";
+
+            return null;
         }
 
         void LetGo(PlayerLogic wizard)
@@ -125,11 +133,11 @@ namespace FallingWizard.Player
         }
 
         [System.Serializable]
-        public class Tier
+        public class Tier : ITier
         {
             [Tooltip("How far the hand leans either side of straight down, in degrees. The vine " +
                      "and the wizard both keep their own ceiling; the smallest of the three wins.")]
-            [Range(0f, 89f)] public float maxSwing = 30f;
+            [Range(0f, WidestSwing)] public float maxSwing = 30f;
 
             [Tooltip("Climbing up and down, in boxes per second. 0 means you cannot - that is " +
                      "rank 1, and unlocking it is the upgrade.")]
@@ -137,12 +145,12 @@ namespace FallingWizard.Player
 
             public void Validate()
             {
-                maxSwing = Mathf.Clamp(maxSwing, 0f, 89f);
+                maxSwing = Mathf.Clamp(maxSwing, 0f, WidestSwing);
                 climbSpeed = Mathf.Max(0f, climbSpeed);
             }
         }
 
-        public class Grip
+        class Grip
         {
             public VineAnchor held;
         }

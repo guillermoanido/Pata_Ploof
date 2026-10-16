@@ -16,45 +16,43 @@ namespace FallingWizard.Core
 
         const string LoadoutPath = "UI/Loadout";
 
-        static readonly HashSet<InputAction> Watched = new HashSet<InputAction>();
+        static readonly HashSet<InputAction> WatchedActions = new HashSet<InputAction>();
 
         static InputAction pause;
         static InputAction skip;
         static InputAction cancel;
         static InputAction loadout;
 
-        public static string Scheme { get; private set; } = KeyboardScheme;
-
         public static event Action SchemeChanged;
 
-        public static bool PausePressed => pause != null && pause.WasPressedThisFrame();
+        public static string Scheme { get; private set; } = KeyboardScheme;
 
-        public static bool SkipPressed => skip != null && skip.WasPressedThisFrame();
+        public static bool WasPausePressed => pause != null && pause.WasPressedThisFrame();
 
-        public static bool CancelPressed => cancel != null && cancel.WasPressedThisFrame();
+        public static bool WasSkipPressed => skip != null && skip.WasPressedThisFrame();
 
-        public static bool LoadoutPressed => loadout != null && loadout.WasPressedThisFrame();
+        public static bool WasCancelPressed => cancel != null && cancel.WasPressedThisFrame();
 
-        public static InputAction Player(string action) => Find($"Player/{action}");
+        public static bool WasLoadoutPressed => loadout != null && loadout.WasPressedThisFrame();
 
-        public static InputAction Find(string path)
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        static void Boot()
         {
-            if (string.IsNullOrEmpty(path))
-                return null;
+            WatchedActions.Clear();
+            Scheme = Gamepad.current != null && Keyboard.current == null ? GamepadScheme : KeyboardScheme;
 
-            InputActionAsset actions = InputSystem.actions;
-            InputAction action = actions != null ? actions.FindAction(path) : null;
+            pause = FindAndWatch(PausePath);
+            skip = FindAndWatch(SkipPath);
+            cancel = FindAndWatch(CancelPath);
+            loadout = FindAndWatch(LoadoutPath);
 
-            if (action == null)
-            {
-                Debug.LogError($"Input action '{path}' is missing from the project-wide actions asset.");
-                return null;
-            }
-
-            action.Enable();
-            Watched.Add(action);
-            return action;
+            InputSystem.onActionChange -= OnActionChange;
+            InputSystem.onActionChange += OnActionChange;
+            InputSystem.onDeviceChange -= OnDeviceChange;
+            InputSystem.onDeviceChange += OnDeviceChange;
         }
+
+        public static InputAction Player(string action) => FindAndWatch($"Player/{action}");
 
         public static string Glyph(InputAction action) => GlyphFor(action, Scheme);
 
@@ -74,21 +72,22 @@ namespace FallingWizard.Core
             return actions != null ? actions.FindAction(path) : null;
         }
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        static void Boot()
+        static InputAction FindAndWatch(string path)
         {
-            Watched.Clear();
-            Scheme = Gamepad.current != null && Keyboard.current == null ? GamepadScheme : KeyboardScheme;
+            if (string.IsNullOrEmpty(path))
+                return null;
 
-            pause = Find(PausePath);
-            skip = Find(SkipPath);
-            cancel = Find(CancelPath);
-            loadout = Find(LoadoutPath);
+            InputAction action = Lookup(path);
 
-            InputSystem.onActionChange -= OnActionChange;
-            InputSystem.onActionChange += OnActionChange;
-            InputSystem.onDeviceChange -= OnDeviceChange;
-            InputSystem.onDeviceChange += OnDeviceChange;
+            if (action == null)
+            {
+                Debug.LogError($"Input action '{path}' is missing from the project-wide actions asset.");
+                return null;
+            }
+
+            action.Enable();
+            WatchedActions.Add(action);
+            return action;
         }
 
         static void OnActionChange(object subject, InputActionChange change)
@@ -96,27 +95,37 @@ namespace FallingWizard.Core
             if (change != InputActionChange.ActionPerformed)
                 return;
 
-            if (!(subject is InputAction action) || !Watched.Contains(action))
+            var action = subject as InputAction;
+
+            if (action == null || !WatchedActions.Contains(action))
                 return;
 
             InputDevice device = action.activeControl != null ? action.activeControl.device : null;
+            string nextScheme = PickSchemeFor(device);
 
-            string next = device is Gamepad ? GamepadScheme
-                        : device is Keyboard || device is Mouse ? KeyboardScheme
-                        : Scheme;
-
-            if (next == Scheme)
+            if (nextScheme == Scheme)
                 return;
 
-            Scheme = next;
+            Scheme = nextScheme;
             SchemeChanged?.Invoke();
+        }
+
+        static string PickSchemeFor(InputDevice device)
+        {
+            if (device is Gamepad)
+                return GamepadScheme;
+
+            if (device is Keyboard || device is Mouse)
+                return KeyboardScheme;
+
+            return Scheme;
         }
 
         static void OnDeviceChange(InputDevice device, InputDeviceChange change)
         {
-            bool lost = change == InputDeviceChange.Removed || change == InputDeviceChange.Disconnected;
+            bool isLost = change == InputDeviceChange.Removed || change == InputDeviceChange.Disconnected;
 
-            if (device is Gamepad && lost && Scheme == GamepadScheme)
+            if (device is Gamepad && isLost && Scheme == GamepadScheme)
                 Scheme = KeyboardScheme;
 
             SchemeChanged?.Invoke();

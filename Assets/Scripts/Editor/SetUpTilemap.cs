@@ -1,6 +1,5 @@
 #if UNITY_EDITOR
 using System.Collections.Generic;
-using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -13,7 +12,7 @@ namespace FallingWizard.EditorTools
         const string GroundLayer = "Ground";
 
         [MenuItem("Falling Wizard/Set Up Tilemap Collision")]
-        public static void Run()
+        static void Run()
         {
             int ground = LayerMask.NameToLayer(GroundLayer);
 
@@ -24,7 +23,7 @@ namespace FallingWizard.EditorTools
                 return;
             }
 
-            Tilemap[] targets = Chosen();
+            Tilemap[] targets = ChooseTilemaps();
 
             if (targets.Length == 0)
             {
@@ -40,38 +39,58 @@ namespace FallingWizard.EditorTools
             Debug.Log($"Tilemap collision set up on {targets.Length} tilemap(s). Save the scene to keep it.");
         }
 
-        static Tilemap[] Chosen()
+        static Tilemap[] ChooseTilemaps()
         {
             var picked = new List<Tilemap>();
 
-            foreach (GameObject go in Selection.gameObjects)
-                picked.AddRange(go.GetComponentsInChildren<Tilemap>(true));
+            foreach (GameObject selected in Selection.gameObjects)
+                AddNotYetPicked(picked, selected.GetComponentsInChildren<Tilemap>(true));
 
             if (picked.Count > 0)
-                return picked.Distinct().ToArray();
+                return picked.ToArray();
 
             return Object.FindObjectsByType<Tilemap>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         }
 
+        static void AddNotYetPicked(List<Tilemap> picked, Tilemap[] maps)
+        {
+            foreach (Tilemap map in maps)
+            {
+                if (!picked.Contains(map))
+                    picked.Add(map);
+            }
+        }
+
         static void Wire(Tilemap map, int ground)
         {
-            GameObject go = map.gameObject;
+            GameObject tilemapObject = map.gameObject;
             var changes = new List<string>();
 
-            if (go.layer != ground)
+            MoveToGroundLayer(tilemapObject, ground, changes);
+            MakeBodyStatic(tilemapObject, changes);
+            MergeTilesIntoComposite(tilemapObject, changes);
+            UsePolygonComposite(tilemapObject, changes);
+
+            EditorUtility.SetDirty(tilemapObject);
+
+            Debug.Log(changes.Count == 0
+                ? $"'{tilemapObject.name}' was already set up."
+                : $"'{tilemapObject.name}': {string.Join(", ", changes)}.", tilemapObject);
+        }
+
+        static void MoveToGroundLayer(GameObject tilemapObject, int ground, List<string> changes)
+        {
+            if (tilemapObject.layer != ground)
             {
-                Undo.RecordObject(go, "Tilemap layer");
-                go.layer = ground;
+                Undo.RecordObject(tilemapObject, "Tilemap layer");
+                tilemapObject.layer = ground;
                 changes.Add($"layer -> {GroundLayer}");
             }
+        }
 
-            var body = go.GetComponent<Rigidbody2D>();
-
-            if (body == null)
-            {
-                body = Undo.AddComponent<Rigidbody2D>(go);
-                changes.Add("added Rigidbody2D");
-            }
+        static void MakeBodyStatic(GameObject tilemapObject, List<string> changes)
+        {
+            var body = GetOrAdd<Rigidbody2D>(tilemapObject, changes);
 
             if (body.bodyType != RigidbodyType2D.Static)
             {
@@ -79,14 +98,11 @@ namespace FallingWizard.EditorTools
                 body.bodyType = RigidbodyType2D.Static;
                 changes.Add("body -> Static");
             }
+        }
 
-            var tiles = go.GetComponent<TilemapCollider2D>();
-
-            if (tiles == null)
-            {
-                tiles = Undo.AddComponent<TilemapCollider2D>(go);
-                changes.Add("added TilemapCollider2D");
-            }
+        static void MergeTilesIntoComposite(GameObject tilemapObject, List<string> changes)
+        {
+            var tiles = GetOrAdd<TilemapCollider2D>(tilemapObject, changes);
 
             if (tiles.compositeOperation != Collider2D.CompositeOperation.Merge)
             {
@@ -94,14 +110,11 @@ namespace FallingWizard.EditorTools
                 tiles.compositeOperation = Collider2D.CompositeOperation.Merge;
                 changes.Add("collider -> merged into composite");
             }
+        }
 
-            var composite = go.GetComponent<CompositeCollider2D>();
-
-            if (composite == null)
-            {
-                composite = Undo.AddComponent<CompositeCollider2D>(go);
-                changes.Add("added CompositeCollider2D");
-            }
+        static void UsePolygonComposite(GameObject tilemapObject, List<string> changes)
+        {
+            var composite = GetOrAdd<CompositeCollider2D>(tilemapObject, changes);
 
             if (composite.geometryType != CompositeCollider2D.GeometryType.Polygons)
             {
@@ -109,12 +122,19 @@ namespace FallingWizard.EditorTools
                 composite.geometryType = CompositeCollider2D.GeometryType.Polygons;
                 changes.Add("composite -> Polygons");
             }
+        }
 
-            EditorUtility.SetDirty(go);
+        static T GetOrAdd<T>(GameObject tilemapObject, List<string> changes) where T : Component
+        {
+            var component = tilemapObject.GetComponent<T>();
 
-            Debug.Log(changes.Count == 0
-                ? $"'{go.name}' was already set up."
-                : $"'{go.name}': {string.Join(", ", changes)}.", go);
+            if (component == null)
+            {
+                component = Undo.AddComponent<T>(tilemapObject);
+                changes.Add($"added {typeof(T).Name}");
+            }
+
+            return component;
         }
     }
 }

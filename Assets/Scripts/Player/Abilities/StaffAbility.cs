@@ -13,32 +13,32 @@ namespace FallingWizard.Player
         public Sprite lookingDownIcon;
 
         public override Sprite IconFor(PlayerLogic wizard) =>
-            wizard.StaffLooksDown && lookingDownIcon != null ? lookingDownIcon : icon;
+            wizard.IsStaffLookingDown && lookingDownIcon != null ? lookingDownIcon : icon;
 
         public override void ModifyStats(PlayerLogic wizard, PlayerLogic.Modifiers stats) =>
             wizard.SelectStaff(wizard.spellbook.RankOf(this));
 
         public override bool CanCast(PlayerLogic wizard) =>
-            wizard.IsOnStaff || wizard.StaffLooksDown ||
-            (wizard.StaffIsFree && (wizard.movement.IsAtEdge || wizard.CanClimbHere));
+            wizard.IsOnStaff || wizard.IsStaffLookingDown ||
+            (wizard.IsStaffFree && (wizard.movement.IsAtEdge || wizard.CanClimbHere));
 
         public override void OnHeld(PlayerLogic wizard, float heldSeconds, float fixedDeltaTime)
         {
             Aim aim = wizard.spellbook.StateOf<Aim>(this);
 
-            if (!aim.pressed)
+            if (!aim.isPressed)
             {
-                aim.pressed = true;
-                aim.letGoOfTheStaff = wizard.IsOnStaff;
+                aim.isPressed = true;
+                aim.hasLetGoOfTheStaff = wizard.IsOnStaff;
 
-                if (aim.letGoOfTheStaff)
+                if (aim.hasLetGoOfTheStaff)
                     wizard.DropFromStaff();
             }
 
-            if (aim.letGoOfTheStaff || heldSeconds < tapSeconds || !wizard.StaffIsFree)
+            if (aim.hasLetGoOfTheStaff || heldSeconds < tapSeconds || !wizard.IsStaffFree)
                 return;
 
-            if (wizard.StaffLooksDown)
+            if (wizard.IsStaffLookingDown)
                 wizard.AimStaffDown(false);
 
             wizard.RaiseStaff();
@@ -49,30 +49,25 @@ namespace FallingWizard.Player
         {
             Aim aim = wizard.spellbook.StateOf<Aim>(this);
 
-            bool tapped = heldSeconds <= tapSeconds && !aim.letGoOfTheStaff;
+            bool tapped = heldSeconds <= tapSeconds && !aim.hasLetGoOfTheStaff;
 
-            aim.pressed = false;
-            aim.letGoOfTheStaff = false;
+            aim.Clear();
 
             if (tapped)
             {
-                wizard.AimStaffDown(!wizard.StaffLooksDown);
+                wizard.AimStaffDown(!wizard.IsStaffLookingDown);
                 return;
             }
 
-            if (!wizard.StaffLooksDown)
-                wizard.LowerStaff();
+            LowerStaffUnlessLookingDown(wizard);
         }
 
         public override void OnChargeLost(PlayerLogic wizard)
         {
             Aim aim = wizard.spellbook.StateOf<Aim>(this);
 
-            aim.pressed = false;
-            aim.letGoOfTheStaff = false;
-
-            if (!wizard.StaffLooksDown)
-                wizard.LowerStaff();
+            aim.Clear();
+            LowerStaffUnlessLookingDown(wizard);
         }
 
         public override string WhyNot(PlayerLogic wizard)
@@ -96,12 +91,21 @@ namespace FallingWizard.Player
             if (wizard.movement.TryFindLedgeEdge(out _))
                 return "the drop here is too shallow for the staff to reach down into";
 
-            PlayerLogic.Movement walk = wizard.movement;
+            return ExplainWhyNoClimb(wizard.movement);
+        }
 
-            switch (walk.WhyNoClimb)
+        static void LowerStaffUnlessLookingDown(PlayerLogic wizard)
+        {
+            if (!wizard.IsStaffLookingDown)
+                wizard.LowerStaff();
+        }
+
+        static string ExplainWhyNoClimb(PlayerLogic.Movement movement)
+        {
+            switch (movement.WhyNoClimb)
             {
                 case PlayerLogic.Movement.ClimbRefusal.NotStanding:
-                    return walk.catchLedgesInTheAir
+                    return movement.catchLedgesInTheAir
                         ? "there is nothing here to raise the staff against"
                         : "you are not stood on anything to raise the staff from";
 
@@ -115,15 +119,15 @@ namespace FallingWizard.Player
 
                 case PlayerLogic.Movement.ClimbRefusal.TooTall:
                     return $"what the hook caught carries on above it, so there is no top to " +
-                           $"climb onto - the hook reaches {walk.ClimbCanReach:0.00} boxes up";
+                           $"climb onto - the hook reaches {movement.ClimbReach:0.00} boxes up";
 
                 case PlayerLogic.Movement.ClimbRefusal.NoRoomOnTop:
-                    return $"the top is {walk.ClimbRise:0.00} boxes up, which the staff can " +
+                    return $"the top is {movement.ClimbRise:0.00} boxes up, which the staff can " +
                            "reach, but the wizard does not fit standing on it - something is in " +
                            "the way just past the lip";
 
                 case PlayerLogic.Movement.ClimbRefusal.NoHeadroom:
-                    return $"the top is {walk.ClimbRise:0.00} boxes up, which the staff can " +
+                    return $"the top is {movement.ClimbRise:0.00} boxes up, which the staff can " +
                            "reach, but something is in the way directly above the wizard's head";
             }
 
@@ -132,8 +136,14 @@ namespace FallingWizard.Player
 
         class Aim
         {
-            public bool pressed;
-            public bool letGoOfTheStaff;
+            public bool isPressed;
+            public bool hasLetGoOfTheStaff;
+
+            public void Clear()
+            {
+                isPressed = false;
+                hasLetGoOfTheStaff = false;
+            }
         }
     }
 }

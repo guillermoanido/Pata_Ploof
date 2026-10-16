@@ -16,9 +16,9 @@ namespace FallingWizard.Player
             public float AirDragMultiplier;
 
             public int ExtraJumps;
-            public bool Shielded;
+            public bool IsShielded;
 
-            public bool Rooted;
+            public bool IsRooted;
 
             public Modifiers() => Reset();
 
@@ -33,8 +33,8 @@ namespace FallingWizard.Player
                 AirControlMultiplier = 1f;
                 AirDragMultiplier = 1f;
                 ExtraJumps = 0;
-                Shielded = false;
-                Rooted = false;
+                IsShielded = false;
+                IsRooted = false;
             }
         }
     }

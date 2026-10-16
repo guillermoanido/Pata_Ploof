@@ -13,19 +13,15 @@ namespace FallingWizard.Menus
 
         protected override Selectable DefaultSelection => playButton;
 
+        void Start() => ShowPanel();
+
         protected override void WireButtons()
         {
-            playButton.onClick.AddListener(() => UI.SkillScreen.Open(Game.StartRun));
+            playButton.onClick.AddListener(OpenSkillScreen);
             settingsButton.onClick.AddListener(OpenSettings);
             exitButton.onClick.AddListener(Game.Quit);
         }
 
-        protected override void OnBackPressed()
-        {
-            if (IsSettingsOpen)
-                CloseSettings();
-        }
-
-        void Start() => ShowPanel();
+        static void OpenSkillScreen() => UI.SkillScreen.Open(Game.StartRun);
     }
 }

@@ -9,6 +9,8 @@ namespace FallingWizard.World
     {
         const float Epsilon = 0.0001f;
 
+        const float Half = 0.5f;
+
         static readonly Color LineColour = new Color(0.42f, 0.75f, 0.38f);
         static readonly Color ReachColour = new Color(0.42f, 0.75f, 0.38f, 0.25f);
 
@@ -54,8 +56,8 @@ namespace FallingWizard.World
         public bool staysDown = true;
 
         [NonSerialized] float unrolled;
-        [NonSerialized] bool called;
-        [NonSerialized] bool showingGlow;
+        [NonSerialized] bool isCalledDown;
+        [NonSerialized] bool isShowingGlow;
 
         [NonSerialized] float ropeThickness = 1f;
 
@@ -63,13 +65,33 @@ namespace FallingWizard.World
 
         public Vector2 Knot => (Vector2)transform.position + knotOffset;
 
-        public Vector2 Tail => Knot + Vector2.down * length;
+        Vector2 Tail => Knot + Vector2.down * length;
 
-        public bool IsDown => called;
+        float Lean => IsBeingRidden ? PlayerCharacter.Instance.Logic.vine.Lean : 0f;
 
-        void OnEnable() => Hanging.Add(this);
+        bool IsWizardNear
+        {
+            get
+            {
+                PlayerCharacter wizard = PlayerCharacter.Instance;
 
-        void OnDisable() => Hanging.Remove(this);
+                return wizard != null &&
+                       wizard.Logic.health.IsAlive &&
+                       IsWithinReach(wizard.Logic.movement.Position);
+            }
+        }
+
+        bool IsBeingRidden
+        {
+            get
+            {
+                PlayerCharacter wizard = PlayerCharacter.Instance;
+
+                return wizard != null &&
+                       wizard.Logic.IsOnVine &&
+                       (wizard.Logic.vine.Anchor - Knot).sqrMagnitude < Epsilon;
+            }
+        }
 
         void Awake()
         {
@@ -82,45 +104,19 @@ namespace FallingWizard.World
             ropeThickness = rope.transform.localScale.x;
         }
 
+        void OnEnable() => Hanging.Add(this);
+
         void Update()
         {
             ShowGlowLookWhenNear();
             Unroll();
         }
 
-        void OnDrawGizmosSelected()
-        {
-            Gizmos.color = LineColour;
-            Gizmos.DrawLine(Knot, Tail);
-
-            float sweep = maxSwing * Mathf.Deg2Rad;
-
-            Gizmos.DrawLine(Knot, Knot + new Vector2(Mathf.Sin(-sweep), -Mathf.Cos(sweep)) * length);
-            Gizmos.DrawLine(Knot, Knot + new Vector2(Mathf.Sin(sweep), -Mathf.Cos(sweep)) * length);
-
-            Gizmos.color = ReachColour;
-            Gizmos.DrawWireSphere(Tail, grabRange);
-            Gizmos.DrawWireSphere(Knot, grabRange);
-        }
-
-        public float DistanceTo(Vector2 point)
-        {
-            Vector2 down = Tail - Knot;
-            float run = down.sqrMagnitude;
-
-            if (run <= Epsilon)
-                return Vector2.Distance(point, Knot);
-
-            float along = Mathf.Clamp01(Vector2.Dot(point - Knot, down) / run);
-
-            return Vector2.Distance(point, Knot + down * along);
-        }
-
-        public bool IsWithinReach(Vector2 point) => DistanceTo(point) <= grabRange;
+        void OnDisable() => Hanging.Remove(this);
 
         public void CallDown()
         {
-            called = true;
+            isCalledDown = true;
 
             if (unrollTime <= 0f)
                 unrolled = 1f;
@@ -131,69 +127,58 @@ namespace FallingWizard.World
             if (staysDown)
                 return;
 
-            called = false;
+            isCalledDown = false;
             unrolled = 0f;
         }
 
         public static VineAnchor Nearest(Vector2 point)
         {
             VineAnchor closest = null;
-            float best = float.MaxValue;
+            float closestGap = float.MaxValue;
 
             foreach (VineAnchor vine in Hanging)
             {
                 float gap = vine.DistanceTo(point);
 
-                if (gap > vine.grabRange || gap >= best)
+                if (gap > vine.grabRange || gap >= closestGap)
                     continue;
 
-                best = gap;
+                closestGap = gap;
                 closest = vine;
             }
 
             return closest;
         }
 
-        float Swing => BeingRidden ? PlayerCharacter.Instance.Logic.vine.Lean : 0f;
-
-        bool WizardIsNear
-        {
-            get
-            {
-                PlayerCharacter wizard = PlayerCharacter.Instance;
-
-                return wizard != null &&
-                       wizard.Logic.health.IsAlive &&
-                       IsWithinReach(wizard.Logic.movement.Position);
-            }
-        }
-
-        bool BeingRidden
-        {
-            get
-            {
-                PlayerCharacter wizard = PlayerCharacter.Instance;
-
-                return wizard != null &&
-                       wizard.Logic.IsOnVine &&
-                       (wizard.Logic.vine.Anchor - Knot).sqrMagnitude < Epsilon;
-            }
-        }
-
         void ShowGlowLookWhenNear()
         {
-            bool near = WizardIsNear;
+            bool near = IsWizardNear;
 
-            if (near != showingGlow)
+            if (near != isShowingGlow)
                 ShowGlowLook(near);
         }
 
         void ShowGlowLook(bool near)
         {
-            showingGlow = near;
+            isShowingGlow = near;
 
             if (glowLook != null)
                 glowLook.SetActive(near);
+        }
+
+        bool IsWithinReach(Vector2 point) => DistanceTo(point) <= grabRange;
+
+        float DistanceTo(Vector2 point)
+        {
+            Vector2 knotToTail = Tail - Knot;
+            float squaredLength = knotToTail.sqrMagnitude;
+
+            if (squaredLength <= Epsilon)
+                return Vector2.Distance(point, Knot);
+
+            float along = Mathf.Clamp01(Vector2.Dot(point - Knot, knotToTail) / squaredLength);
+
+            return Vector2.Distance(point, Knot + knotToTail * along);
         }
 
         void Unroll()
@@ -201,40 +186,57 @@ namespace FallingWizard.World
             if (rope == null || rope.sprite == null)
                 return;
 
-            if (called && !staysDown && !BeingRidden)
-                called = false;
+            if (isCalledDown && !staysDown && !IsBeingRidden)
+                isCalledDown = false;
 
-            float want = called ? 1f : 0f;
+            float target = isCalledDown ? 1f : 0f;
 
             unrolled = unrollTime <= 0f
-                ? want
-                : Mathf.MoveTowards(unrolled, want, Time.deltaTime / unrollTime);
+                ? target
+                : Mathf.MoveTowards(unrolled, target, Time.deltaTime / unrollTime);
 
             rope.enabled = unrolled > Epsilon;
 
             if (!rope.enabled)
                 return;
 
-            Stretch(unrolled, Swing);
+            Stretch(unrolled, Lean);
         }
 
         void Stretch(float howFar, float lean)
         {
-            Vector2 unit = rope.sprite.bounds.size;
+            Vector2 spriteSize = rope.sprite.bounds.size;
 
-            if (unit.x <= Epsilon || unit.y <= Epsilon)
+            if (spriteSize.x <= Epsilon || spriteSize.y <= Epsilon)
                 return;
 
-            float hangs = length * howFar;
-            float tilt = lean * Mathf.Deg2Rad;
+            float hangingLength = length * howFar;
 
-            var along = new Vector2(Mathf.Sin(tilt), -Mathf.Cos(tilt));
-
-            rope.transform.position = Knot + along * (hangs * 0.5f);
+            rope.transform.position = Knot + DirectionAtLean(lean) * (hangingLength * Half);
             rope.transform.rotation = Quaternion.Euler(0f, 0f, lean);
 
             rope.transform.localScale =
-                new Vector3(ropeThickness, Mathf.Max(Epsilon, hangs) / unit.y, 1f);
+                new Vector3(ropeThickness, Mathf.Max(Epsilon, hangingLength) / spriteSize.y, 1f);
+        }
+
+        Vector2 DirectionAtLean(float lean)
+        {
+            float leanInRadians = lean * Mathf.Deg2Rad;
+
+            return new Vector2(Mathf.Sin(leanInRadians), -Mathf.Cos(leanInRadians));
+        }
+
+        void OnDrawGizmosSelected()
+        {
+            Gizmos.color = LineColour;
+            Gizmos.DrawLine(Knot, Tail);
+
+            Gizmos.DrawLine(Knot, Knot + DirectionAtLean(-maxSwing) * length);
+            Gizmos.DrawLine(Knot, Knot + DirectionAtLean(maxSwing) * length);
+
+            Gizmos.color = ReachColour;
+            Gizmos.DrawWireSphere(Tail, grabRange);
+            Gizmos.DrawWireSphere(Knot, grabRange);
         }
     }
 }

@@ -13,11 +13,8 @@ namespace FallingWizard.Menus
     {
         const float AsPercent = 100f;
 
-        const float ResetButtonWidth = 260f;
-        const float ResetButtonHeight = 56f;
-
-        const float ControlsButtonWidth = 260f;
-        const float ControlsButtonHeight = 56f;
+        const float BuiltButtonWidth = 260f;
+        const float BuiltButtonHeight = 56f;
 
         static readonly Language[] Languages = (Language[])Enum.GetValues(typeof(Language));
 
@@ -55,10 +52,10 @@ namespace FallingWizard.Menus
             FillResolutionDropdown();
             FillLanguageDropdown();
 
-            resolutionDropdown.onValueChanged.AddListener(index => GameSettings.ResolutionIndex = index);
-            fullscreenToggle.onValueChanged.AddListener(on => GameSettings.Fullscreen = on);
+            resolutionDropdown.onValueChanged.AddListener(OnResolutionChanged);
+            fullscreenToggle.onValueChanged.AddListener(OnFullscreenChanged);
             volumeSlider.onValueChanged.AddListener(OnVolumeChanged);
-            backButton.onClick.AddListener(() => Closed?.Invoke());
+            backButton.onClick.AddListener(Close);
 
             EnsureControlsButton();
             controlsButton.onClick.AddListener(ShowControls);
@@ -71,50 +68,6 @@ namespace FallingWizard.Menus
 
             foreach (GameObject row in desktopOnlyRows)
                 row.SetActive(GameSettings.DisplaySettingsSupported);
-        }
-
-        void EnsureResetButton()
-        {
-            if (resetSaveButton != null)
-                return;
-
-            resetSaveButton = UI.Ui.CreateButton(Loc.Get(Loc.Keys.SettingsResetSave),
-                backButton.transform.parent, ResetButtonWidth, ResetButtonHeight);
-
-            resetSaveButton.transform.SetSiblingIndex(backButton.transform.GetSiblingIndex());
-        }
-
-        void EnsureControlsButton()
-        {
-            if (controlsButton != null)
-                return;
-
-            controlsButton = UI.Ui.CreateButton(Loc.Get(Loc.Keys.SettingsControls),
-                backButton.transform.parent, ControlsButtonWidth, ControlsButtonHeight);
-
-            controlsButton.transform.SetSiblingIndex(backButton.transform.GetSiblingIndex());
-        }
-
-        static void ShowControls() => UI.ControlsScreen.Open();
-
-        void AskToResetSave()
-        {
-            UI.ChoiceScreen screen = UI.ChoiceScreen.Open(
-                Loc.Get(Loc.Keys.SettingsResetSaveTitle),
-                Loc.Get(Loc.Keys.SettingsResetSaveBlurb));
-
-            screen.Status(Loc.Format(Loc.Keys.SettingsResetSaveStatus, Progress.Wisps));
-
-            screen.Choice(Loc.Get(Loc.Keys.SettingsResetSaveConfirm),
-                () => screen.CloseThen(Wipe));
-
-            screen.Choice(Loc.Get(Loc.Keys.SettingsResetSaveCancel), screen.Close);
-        }
-
-        static void Wipe()
-        {
-            Progress.ResetSave();
-            Game.LoadMainMenu();
         }
 
         void OnEnable()
@@ -131,12 +84,6 @@ namespace FallingWizard.Menus
         {
             Loc.Changed -= Retranslate;
             GameSettings.Save();
-        }
-
-        void Retranslate()
-        {
-            UI.Ui.Retext(controlsButton, Loc.Get(Loc.Keys.SettingsControls));
-            UI.Ui.Retext(resetSaveButton, Loc.Get(Loc.Keys.SettingsResetSave));
         }
 
         void FillResolutionDropdown()
@@ -162,17 +109,9 @@ namespace FallingWizard.Menus
             languageDropdown.AddOptions(names);
         }
 
-        void ShowCurrentSettings()
-        {
-            resolutionDropdown.SetValueWithoutNotify(GameSettings.ResolutionIndex);
-            fullscreenToggle.SetIsOnWithoutNotify(GameSettings.Fullscreen);
-            volumeSlider.SetValueWithoutNotify(GameSettings.Volume);
-            UpdateVolumeLabel(GameSettings.Volume);
-            Retranslate();
+        static void OnResolutionChanged(int index) => GameSettings.ResolutionIndex = index;
 
-            if (languageDropdown != null)
-                languageDropdown.SetValueWithoutNotify(Array.IndexOf(Languages, Loc.Language));
-        }
+        static void OnFullscreenChanged(bool isOn) => GameSettings.IsFullscreen = isOn;
 
         void OnVolumeChanged(float value)
         {
@@ -180,18 +119,81 @@ namespace FallingWizard.Menus
             UpdateVolumeLabel(value);
         }
 
-        void OnLanguageChanged(int index)
+        void UpdateVolumeLabel(float value)
         {
-            if ((uint)index >= Languages.Length)
+            if (volumeValueLabel != null)
+                volumeValueLabel.text = $"{Mathf.RoundToInt(value * AsPercent)}%";
+        }
+
+        void Close() => Closed?.Invoke();
+
+        void EnsureControlsButton()
+        {
+            if (controlsButton == null)
+                controlsButton = BuildButtonBesideBack(Loc.Keys.SettingsControls);
+        }
+
+        Button BuildButtonBesideBack(string labelKey)
+        {
+            Button button = UI.Ui.CreateButton(Loc.Get(labelKey), backButton.transform.parent,
+                BuiltButtonWidth, BuiltButtonHeight);
+
+            button.transform.SetSiblingIndex(backButton.transform.GetSiblingIndex());
+            return button;
+        }
+
+        static void ShowControls() => UI.ControlsScreen.Open();
+
+        void EnsureResetButton()
+        {
+            if (resetSaveButton == null)
+                resetSaveButton = BuildButtonBesideBack(Loc.Keys.SettingsResetSave);
+        }
+
+        void AskToResetSave()
+        {
+            UI.ChoiceScreen screen = UI.ChoiceScreen.Open(
+                Loc.Get(Loc.Keys.SettingsResetSaveTitle),
+                Loc.Get(Loc.Keys.SettingsResetSaveBlurb));
+
+            screen.Status(Loc.Format(Loc.Keys.SettingsResetSaveStatus, Progress.Wisps));
+
+            screen.Choice(Loc.Get(Loc.Keys.SettingsResetSaveConfirm),
+                () => screen.CloseThen(ResetSaveAndLoadMainMenu));
+
+            screen.Choice(Loc.Get(Loc.Keys.SettingsResetSaveCancel), screen.Close);
+        }
+
+        static void ResetSaveAndLoadMainMenu()
+        {
+            Progress.ResetSave();
+            Game.LoadMainMenu();
+        }
+
+        static void OnLanguageChanged(int index)
+        {
+            if (index < 0 || index >= Languages.Length)
                 return;
 
             Loc.Set(Languages[index]);
         }
 
-        void UpdateVolumeLabel(float value)
+        void Retranslate()
         {
-            if (volumeValueLabel != null)
-                volumeValueLabel.text = $"{Mathf.RoundToInt(value * AsPercent)}%";
+            UI.Ui.Retext(controlsButton, Loc.Get(Loc.Keys.SettingsControls));
+            UI.Ui.Retext(resetSaveButton, Loc.Get(Loc.Keys.SettingsResetSave));
+        }
+
+        void ShowCurrentSettings()
+        {
+            resolutionDropdown.SetValueWithoutNotify(GameSettings.ResolutionIndex);
+            fullscreenToggle.SetIsOnWithoutNotify(GameSettings.IsFullscreen);
+            volumeSlider.SetValueWithoutNotify(GameSettings.Volume);
+            UpdateVolumeLabel(GameSettings.Volume);
+            Retranslate();
+
+            if (languageDropdown != null)
+                languageDropdown.SetValueWithoutNotify(Array.IndexOf(Languages, Loc.Language));
         }
     }
 }

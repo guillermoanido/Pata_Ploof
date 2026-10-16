@@ -8,73 +8,91 @@ namespace FallingWizard.UI
 {
     public static class Ui
     {
+        const float SheetPadding = 36f;
+        const float SheetSpacing = 16f;
+        const float ColumnSpacing = 18f;
+        const float RowSpacing = 16f;
+        const float PipSpacing = 4f;
+        const float ButtonFontSize = 30f;
+
+        const float ScalerBalance = 0.5f;
+
+        const float TintFadeSeconds = 0.08f;
+        const float CardTintMultiplier = 2f;
+
         public static readonly Color Ink = new Color(0.93f, 0.92f, 0.98f);
         public static readonly Color FadedInk = new Color(0.62f, 0.60f, 0.72f);
-        public static readonly Color ButtonInk = new Color(0.11f, 0.10f, 0.14f);
 
-        public static readonly Color Shade = new Color(0.02f, 0.02f, 0.04f, 0.78f);
         public static readonly Color Panel = new Color(0.07f, 0.06f, 0.11f, 0.97f);
         public static readonly Color Card = new Color(0.13f, 0.12f, 0.19f, 0.95f);
         public static readonly Color CardLit = new Color(0.20f, 0.19f, 0.30f, 0.98f);
 
         public static readonly Color Wisp = new Color(0.55f, 0.85f, 1f);
-        public static readonly Color Heart = new Color(0.88f, 0.30f, 0.38f);
         public static readonly Color Warning = new Color(0.95f, 0.72f, 0.36f);
 
+        static readonly Color ButtonInk = new Color(0.11f, 0.10f, 0.14f);
+        static readonly Color Shade = new Color(0.02f, 0.02f, 0.04f, 0.78f);
+        static readonly Color PipEmpty = new Color(1f, 1f, 1f, 0.16f);
+
+        static readonly Color ButtonTintNormal = new Color(1f, 1f, 1f, 1f);
+        static readonly Color ButtonTintHighlighted = new Color(0.84f, 0.90f, 1f, 1f);
+        static readonly Color ButtonTintSelected = new Color(0.72f, 0.84f, 1f, 1f);
+        static readonly Color ButtonTintPressed = new Color(0.60f, 0.72f, 0.95f, 1f);
+        static readonly Color ButtonTintDisabled = new Color(1f, 1f, 1f, 0.35f);
+
+        static readonly Color CardTintNormal = new Color(0.5f, 0.5f, 0.5f, 0.5f);
+        static readonly Color CardTintHighlighted = new Color(0.62f, 0.62f, 0.7f, 0.5f);
+        static readonly Color CardTintSelected = new Color(0.78f, 0.78f, 0.92f, 0.52f);
+        static readonly Color CardTintPressed = new Color(0.9f, 0.9f, 1f, 0.55f);
+        static readonly Color CardTintDisabled = new Color(0.4f, 0.4f, 0.45f, 0.4f);
+
         static readonly Vector2 ReferenceResolution = new Vector2(1920f, 1080f);
-
-        const float ScalerBalance = 0.5f;
-
-        public const float SheetPadding = 36f;
-        public const float SheetSpacing = 16f;
-        public const float ColumnSpacing = 18f;
-        public const float RowSpacing = 16f;
-        public const float ButtonFontSize = 30f;
-
         static readonly Vector2 Centre = new Vector2(0.5f, 0.5f);
 
-        public static readonly Color PipEmpty = new Color(1f, 1f, 1f, 0.16f);
+        static readonly TMP_DefaultControls.Resources PlainResources =
+            new TMP_DefaultControls.Resources();
 
-        public static ColorBlock Tints
+        static ColorBlock ButtonTints
         {
             get
             {
                 ColorBlock block = ColorBlock.defaultColorBlock;
-                block.normalColor = new Color(1f, 1f, 1f, 1f);
-                block.highlightedColor = new Color(0.84f, 0.90f, 1f, 1f);
-                block.selectedColor = new Color(0.72f, 0.84f, 1f, 1f);
-                block.pressedColor = new Color(0.60f, 0.72f, 0.95f, 1f);
-                block.disabledColor = new Color(1f, 1f, 1f, 0.35f);
-                block.fadeDuration = 0.08f;
+                block.normalColor = ButtonTintNormal;
+                block.highlightedColor = ButtonTintHighlighted;
+                block.selectedColor = ButtonTintSelected;
+                block.pressedColor = ButtonTintPressed;
+                block.disabledColor = ButtonTintDisabled;
+                block.fadeDuration = TintFadeSeconds;
                 return block;
             }
         }
 
-        public static ColorBlock CardTints
+        static ColorBlock CardTints
         {
             get
             {
                 ColorBlock block = ColorBlock.defaultColorBlock;
-                block.colorMultiplier = 2f;
-                block.normalColor = new Color(0.5f, 0.5f, 0.5f, 0.5f);
-                block.highlightedColor = new Color(0.62f, 0.62f, 0.7f, 0.5f);
-                block.selectedColor = new Color(0.78f, 0.78f, 0.92f, 0.52f);
-                block.pressedColor = new Color(0.9f, 0.9f, 1f, 0.55f);
-                block.disabledColor = new Color(0.4f, 0.4f, 0.45f, 0.4f);
-                block.fadeDuration = 0.08f;
+                block.colorMultiplier = CardTintMultiplier;
+                block.normalColor = CardTintNormal;
+                block.highlightedColor = CardTintHighlighted;
+                block.selectedColor = CardTintSelected;
+                block.pressedColor = CardTintPressed;
+                block.disabledColor = CardTintDisabled;
+                block.fadeDuration = TintFadeSeconds;
                 return block;
             }
         }
 
         public static Canvas CreateCanvas(string name, int sortingOrder)
         {
-            var go = new GameObject(name, typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+            var canvasObject = new GameObject(name, typeof(Canvas), typeof(CanvasScaler),
+                typeof(GraphicRaycaster));
 
-            var canvas = go.GetComponent<Canvas>();
+            var canvas = canvasObject.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = sortingOrder;
 
-            var scaler = go.GetComponent<CanvasScaler>();
+            var scaler = canvasObject.GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = ReferenceResolution;
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
@@ -85,108 +103,92 @@ namespace FallingWizard.UI
             return canvas;
         }
 
-        public static void EnsureEventSystem()
+        public static Image CreateShroud(Transform parent)
         {
-            if (EventSystem.current != null)
-                return;
+            var shroudObject = new GameObject("Shroud", typeof(Image));
+            Attach(shroudObject, parent);
+            Stretch(shroudObject);
 
-            var go = new GameObject("Event System", typeof(EventSystem));
-            go.AddComponent<InputSystemUIInputModule>();
+            Image shroud = shroudObject.GetComponent<Image>();
+            shroud.color = Shade;
+            return shroud;
         }
 
-        public static Image Shroud(Transform parent)
-        {
-            var go = new GameObject("Shroud", typeof(Image));
-            Attach(go, parent);
-            Stretch(go);
-
-            Image art = go.GetComponent<Image>();
-            art.color = Shade;
-            return art;
-        }
-
-        public static RectTransform Sheet(string name, Transform parent, Color colour,
+        public static RectTransform CreateSheet(string name, Transform parent, Color colour,
             float width, float padding = SheetPadding, float spacing = SheetSpacing)
         {
-            var go = new GameObject(name, typeof(Image), typeof(VerticalLayoutGroup),
+            var sheetObject = new GameObject(name, typeof(Image), typeof(VerticalLayoutGroup),
                 typeof(ContentSizeFitter));
-            Attach(go, parent);
+            Attach(sheetObject, parent);
 
-            go.GetComponent<Image>().color = colour;
+            sheetObject.GetComponent<Image>().color = colour;
 
-            var rect = (RectTransform)go.transform;
-            rect.anchorMin = rect.anchorMax = rect.pivot = Centre;
-            rect.anchoredPosition = Vector2.zero;
-            rect.sizeDelta = new Vector2(width, 0f);
+            var rectTransform = (RectTransform)sheetObject.transform;
+            rectTransform.anchorMin = rectTransform.anchorMax = rectTransform.pivot = Centre;
+            rectTransform.anchoredPosition = Vector2.zero;
+            rectTransform.sizeDelta = new Vector2(width, 0f);
 
-            var layout = go.GetComponent<VerticalLayoutGroup>();
+            var layout = sheetObject.GetComponent<VerticalLayoutGroup>();
             layout.childAlignment = TextAnchor.UpperCenter;
             layout.spacing = spacing;
             layout.padding = new RectOffset((int)padding, (int)padding, (int)padding, (int)padding);
-            layout.childControlWidth = true;
-            layout.childControlHeight = true;
-            layout.childForceExpandWidth = false;
-            layout.childForceExpandHeight = false;
+            SizeChildrenWithoutStretching(layout);
 
-            var fitter = go.GetComponent<ContentSizeFitter>();
+            var fitter = sheetObject.GetComponent<ContentSizeFitter>();
             fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            return rect;
+            return rectTransform;
         }
 
-        public static RectTransform Column(string name, Transform parent, float width,
+        public static RectTransform CreateColumn(string name, Transform parent, float width,
             float spacing = ColumnSpacing, TextAnchor align = TextAnchor.UpperCenter)
         {
-            var go = new GameObject(name, typeof(RectTransform), typeof(VerticalLayoutGroup));
-            Attach(go, parent);
+            var columnObject = new GameObject(name, typeof(RectTransform),
+                typeof(VerticalLayoutGroup));
+            Attach(columnObject, parent);
 
-            var layout = go.GetComponent<VerticalLayoutGroup>();
+            var layout = columnObject.GetComponent<VerticalLayoutGroup>();
             layout.childAlignment = align;
             layout.spacing = spacing;
-            layout.childControlWidth = true;
-            layout.childControlHeight = true;
-            layout.childForceExpandWidth = false;
-            layout.childForceExpandHeight = false;
+            SizeChildrenWithoutStretching(layout);
 
-            var rect = (RectTransform)go.transform;
-            rect.sizeDelta = new Vector2(width, 0f);
+            var rectTransform = (RectTransform)columnObject.transform;
+            rectTransform.sizeDelta = new Vector2(width, 0f);
 
-            return rect;
+            return rectTransform;
         }
 
-        public static RectTransform Row(string name, Transform parent, float width, float height,
-            float spacing = RowSpacing, TextAnchor align = TextAnchor.MiddleLeft)
+        public static RectTransform CreateRow(string name, Transform parent, float width,
+            float height, float spacing = RowSpacing, TextAnchor align = TextAnchor.MiddleLeft)
         {
-            var go = new GameObject(name, typeof(RectTransform), typeof(HorizontalLayoutGroup));
-            Attach(go, parent);
-            SetSize(go, width, height);
+            var rowObject = new GameObject(name, typeof(RectTransform),
+                typeof(HorizontalLayoutGroup));
+            Attach(rowObject, parent);
+            SetSize(rowObject, width, height);
 
-            var layout = go.GetComponent<HorizontalLayoutGroup>();
+            var layout = rowObject.GetComponent<HorizontalLayoutGroup>();
             layout.childAlignment = align;
             layout.spacing = spacing;
-            layout.childControlWidth = true;
-            layout.childControlHeight = true;
-            layout.childForceExpandWidth = false;
-            layout.childForceExpandHeight = false;
+            SizeChildrenWithoutStretching(layout);
 
-            return (RectTransform)go.transform;
+            return (RectTransform)rowObject.transform;
         }
 
-        public static Image Plate(string name, Transform parent, Color colour, float width,
+        public static Image CreatePlate(string name, Transform parent, Color colour, float width,
             float height, bool clickable = true)
         {
-            var go = new GameObject(name, typeof(Image));
-            Attach(go, parent);
-            SetSize(go, width, height);
+            var plateObject = new GameObject(name, typeof(Image));
+            Attach(plateObject, parent);
+            SetSize(plateObject, width, height);
 
-            Image art = go.GetComponent<Image>();
-            art.color = colour;
-            art.raycastTarget = clickable;
-            return art;
+            Image plate = plateObject.GetComponent<Image>();
+            plate.color = colour;
+            plate.raycastTarget = clickable;
+            return plate;
         }
 
-        public static Button Pressable(Image plate)
+        public static Button MakePressable(Image plate)
         {
             var button = plate.gameObject.AddComponent<Button>();
             button.targetGraphic = plate;
@@ -195,52 +197,53 @@ namespace FallingWizard.UI
             return button;
         }
 
-        public static void Focus(GameObject what)
+        public static void Focus(GameObject target)
         {
-            if (EventSystem.current == null || what == null)
+            if (EventSystem.current == null || target == null)
                 return;
 
             EventSystem.current.SetSelectedGameObject(null);
-            EventSystem.current.SetSelectedGameObject(what);
+            EventSystem.current.SetSelectedGameObject(target);
         }
 
-        public static RectTransform Pips(Transform parent, int filled, int total, float size,
-            Color lit)
+        public static RectTransform CreatePips(Transform parent, int filled, int total,
+            float size, Color lit)
         {
-            RectTransform strip = Row("Pips", parent, (size + 4f) * Mathf.Max(1, total), size, 4f);
+            RectTransform strip = CreateRow("Pips", parent,
+                (size + PipSpacing) * Mathf.Max(1, total), size, PipSpacing);
 
             for (int i = 0; i < total; i++)
-                Plate($"Pip {i + 1}", strip, i < filled ? lit : PipEmpty, size, size,
+                CreatePlate($"Pip {i + 1}", strip, i < filled ? lit : PipEmpty, size, size,
                     clickable: false);
 
             return strip;
         }
 
-        public static Image Icon(Transform parent, Sprite sprite, float size, Color tint)
+        public static Image CreateIcon(Transform parent, Sprite sprite, float size, Color tint)
         {
-            var go = new GameObject("Icon", typeof(Image));
-            Attach(go, parent);
-            SetSize(go, size, size);
+            var iconObject = new GameObject("Icon", typeof(Image));
+            Attach(iconObject, parent);
+            SetSize(iconObject, size, size);
 
-            Image art = go.GetComponent<Image>();
-            art.sprite = sprite;
-            art.color = tint;
-            art.preserveAspect = true;
-            art.raycastTarget = false;
-            return art;
+            Image icon = iconObject.GetComponent<Image>();
+            icon.sprite = sprite;
+            icon.color = tint;
+            icon.preserveAspect = true;
+            icon.raycastTarget = false;
+            return icon;
         }
 
-        public static TextMeshProUGUI Label(string text, Transform parent, float size, float width,
-            float height, TextAlignmentOptions align = TextAlignmentOptions.Center)
+        public static TextMeshProUGUI CreateLabel(string text, Transform parent, float fontSize,
+            float width, float height, TextAlignmentOptions align = TextAlignmentOptions.Center)
         {
-            GameObject go = TMP_DefaultControls.CreateText(Plain);
-            go.name = "Label";
-            Attach(go, parent);
-            SetSize(go, width, height);
+            GameObject labelObject = TMP_DefaultControls.CreateText(PlainResources);
+            labelObject.name = "Label";
+            Attach(labelObject, parent);
+            SetSize(labelObject, width, height);
 
-            var label = go.GetComponent<TextMeshProUGUI>();
+            var label = labelObject.GetComponent<TextMeshProUGUI>();
             label.text = text;
-            label.fontSize = size;
+            label.fontSize = fontSize;
             label.color = Ink;
             label.alignment = align;
             label.raycastTarget = false;
@@ -252,20 +255,20 @@ namespace FallingWizard.UI
         public static Button CreateButton(string text, Transform parent, float width, float height,
             float fontSize = ButtonFontSize)
         {
-            GameObject go = TMP_DefaultControls.CreateButton(Plain);
-            go.name = text + " Button";
-            Attach(go, parent);
-            SetSize(go, width, height);
+            GameObject buttonObject = TMP_DefaultControls.CreateButton(PlainResources);
+            buttonObject.name = text + " Button";
+            Attach(buttonObject, parent);
+            SetSize(buttonObject, width, height);
 
-            var label = go.GetComponentInChildren<TextMeshProUGUI>();
+            var label = buttonObject.GetComponentInChildren<TextMeshProUGUI>();
             label.text = text;
             label.fontSize = fontSize;
             label.color = ButtonInk;
             label.alignment = TextAlignmentOptions.Center;
             label.textWrappingMode = TextWrappingModes.NoWrap;
 
-            var button = go.GetComponent<Button>();
-            button.colors = Tints;
+            var button = buttonObject.GetComponent<Button>();
+            button.colors = ButtonTints;
 
             return button;
         }
@@ -281,15 +284,15 @@ namespace FallingWizard.UI
                 label.text = text;
         }
 
-        public static void SetSize(GameObject go, float width, float height)
+        public static void SetSize(GameObject target, float width, float height)
         {
-            var rect = (RectTransform)go.transform;
-            rect.sizeDelta = new Vector2(width, height);
+            var rectTransform = (RectTransform)target.transform;
+            rectTransform.sizeDelta = new Vector2(width, height);
 
-            var element = go.GetComponent<LayoutElement>();
+            var element = target.GetComponent<LayoutElement>();
 
             if (element == null)
-                element = go.AddComponent<LayoutElement>();
+                element = target.AddComponent<LayoutElement>();
 
             element.preferredWidth = width;
             element.preferredHeight = height;
@@ -298,18 +301,33 @@ namespace FallingWizard.UI
             element.minHeight = height;
         }
 
-        public static void Attach(GameObject go, Transform parent) =>
-            go.transform.SetParent(parent, false);
-
-        public static void Stretch(GameObject go)
+        public static void SizeChildrenWithoutStretching(HorizontalOrVerticalLayoutGroup layout)
         {
-            var rect = (RectTransform)go.transform;
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = false;
         }
 
-        static readonly TMP_DefaultControls.Resources Plain = new TMP_DefaultControls.Resources();
+        public static void Attach(GameObject child, Transform parent) =>
+            child.transform.SetParent(parent, false);
+
+        public static void Stretch(GameObject target)
+        {
+            var rectTransform = (RectTransform)target.transform;
+            rectTransform.anchorMin = Vector2.zero;
+            rectTransform.anchorMax = Vector2.one;
+            rectTransform.offsetMin = Vector2.zero;
+            rectTransform.offsetMax = Vector2.zero;
+        }
+
+        static void EnsureEventSystem()
+        {
+            if (EventSystem.current != null)
+                return;
+
+            var eventSystemObject = new GameObject("Event System", typeof(EventSystem));
+            eventSystemObject.AddComponent<InputSystemUIInputModule>();
+        }
     }
 }
