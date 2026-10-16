@@ -188,7 +188,7 @@ namespace FallingWizard.Player
             [Min(0f)] public float windLift = 30f;
 
             [NonSerialized] Rigidbody2D body;
-            [NonSerialized] SpriteRenderer sprite;
+            [NonSerialized] Transform art;
             [NonSerialized] Collider2D hull;
 
             [NonSerialized] float baseGravityScale;
@@ -209,7 +209,7 @@ namespace FallingWizard.Player
 
             [NonSerialized] float grip = 1f;
 
-            [NonSerialized] Vector2 carrier;
+            [NonSerialized] Vector2 platformVelocity;
 
             [NonSerialized] Vector2 groundNormal = Vector2.up;
             [NonSerialized] float groundAngle;
@@ -258,7 +258,6 @@ namespace FallingWizard.Player
 
             public int Facing { get; private set; } = 1;
             public Vector2 Position => body == null ? Vector2.zero : body.position;
-            public SpriteRenderer Art => sprite;
             public Vector2 Wind => wind;
             public Transform Rig => body == null ? null : body.transform;
             public float FeetY => Position.y + groundCheckOffset.y;
@@ -287,11 +286,10 @@ namespace FallingWizard.Player
             public Vector2 Velocity => body == null ? Vector2.zero : body.linearVelocity;
             public float VerticalSpeed => body == null ? 0f : body.linearVelocityY;
 
-            public void Attach(Rigidbody2D rigidbody2d, SpriteRenderer spriteRenderer,
-                Collider2D hitbox)
+            public void Attach(Rigidbody2D rigidbody2d, Transform wizardArt, Collider2D hitbox)
             {
                 body = rigidbody2d;
-                sprite = spriteRenderer;
+                art = wizardArt;
                 hull = hitbox;
                 baseGravityScale = Mathf.Max(MinGravityScale, body.gravityScale);
                 highestPoint = body.position.y;
@@ -351,7 +349,7 @@ namespace FallingWizard.Player
                 body.linearVelocity = Vector2.zero;
                 wind = Vector2.zero;
                 grip = 1f;
-                carrier = Vector2.zero;
+                platformVelocity = Vector2.zero;
                 climbedLastStep = false;
             }
 
@@ -369,14 +367,15 @@ namespace FallingWizard.Player
 
             public void ApplyWind(Vector2 target, float rampup, float groundScale, float fixedDeltaTime)
             {
-                float scale = IsGrounded ? groundScale : 1f;
+                float sidewaysScale = IsGrounded ? groundScale : 1f;
+                var felt = new Vector2(target.x * sidewaysScale, target.y);
                 float rate = rampup > 0f ? rampup : windDecay;
-                wind = Vector2.MoveTowards(wind, target * scale, rate * fixedDeltaTime);
+                wind = Vector2.MoveTowards(wind, felt, rate * fixedDeltaTime);
             }
 
             public void SetGrip(float value) => grip = Mathf.Clamp01(value);
 
-            public void SetCarrier(Vector2 velocity) => carrier = velocity;
+            public void SetPlatformVelocity(Vector2 velocity) => platformVelocity = velocity;
 
             public void AddImpulse(Vector2 velocity, float controlLockout)
             {
@@ -799,8 +798,9 @@ namespace FallingWizard.Player
                 if (Mathf.Abs(steer) > steerDeadzone)
                     Facing = steer < 0f ? -1 : 1;
 
-                if (sprite != null)
-                    sprite.flipX = Facing < 0;
+                if (art != null)
+                    art.localScale = new Vector3(Facing * Mathf.Abs(art.localScale.x),
+                        art.localScale.y, art.localScale.z);
             }
 
             bool StepUp(Command command, Modifiers stats)
@@ -870,16 +870,16 @@ namespace FallingWizard.Player
                         rate * fixedDeltaTime))
                     return;
 
-                float speedOverTheGround = body.linearVelocityX - carrier.x;
+                float speedOverTheGround = body.linearVelocityX - platformVelocity.x;
 
-                body.linearVelocityX = carrier.x +
+                body.linearVelocityX = platformVelocity.x +
                     Mathf.MoveTowards(speedOverTheGround, targetSpeed, rate * fixedDeltaTime);
 
-                if (IsGrounded && IsCarried && !rising)
-                    body.linearVelocityY = carrier.y;
+                if (IsGrounded && IsOnMovingPlatform && !rising)
+                    body.linearVelocityY = platformVelocity.y;
             }
 
-            bool IsCarried => carrier != Vector2.zero;
+            bool IsOnMovingPlatform => platformVelocity != Vector2.zero;
 
             bool TryRunAlongRamp(float targetSpeed, float topSpeed, float change)
             {

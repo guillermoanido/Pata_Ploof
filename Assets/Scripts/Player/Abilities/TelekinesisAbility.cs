@@ -99,13 +99,6 @@ namespace FallingWizard.Player
             return held != null && held.Icon != null ? held.Icon : icon;
         }
 
-        public override Color IconTintFor(PlayerLogic wizard)
-        {
-            Carryable held = wizard.spellbook.StateOf<Hands>(this).thing;
-
-            return held != null ? held.tint : Color.white;
-        }
-
         public override void OnRunReset(PlayerLogic wizard) =>
             wizard.spellbook.StateOf<Hands>(this).thing = null;
 

@@ -51,34 +51,6 @@ namespace FallingWizard.Player
         [Tooltip("How far ahead to look, in boxes. The line stops here even if it never lands.")]
         [Min(1f)] public float lookAhead = 16f;
 
-        [Header("Arrow")]
-        [Tooltip("Leave empty and the arrow is drawn from two boxes, a shaft and a turned square " +
-                 "for the head. Give it a real arrow sprite and that is drawn whole instead - " +
-                 "draw it pointing RIGHT, because it is turned from there.")]
-        public Sprite arrowArt;
-
-        [Tooltip("How long the arrow is with no charge, in boxes.")]
-        [Min(0.1f)] public float minLength = 1.1f;
-
-        [Tooltip("How long it is at full charge. This is a read on power, not a promise about " +
-                 "distance - a full throw carries much further than the arrow is long.")]
-        [Min(0.1f)] public float maxLength = 3f;
-
-        [Tooltip("How thick the shaft is, in boxes. Ignored when an arrow sprite is given.")]
-        [Min(0.01f)] public float thickness = 0.12f;
-
-        [Tooltip("How big the head is, in boxes, measured along the arrow.")]
-        [Min(0.05f)] public float headSize = 0.45f;
-
-        public Color safe = new Color(0.95f, 0.93f, 0.75f, 0.85f);
-
-        [Tooltip("Drawn when the flight passes through something that will change where you end " +
-                 "up - hazards here are things you fly through, not walls.")]
-        public Color danger = new Color(0.95f, 0.35f, 0.30f, 0.9f);
-
-        [Tooltip("Sorting order. Above the level, so the arrow is never drawn inside a wall.")]
-        public int sortingOrder = 20;
-
         [Header("Ranks")]
         [Tooltip("One block per rank. Element 0 is what learning it gives you.")]
         public Tier[] tiers = { new Tier() };
@@ -110,7 +82,7 @@ namespace FallingWizard.Player
             }
 
             Aim(wizard, charge, fixedDeltaTime);
-            Draw(wizard, charge);
+            ShowArrow(wizard, charge);
         }
 
         public override void OnChargeLost(PlayerLogic wizard) => Drop(wizard);
@@ -123,7 +95,7 @@ namespace FallingWizard.Player
                 return;
 
             charge.winding = false;
-            charge.arrow?.Hide();
+            HideArrow(wizard, charge);
 
             if (wizard.State != PlayerState.Normal || !wizard.spellbook.Fire(this))
                 return;
@@ -142,24 +114,16 @@ namespace FallingWizard.Player
             return charge.winding ? Mathf.Clamp01(charge.wound) : -1f;
         }
 
+        public override void OnEquipped(PlayerLogic wizard) =>
+            HideArrow(wizard, wizard.spellbook.StateOf<Charge>(this));
+
         public override void OnRunReset(PlayerLogic wizard) => Drop(wizard);
 
-        public override void OnUnequipped(PlayerLogic wizard)
-        {
-            Charge charge = wizard.spellbook.StateOf<Charge>(this);
-
-            Drop(wizard);
-
-            if (charge.arrow != null)
-                Destroy(charge.arrow.gameObject);
-
-            charge.arrow = null;
-        }
+        public override void OnUnequipped(PlayerLogic wizard) => Drop(wizard);
 
         protected override void Validate()
         {
             maxSpeed = Mathf.Max(minSpeed, maxSpeed);
-            maxLength = Mathf.Max(minLength, maxLength);
             maxAngle = Mathf.Max(minAngle, maxAngle);
             restAngle = Mathf.Clamp(restAngle, minAngle, maxAngle);
 
@@ -209,11 +173,12 @@ namespace FallingWizard.Player
                 Distance = lookAhead,
             };
 
-        void Draw(PlayerLogic wizard, Charge charge)
+        void ShowArrow(PlayerLogic wizard, Charge charge)
         {
-            if (charge.arrow == null)
-                charge.arrow = FlingArrow.Make(arrowArt, thickness, headSize, safe, danger,
-                    sortingOrder);
+            FlingArrow arrow = ArrowOf(wizard, charge);
+
+            if (arrow == null)
+                return;
 
             Vector2 launch = Launch(wizard, charge);
 
@@ -224,9 +189,31 @@ namespace FallingWizard.Player
                 ? charge.path[0]
                 : (Vector2)wizard.Rig.position;
 
-            float length = Mathf.Lerp(minLength, maxLength, Mathf.Clamp01(charge.wound));
+            arrow.Show(from, launch, end.Hazard);
+        }
 
-            charge.arrow.Show(from, launch, length, end.Hazard, charge.wound);
+        void HideArrow(PlayerLogic wizard, Charge charge)
+        {
+            FlingArrow arrow = ArrowOf(wizard, charge);
+
+            if (arrow != null)
+                arrow.Hide();
+        }
+
+        FlingArrow ArrowOf(PlayerLogic wizard, Charge charge)
+        {
+            if (charge.searched || wizard.Rig == null)
+                return charge.arrow;
+
+            charge.searched = true;
+            charge.arrow = wizard.Rig.GetComponentInChildren<FlingArrow>(true);
+
+            if (charge.arrow == null)
+                Debug.LogWarning($"'{name}' found no Fling Arrow under the wizard, so aiming " +
+                                 "shows no arrow. Add the Fling Arrow component to your arrow " +
+                                 "object and place it under the wizard.", this);
+
+            return charge.arrow;
         }
 
         void Drop(PlayerLogic wizard)
@@ -235,7 +222,7 @@ namespace FallingWizard.Player
 
             charge.winding = false;
             charge.wound = 0f;
-            charge.arrow?.Hide();
+            HideArrow(wizard, charge);
         }
 
         Tier Of(PlayerLogic wizard) =>
@@ -244,7 +231,10 @@ namespace FallingWizard.Player
         [System.Serializable]
         public class Tier
         {
+            [Tooltip("Launch speed at full charge at this rank, in boxes per second.")]
             [Min(0f)] public float maxSpeed = 14f;
+
+            [Tooltip("Seconds of holding to wind up to full power at this rank.")]
             [Min(0.05f)] public float chargeTime = 0.7f;
 
             public void Validate()
@@ -259,6 +249,7 @@ namespace FallingWizard.Player
             public readonly List<Vector2> path = new List<Vector2>(256);
 
             public FlingArrow arrow;
+            public bool searched;
             public bool winding;
             public float wound;
             public float angle = 55f;

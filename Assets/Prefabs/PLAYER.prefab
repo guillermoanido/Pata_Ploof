@@ -12,8 +12,6 @@ GameObject:
   - component: {fileID: 8112197954022504554}
   - component: {fileID: 349145237775677807}
   - component: {fileID: 2516740736055608386}
-  - component: {fileID: 4515014421048149315}
-  - component: {fileID: 5555260189852586458}
   - component: {fileID: 2112784434448732272}
   m_Layer: 7
   m_Name: PLAYER
@@ -132,7 +130,6 @@ MonoBehaviour:
   restartLevelOnDeath: 1
   respawnDelay: 1.25
   offerChoiceOnDeath: 1
-  bodyVisual: {fileID: 1394355070486603774}
   staves:
   - {fileID: 4439750653072729773}
   - {fileID: 1646938069505509153}
@@ -189,7 +186,6 @@ MonoBehaviour:
       wallBounce: 0.55
       minimumBounceSpeed: 1.5
     health:
-      maxHealth: 3
       maxBonusHearts: 4
       invulnerabilityTime: 0.6
     vine:
@@ -209,23 +205,6 @@ MonoBehaviour:
       explainRefusals: 1
     safeFallDistance: 3
     damagePerBox: 1
---- !u!111 &4515014421048149315
-Animation:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 90386082971037464}
-  m_Enabled: 1
-  serializedVersion: 4
-  m_Animation: {fileID: 0}
-  m_Animations:
-  - {fileID: 7400000, guid: c79920fed71892c439efe8649f60b97c, type: 2}
-  m_WrapMode: 0
-  m_PlayAutomatically: 1
-  m_AnimatePhysics: 0
-  m_UpdateMode: 0
-  m_CullingType: 0
 --- !u!95 &5555260189852586458
 Animator:
   serializedVersion: 7
@@ -233,7 +212,7 @@ Animator:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 90386082971037464}
+  m_GameObject: {fileID: 4862019375510264301}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
   m_Controller: {fileID: 9100000, guid: 3d9f3a26f555255468018f39db707d7d, type: 2}
@@ -263,8 +242,6 @@ MonoBehaviour:
   ragdollVariants: 4
   standStillSpeed: 0.1
   cycleRateRange: {x: 0.5, y: 1.5}
-  staffIsDrawnIntoTheArt: 0
-  hatStates: []
 --- !u!1 &341998881807793293
 GameObject:
   m_ObjectHideFlags: 0
@@ -274,7 +251,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6532420574317867788}
-  - component: {fileID: 1394355070486603774}
   m_Layer: 0
   m_Name: Visual
   m_TagString: Untagged
@@ -294,9 +270,57 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 4862019375510264302}
   m_Father: {fileID: 5942608570598139845}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &4862019375510264301
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4862019375510264302}
+  - component: {fileID: 1394355070486603774}
+  - component: {fileID: 5555260189852586458}
+  - component: {fileID: 4862019375510264303}
+  m_Layer: 0
+  m_Name: Health 3
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4862019375510264302
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4862019375510264301}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6532420574317867788}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4862019375510264303
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4862019375510264301}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8554f5bbe2ba44beb93bccbc723f9405, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  health: 3
 --- !u!212 &1394355070486603774
 SpriteRenderer:
   serializedVersion: 2
@@ -304,7 +328,7 @@ SpriteRenderer:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 341998881807793293}
+  m_GameObject: {fileID: 4862019375510264301}
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0

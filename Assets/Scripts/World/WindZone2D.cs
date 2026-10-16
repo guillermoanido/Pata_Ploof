@@ -1,4 +1,3 @@
-using System;
 using FallingWizard.Core;
 using FallingWizard.Player;
 using UnityEngine;
@@ -24,11 +23,12 @@ namespace FallingWizard.World
 
         [Header("Wind")]
         [Tooltip("Which way this blows, and how hard, as the SPEED in boxes per second it wants " +
-                 "to carry the wizard at. Both numbers mean the same thing, so (-6,0) is a hard " +
-                 "leftward gale next to a run of 4 and (0,6) lifts just as firmly. Sideways you " +
-                 "can lean against it and partly win, because steering is added on top. Up and " +
-                 "down it beats gravity outright, so (0,6) really does carry them up at 6 and " +
-                 "(0,-6) pins them down at 6 - it does not need to out-number gravity to be " +
+                 "to carry the wizard at. It turns with the object: rotate the zone and the wind " +
+                 "turns with it, which the arrows in the scene view show. Both numbers mean the " +
+                 "same thing, so (-6,0) is a hard leftward gale next to a run of 4 and (0,6) " +
+                 "lifts just as firmly. Sideways you can lean against it and partly win, because " +
+                 "steering is added on top. Up and down it beats gravity outright, so (0,6) " +
+                 "really does carry them up at 6 - it does not need to out-number gravity to be " +
                  "felt. For a shove that lands once rather than a wind that holds, use a Wind " +
                  "Trap's Kick.")]
         public Vector2 push = new Vector2(-4f, 0f);
@@ -36,87 +36,28 @@ namespace FallingWizard.World
         [Tooltip("How quickly the wind takes hold once you step in, in boxes per second squared.")]
         [Min(0f)] public float rampup = 20f;
 
-        [Tooltip("How much of it is felt with both feet on the ground. 0 means it only pushes " +
-                 "you while you are in the air.")]
+        [Tooltip("How much of the SIDEWAYS push is felt with both feet on the ground. 0 means " +
+                 "it only pushes you sideways while you are in the air. Up and down is always " +
+                 "felt in full, so an updraft lifts a wizard who is standing in it.")]
         [Range(0f, 1f)] public float groundScale = 0.35f;
-
-        [Header("Haze")]
-        [Tooltip("The flat rectangle showing where the wind reaches. Empty uses the first sprite " +
-                 "found underneath. It is resized to match the collider, so stretching the zone " +
-                 "is the only thing you have to do.")]
-        public SpriteRenderer haze;
-
-        [Tooltip("Colour of that rectangle. Keep the alpha low - it covers whatever is behind it.")]
-        public Color hazeTint = new Color(0.62f, 0.82f, 0.95f, 0.14f);
-
-        [Tooltip("Resize the haze to match the collider whenever the zone changes, so stretching " +
-                 "the zone is the only thing you have to do. Turn it OFF the moment you want to " +
-                 "size or place that art yourself - it will stop touching your transform.")]
-        public bool fitHazeToZone = true;
-
-        [Header("Streaks")]
-        [Tooltip("Drifting streaks, so the wind is something you can see moving rather than a " +
-                 "tinted box you have to walk into to discover. They are built when the level " +
-                 "starts, so the editor shows the arrows instead.")]
-        public bool showStreaks = true;
-
-        [Tooltip("How many. A dozen reads as wind without turning the screen into soup.")]
-        [Range(0, 60)] public int streaks = 16;
-
-        [Tooltip("Art for one streak. Empty draws a thin bar.")]
-        public Sprite streakArt;
-
-        [Tooltip("Colour of a streak at its brightest. They fade in and out as they cross, so " +
-                 "none of them pops into being.")]
-        public Color streakTint = new Color(0.85f, 0.95f, 1f, 0.55f);
-
-        [Tooltip("Size of one streak in boxes, before it is turned to face the wind. A mage is " +
-                 "one box, so this is a short scratch of white.")]
-        public Vector2 streakSize = new Vector2(0.9f, 0.05f);
-
-        [Tooltip("How fast they travel against the push itself. Above 1 they outrun the wizard, " +
-                 "which reads as faster than the zone really is.")]
-        [Min(0f)] public float streakSpeed = 1.4f;
-
-        [Tooltip("Sorting order. Below the wizard so they blow past behind them.")]
-        public int sortingOrder = -2;
 
         [Header("Editor")]
         [Tooltip("Draw the arrows in the scene view without having to select the zone first, " +
                  "which is what you want while laying a level out.")]
         public bool alwaysShowArrows = true;
 
-        [NonSerialized] Collider2D area;
-        [NonSerialized] Transform gust;
-        [NonSerialized] Transform[] blown = Array.Empty<Transform>();
-        [NonSerialized] SpriteRenderer[] blownArt = Array.Empty<SpriteRenderer>();
-
         protected override bool Continuous => true;
 
-        protected virtual float Openness => 1f;
+        public Vector2 WorldPush => TurnedWithThisObject(push);
 
-        public Vector2 Drift => push * streakSpeed * Haste.WorldScale * Openness;
+        protected Vector2 TurnedWithThisObject(Vector2 direction) =>
+            transform.rotation * direction;
 
         protected virtual void Reset()
         {
             rearmDelay = 0f;
             damage = 0;
             affectsRagdolled = true;
-        }
-
-        protected virtual void OnValidate() => FitHaze();
-
-        protected override void Awake()
-        {
-            base.Awake();
-
-            area = GetComponent<Collider2D>();
-
-            if (haze == null)
-                haze = GetComponentInChildren<SpriteRenderer>();
-
-            FitHaze();
-            BuildStreaks();
         }
 
         protected override void Affect(PlayerLogic wizard) { }
@@ -126,136 +67,10 @@ namespace FallingWizard.World
             if (!Allowed(wizard))
                 return;
 
-            wizard.Logic.Push(push * Haste.WorldScale, rampup, groundScale);
+            wizard.Logic.Push(WorldPush * Haste.WorldScale, rampup, groundScale);
         }
 
-        protected virtual void Update()
-        {
-            if (blown.Length == 0 || area == null)
-                return;
-
-            Vector2 drift = Drift;
-
-            if (push.sqrMagnitude < Epsilon)
-                return;
-
-            Bounds zone = area.bounds;
-            Vector2 step = drift * Time.deltaTime;
-
-            for (int i = 0; i < blown.Length; i++)
-            {
-                Vector2 point = (Vector2)blown[i].position + step;
-                point = Wrap(point, zone, drift);
-
-                blown[i].position = new Vector3(point.x, point.y, transform.position.z);
-                blownArt[i].color = Fade(point, zone, drift);
-            }
-        }
-
-        static Vector2 Wrap(Vector2 point, Bounds zone, Vector2 drift)
-        {
-            if (drift.x > 0f && point.x > zone.max.x) point.x = zone.min.x;
-            if (drift.x < 0f && point.x < zone.min.x) point.x = zone.max.x;
-            if (drift.y > 0f && point.y > zone.max.y) point.y = zone.min.y;
-            if (drift.y < 0f && point.y < zone.min.y) point.y = zone.max.y;
-
-            return point;
-        }
-
-        Color Fade(Vector2 point, Bounds zone, Vector2 drift)
-        {
-            bool sideways = Mathf.Abs(drift.x) >= Mathf.Abs(drift.y);
-
-            float low = sideways ? zone.min.x : zone.min.y;
-            float high = sideways ? zone.max.x : zone.max.y;
-            float here = sideways ? point.x : point.y;
-
-            float span = high - low;
-            float along = span <= Epsilon ? 0.5f : Mathf.Clamp01((here - low) / span);
-
-            Color tint = streakTint;
-            tint.a *= Mathf.Sin(along * Mathf.PI) * Openness;
-            return tint;
-        }
-
-        void FitHaze()
-        {
-            if (haze == null)
-                haze = GetComponentInChildren<SpriteRenderer>();
-
-            if (haze == null || haze.sprite == null)
-                return;
-
-            haze.color = hazeTint;
-            haze.sortingOrder = sortingOrder - 1;
-
-            var shape = GetComponent<BoxCollider2D>();
-
-            if (shape == null)
-                return;
-
-            Vector2 tall = haze.sprite.bounds.size;
-
-            if (tall.x <= Epsilon || tall.y <= Epsilon)
-                return;
-
-            if (!fitHazeToZone)
-                return;
-
-            haze.transform.localPosition = shape.offset;
-            haze.transform.localScale = new Vector3(shape.size.x / tall.x, shape.size.y / tall.y, 1f);
-        }
-
-        void BuildStreaks()
-        {
-            if (!showStreaks || streaks <= 0 || area == null)
-                return;
-
-            Bounds zone = area.bounds;
-
-            gust = new GameObject($"{name} Streaks").transform;
-
-            blown = new Transform[streaks];
-            blownArt = new SpriteRenderer[streaks];
-
-            float turn = Mathf.Atan2(push.y, push.x) * Mathf.Rad2Deg;
-
-            for (int i = 0; i < streaks; i++)
-            {
-                var streak = new GameObject($"Streak {i + 1}");
-                streak.transform.SetParent(gust, false);
-
-                streak.transform.position = new Vector3(
-                    UnityEngine.Random.Range(zone.min.x, zone.max.x),
-                    UnityEngine.Random.Range(zone.min.y, zone.max.y),
-                    transform.position.z);
-
-                streak.transform.rotation = Quaternion.Euler(0f, 0f, turn);
-                streak.transform.localScale = Vector3.one;
-
-                var art = streak.AddComponent<SpriteRenderer>();
-                art.sprite = streakArt != null ? streakArt : Placeholder.Box;
-                art.color = streakTint;
-                art.sortingOrder = sortingOrder;
-
-                Vector2 unit = art.sprite.bounds.size;
-
-                if (unit.x > Epsilon && unit.y > Epsilon)
-                    streak.transform.localScale =
-                        new Vector3(streakSize.x / unit.x, streakSize.y / unit.y, 1f);
-
-                blown[i] = streak.transform;
-                blownArt[i] = art;
-            }
-        }
-
-        protected virtual void OnDestroy()
-        {
-            if (gust != null)
-                Destroy(gust.gameObject);
-        }
-
-        protected virtual void OnDrawGizmos()
+        void OnDrawGizmos()
         {
             if (alwaysShowArrows)
                 DrawArrows(UnselectedGizmo);
@@ -275,7 +90,7 @@ namespace FallingWizard.World
             Gizmos.color = Faded(ZoneColour, strength);
             Gizmos.DrawWireCube(zone.center, zone.size);
 
-            Vector2 way = push.normalized;
+            Vector2 way = WorldPush.normalized;
             Vector2 across = new Vector2(-way.y, way.x);
 
             float narrow = Mathf.Min(zone.size.x, zone.size.y);

@@ -50,7 +50,7 @@ namespace FallingWizard.World
 
         public bool IsFalling => falling;
 
-        protected override bool IsArmed => IsFalling;
+        protected override bool IsDangerousNow => IsFalling;
 
         protected override bool Continuous => true;
 

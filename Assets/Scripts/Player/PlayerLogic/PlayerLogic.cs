@@ -45,7 +45,7 @@ namespace FallingWizard.Player
 
         [NonSerialized] float pendingGrip = 1f;
 
-        [NonSerialized] Vector2 pendingCarry;
+        [NonSerialized] Vector2 pendingPlatformVelocity;
 
         public event Action Died;
 
@@ -66,11 +66,10 @@ namespace FallingWizard.Player
         public bool IsOnStaff => State == PlayerState.OnStaff;
         public bool IsPeeking { get; private set; }
 
-        public void Attach(Rigidbody2D body, SpriteRenderer sprite, Collider2D hitbox,
-            Staff[] staffSet)
+        public void Attach(Rigidbody2D body, Transform art, Collider2D hitbox, Staff[] staffSet)
         {
-            movement.Attach(body, sprite, hitbox);
-            ragdoll.Attach(body, sprite != null ? sprite.transform : null, hitbox, movement.groundLayers);
+            movement.Attach(body, art, hitbox);
+            ragdoll.Attach(body, art, hitbox, movement.groundLayers);
             vine.Attach(body);
 
             health.SetBonus(Progress.BonusHearts);
@@ -182,7 +181,7 @@ namespace FallingWizard.Player
 
         public void Slicken(float grip) => pendingGrip = Mathf.Min(pendingGrip, Mathf.Clamp01(grip));
 
-        public void Carry(Vector2 platformVelocity) => pendingCarry = platformVelocity;
+        public void RideAlong(Vector2 platformVelocity) => pendingPlatformVelocity = platformVelocity;
 
         public void Shove(Vector2 velocity, float controlLockout)
         {
@@ -432,7 +431,7 @@ namespace FallingWizard.Player
         void ApplyExternalForce(float fixedDeltaTime)
         {
             movement.SetGrip(pendingGrip);
-            movement.SetCarrier(pendingCarry);
+            movement.SetPlatformVelocity(pendingPlatformVelocity);
 
             switch (State)
             {
@@ -455,7 +454,7 @@ namespace FallingWizard.Player
             pendingGroundScale = 1f;
 
             pendingGrip = 1f;
-            pendingCarry = Vector2.zero;
+            pendingPlatformVelocity = Vector2.zero;
         }
 
         void CheckLanding()

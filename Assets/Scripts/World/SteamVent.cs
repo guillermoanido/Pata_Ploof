@@ -70,7 +70,7 @@ namespace FallingWizard.World
 
         public bool IsBursting => TimeIsBetween(BurstStartsAt, BurstStartsAt + burstSeconds);
 
-        protected override bool IsArmed => IsBursting;
+        protected override bool IsDangerousNow => IsBursting;
 
         protected override bool Continuous => true;
 
@@ -84,7 +84,6 @@ namespace FallingWizard.World
         {
             damage = BurnDamage;
             rearmDelay = BurnCooldown;
-            everyStep = true;
             affectsRagdolled = true;
             affectsOnStaff = false;
         }
@@ -110,7 +109,7 @@ namespace FallingWizard.World
             ShowTheRightLook();
         }
 
-        protected override void Affect(PlayerLogic wizard) { }
+        protected override void Affect(PlayerLogic wizard) => Disarm(rearmDelay / Haste.WorldScale);
 
         protected override void OnPlayerInside(PlayerCharacter wizard, float fixedDeltaTime)
         {

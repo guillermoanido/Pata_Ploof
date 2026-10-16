@@ -13,14 +13,6 @@ namespace FallingWizard.World
                  "reach as well and the shorter of the two wins.")]
         [Min(0.5f)] public float takeRange = 6f;
 
-        [Tooltip("Shown in the spell's slot while this is stowed, so the player can tell a slime " +
-                 "from a rock at a glance. Empty uses whatever sprite this object is drawing.")]
-        public Sprite icon;
-
-        [Tooltip("Tint for that icon. Give a slime and a rock different colours and the slot " +
-                 "reads without any art at all.")]
-        public Color tint = Color.white;
-
         [Tooltip("Seconds it stays inert after being set down. Without this a slime put down " +
                  "beside you bounces you on the next physics step - Awake does not run again " +
                  "when an object is switched back on, so its own re-arm timer is stale.")]
@@ -39,9 +31,6 @@ namespace FallingWizard.World
         {
             get
             {
-                if (icon != null)
-                    return icon;
-
                 var art = GetComponentInChildren<SpriteRenderer>(true);
                 return art != null ? art.sprite : null;
             }

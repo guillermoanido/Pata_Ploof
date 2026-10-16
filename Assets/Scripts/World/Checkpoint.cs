@@ -11,6 +11,8 @@ namespace FallingWizard.World
 
         const float MarkerRadius = 0.25f;
 
+        static readonly Color MarkerColour = new Color(0.98f, 0.86f, 0.42f);
+
         [Header("Checkpoint")]
         [Tooltip("Where the wizard reappears, relative to this object. Lift it clear of the " +
                  "floor so they do not respawn inside it.")]
@@ -20,28 +22,21 @@ namespace FallingWizard.World
         public GameObject reachedEffect;
 
         [Header("Look")]
-        [Tooltip("Tinted to show which checkpoint is the live one. Empty uses the first sprite " +
-                 "found underneath.")]
-        public SpriteRenderer visual;
-
-        public Color dormant = new Color(0.45f, 0.45f, 0.52f);
-        public Color active = new Color(0.98f, 0.86f, 0.42f);
+        [Tooltip("A child object with your lit art, switched on only while this is the live " +
+                 "checkpoint the wizard will come back to, and off the rest of the time. Your own " +
+                 "art on this object is never touched. Never put the checkpoint itself here, or " +
+                 "it switches itself off. Leave it empty and nothing changes when it is reached.")]
+        public GameObject litLook;
 
         public Vector2 RespawnPoint => (Vector2)transform.position + respawnOffset;
 
         void Reset() => GetComponent<Collider2D>().isTrigger = true;
 
-        void Awake()
-        {
-            if (visual == null)
-                visual = GetComponentInChildren<SpriteRenderer>();
-
-            Tint(IsLive);
-        }
+        void Awake() => ShowLitLook(IsLive);
 
         void OnDrawGizmosSelected()
         {
-            Gizmos.color = active;
+            Gizmos.color = MarkerColour;
             Gizmos.DrawWireSphere(RespawnPoint, MarkerRadius);
         }
 
@@ -53,7 +48,7 @@ namespace FallingWizard.World
             Progress.MarkCheckpoint(RespawnPoint);
 
             foreach (Checkpoint other in FindObjectsByType<Checkpoint>(FindObjectsSortMode.None))
-                other.Tint(other == this);
+                other.ShowLitLook(other == this);
 
             if (reachedEffect != null)
                 Instantiate(reachedEffect, transform.position, Quaternion.identity);
@@ -63,10 +58,10 @@ namespace FallingWizard.World
             Progress.CheckpointIsHere &&
             (Progress.CheckpointPoint - RespawnPoint).sqrMagnitude < SamePlace * SamePlace;
 
-        void Tint(bool lit)
+        void ShowLitLook(bool lit)
         {
-            if (visual != null)
-                visual.color = lit ? active : dormant;
+            if (litLook != null)
+                litLook.SetActive(lit);
         }
     }
 }

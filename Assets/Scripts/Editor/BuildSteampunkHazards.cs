@@ -24,9 +24,9 @@ namespace FallingWizard.EditorTools
         const string BrokenGlassName = "Broken Glass";
 
         const string ArtName = "Art";
+        const string StandInName = "Stand-in";
         const string StandInSprite = "UI/Skin/UISprite.psd";
         const int ArtSortingOrder = 1;
-        const int DefaultLayer = 0;
 
         static readonly Vector2 SteamColumnSize = new Vector2(1f, 3f);
         static readonly Vector2 SteamColumnCentre = new Vector2(0f, 1.5f);
@@ -65,7 +65,7 @@ namespace FallingWizard.EditorTools
         {
             (SteamVentName, Layers.Hazard, SetUpSteamVent),
             (WaxDropName, Layers.Hazard, SetUpWaxDrop),
-            (WaxCandleName, DefaultLayer, SetUpWaxCandle),
+            (WaxCandleName, Layers.Default, SetUpWaxCandle),
             (MovingPlatformName, Layers.Ground, SetUpMovingPlatform),
             (PressurePlateName, Layers.Hazard, SetUpPressurePlate),
             (BrokenGlassName, Layers.Hazard, SetUpBrokenGlass),
@@ -97,9 +97,10 @@ namespace FallingWizard.EditorTools
             }
 
             Debug.Log($"Steampunk hazards in {Folder}. Made: {NamesOrNone(made)}. Left alone " +
-                      $"because they were already there: {NamesOrNone(leftAlone)}. The coloured " +
-                      "boxes are stand-ins to draw over. This never overwrites a prefab, so " +
-                      "delete one first if you want a fresh copy of it.");
+                      $"because they were already there: {NamesOrNone(leftAlone)}. Every coloured " +
+                      $"box is a child called '{StandInName}': put your own art next to it and " +
+                      "delete it. This never overwrites a prefab, so delete one first if you " +
+                      "want a fresh copy of it.");
         }
 
         static string PathOf(string name) => $"{Folder}/{name}.prefab";
@@ -221,12 +222,10 @@ namespace FallingWizard.EditorTools
 
         static GameObject AddArt(GameObject root, string name, Vector2 size, Vector2 centre, Color colour)
         {
-            GameObject art = ObjectFactory.CreateGameObject(root.scene, HideFlags.None, name);
-            art.layer = root.layer;
-            art.transform.SetParent(root.transform, false);
-            art.transform.localPosition = centre;
+            GameObject art = AddChild(root, name, centre);
+            GameObject standIn = AddChild(art, StandInName, Vector2.zero);
 
-            var look = ObjectFactory.AddComponent<SpriteRenderer>(art);
+            var look = ObjectFactory.AddComponent<SpriteRenderer>(standIn);
             look.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>(StandInSprite);
             look.drawMode = SpriteDrawMode.Sliced;
             look.size = size;
@@ -234,6 +233,15 @@ namespace FallingWizard.EditorTools
             look.color = colour;
 
             return art;
+        }
+
+        static GameObject AddChild(GameObject parent, string name, Vector2 localPosition)
+        {
+            GameObject child = ObjectFactory.CreateGameObject(parent.scene, HideFlags.None, name);
+            child.layer = parent.layer;
+            child.transform.SetParent(parent.transform, false);
+            child.transform.localPosition = localPosition;
+            return child;
         }
     }
 }

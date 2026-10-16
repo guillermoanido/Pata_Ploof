@@ -10,7 +10,8 @@ namespace FallingWizard.UI
     public class HudSlot : MonoBehaviour
     {
         [Header("Rig")]
-        [Tooltip("The spell's own icon goes here.")]
+        [Tooltip("The spell's own icon goes here. Whatever sprite you give it on the template is " +
+                 "what an empty slot shows.")]
         public Image icon;
 
         [Tooltip("Drawn over the icon as the spell runs and cools down. Must be an Image set to " +
@@ -28,6 +29,13 @@ namespace FallingWizard.UI
         [NonSerialized] string shownScheme;
         [NonSerialized] bool shownWanted;
         [NonSerialized] bool everShown;
+        [NonSerialized] Sprite emptyIcon;
+
+        void Awake()
+        {
+            if (icon != null)
+                emptyIcon = icon.sprite;
+        }
 
         public void Show(PlayerLogic.Spellbook.Slot spell, PlayerHud hud, PlayerLogic wizard)
         {
@@ -42,7 +50,7 @@ namespace FallingWizard.UI
 
             if (icon != null)
             {
-                icon.sprite = filled ? spell.Ability.IconFor(wizard) : hud.emptySlotIcon;
+                icon.sprite = filled ? spell.Ability.IconFor(wizard) : emptyIcon;
 
                 Color state = !filled ? hud.emptyTint
                             : spell.IsReady ? hud.readyTint

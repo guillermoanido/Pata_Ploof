@@ -1,12 +1,9 @@
 #if UNITY_EDITOR
 using System.Collections.Generic;
-using System.Linq;
 using FallingWizard.Player;
 using UnityEditor;
 using UnityEditor.Animations;
-using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace FallingWizard.EditorTools
 {
@@ -14,15 +11,13 @@ namespace FallingWizard.EditorTools
     {
         const string ClipFolder = "Assets/Animations";
         const string ControllerPath = ClipFolder + "/Player.controller";
-        const string PlayerPrefab = "Assets/Prefabs/PLAYER.prefab";
 
-        const string BodyPath = "Visual";
+        const int FramesPerSecond = 12;
+        const int DefaultRagdollVariants = 4;
 
         class Clip
         {
             public string State;
-            public string Sheet;
-            public int Fps = 12;
             public bool Loops;
 
             public string Path => $"{ClipFolder}/{State.Replace(" ", string.Empty)}.anim";
@@ -30,16 +25,16 @@ namespace FallingWizard.EditorTools
 
         static readonly Clip[] Clips =
         {
-            new Clip { State = "Idle",       Sheet = "",                             Fps = 1,  Loops = true },
-            new Clip { State = "Walk",       Sheet = "",                             Fps = 12, Loops = true },
-            new Clip { State = "Run",        Sheet = "",                             Fps = 12, Loops = true },
-            new Clip { State = "Falling",    Sheet = "",                             Fps = 12, Loops = true },
-            new Clip { State = "Climb Up",   Sheet = "",                             Fps = 12, Loops = false },
-            new Clip { State = "Climb Down", Sheet = "",                             Fps = 12, Loops = false },
-            new Clip { State = "Climb",      Sheet = "",                             Fps = 12, Loops = true },
-            new Clip { State = "Take Damage",Sheet = "",                             Fps = 12, Loops = false },
-            new Clip { State = "Hat Change", Sheet = "",                             Fps = 12, Loops = false },
-            new Clip { State = "Death",      Sheet = "",                             Fps = 12, Loops = false },
+            new Clip { State = "Idle",        Loops = true },
+            new Clip { State = "Walk",        Loops = true },
+            new Clip { State = "Run",         Loops = true },
+            new Clip { State = "Falling",     Loops = true },
+            new Clip { State = "Climb Up",    Loops = false },
+            new Clip { State = "Climb Down",  Loops = false },
+            new Clip { State = "Climb",       Loops = true },
+            new Clip { State = "Take Damage", Loops = false },
+            new Clip { State = "Hat Change",  Loops = false },
+            new Clip { State = "Death",       Loops = false },
         };
 
         const string RagdollClipPrefix = "Ragdoll";
@@ -54,31 +49,30 @@ namespace FallingWizard.EditorTools
             var motions = new Dictionary<string, AnimationClip>();
 
             foreach (Clip clip in Clips)
-                motions[clip.State] = FillClip(clip);
+                motions[clip.State] = LoadOrCreateClip(clip);
 
             for (int i = 0; i < variants; i++)
             {
-                var ragdoll = new Clip { State = $"{RagdollClipPrefix} {i}", Sheet = "", Loops = false };
-                motions[ragdoll.State] = FillClip(ragdoll);
+                var ragdoll = new Clip { State = $"{RagdollClipPrefix} {i}", Loops = false };
+                motions[ragdoll.State] = LoadOrCreateClip(ragdoll);
             }
 
-            AnimatorController controller = BuildController(motions, variants);
+            BuildController(motions, variants);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            AttachTo(controller, variants);
-
             Debug.Log($"Player Animator built: {motions.Count} clips and a controller at " +
-                      $"{ControllerPath}, with {variants} ragdoll reaction(s). Clips with no art " +
-                      "yet are empty and wired in - draw into them and press play.");
+                      $"{ControllerPath}, with {variants} ragdoll reaction(s). Clips that already " +
+                      "existed were left exactly as they were; new ones are empty. Give each " +
+                      "health look's Animator this controller, or an override of it.");
         }
 
         static int ReadVariantCount()
         {
             PlayerAnimator existing = Object.FindFirstObjectByType<PlayerAnimator>(FindObjectsInactive.Include);
 
-            return existing != null ? Mathf.Max(1, existing.ragdollVariants) : 4;
+            return existing != null ? Mathf.Max(1, existing.ragdollVariants) : DefaultRagdollVariants;
         }
 
         static void EnsureFolder()
@@ -87,61 +81,21 @@ namespace FallingWizard.EditorTools
                 AssetDatabase.CreateFolder("Assets", "Animations");
         }
 
-        static AnimationClip FillClip(Clip spec)
+        static AnimationClip LoadOrCreateClip(Clip spec)
         {
-            var clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(spec.Path);
+            var existing = AssetDatabase.LoadAssetAtPath<AnimationClip>(spec.Path);
 
-            if (clip == null)
-            {
-                clip = new AnimationClip();
-                AssetDatabase.CreateAsset(clip, spec.Path);
-            }
+            if (existing != null)
+                return existing;
 
-            clip.frameRate = Mathf.Max(1, spec.Fps);
+            var clip = new AnimationClip { frameRate = FramesPerSecond };
 
             AnimationClipSettings settings = AnimationUtility.GetAnimationClipSettings(clip);
             settings.loopTime = spec.Loops;
             AnimationUtility.SetAnimationClipSettings(clip, settings);
 
-            if (!string.IsNullOrEmpty(spec.Sheet))
-            {
-                Sprite[] frames = FramesOf(spec.Sheet);
-
-                if (frames.Length == 0)
-                    Debug.LogWarning($"'{spec.Sheet}' has no sprites, so the {spec.State} clip was " +
-                                     "left empty. Set the texture's Sprite Mode and slice it first.");
-                else
-                    WriteFrames(clip, frames);
-            }
-
-            EditorUtility.SetDirty(clip);
+            AssetDatabase.CreateAsset(clip, spec.Path);
             return clip;
-        }
-
-        static Sprite[] FramesOf(string sheet)
-        {
-            return AssetDatabase.LoadAllAssetsAtPath(sheet)
-                .OfType<Sprite>()
-                .OrderByDescending(s => s.rect.y)
-                .ThenBy(s => s.rect.x)
-                .ToArray();
-        }
-
-        static void WriteFrames(AnimationClip clip, Sprite[] frames)
-        {
-            var keys = new ObjectReferenceKeyframe[frames.Length];
-
-            for (int i = 0; i < frames.Length; i++)
-                keys[i] = new ObjectReferenceKeyframe
-                {
-                    time = i / clip.frameRate,
-                    value = frames[i],
-                };
-
-            EditorCurveBinding binding =
-                EditorCurveBinding.PPtrCurve(BodyPath, typeof(SpriteRenderer), "m_Sprite");
-
-            AnimationUtility.SetObjectReferenceCurve(clip, binding, keys);
         }
 
         static AnimatorController BuildController(Dictionary<string, AnimationClip> motions, int variants)
@@ -326,52 +280,6 @@ namespace FallingWizard.EditorTools
             transition.canTransitionToSelf = false;
 
             conditions(transition);
-        }
-
-        static void AttachTo(AnimatorController controller, int variants)
-        {
-            GameObject prefab = PrefabUtility.LoadPrefabContents(PlayerPrefab);
-
-            if (prefab != null)
-            {
-                Wire(prefab, controller, variants);
-                PrefabUtility.SaveAsPrefabAsset(prefab, PlayerPrefab);
-                PrefabUtility.UnloadPrefabContents(prefab);
-                Debug.Log($"Wired the Animator into {PlayerPrefab}.");
-            }
-
-            Scene scene = SceneManager.GetActiveScene();
-            PlayerCharacter inScene = Object.FindFirstObjectByType<PlayerCharacter>(FindObjectsInactive.Include);
-
-            if (inScene == null)
-                return;
-
-            Wire(inScene.gameObject, controller, variants);
-            EditorSceneManager.MarkSceneDirty(scene);
-            Debug.Log($"Wired the Animator into '{inScene.name}' in {scene.name}. Save the scene to keep it.");
-        }
-
-        static void Wire(GameObject wizard, AnimatorController controller, int variants)
-        {
-            var animator = wizard.GetComponent<Animator>();
-
-            if (animator == null)
-                animator = wizard.AddComponent<Animator>();
-
-            animator.runtimeAnimatorController = controller;
-
-            animator.applyRootMotion = false;
-            animator.updateMode = AnimatorUpdateMode.Normal;
-            animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
-
-            var driver = wizard.GetComponent<PlayerAnimator>();
-
-            if (driver == null)
-                driver = wizard.AddComponent<PlayerAnimator>();
-
-            driver.ragdollVariants = variants;
-
-            EditorUtility.SetDirty(wizard);
         }
     }
 }

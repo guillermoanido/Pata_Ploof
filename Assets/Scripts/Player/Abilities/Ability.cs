@@ -153,6 +153,15 @@ namespace FallingWizard.Player
                 ? 1f
                 : tiers[Mathf.Clamp(rank - 1, 0, tiers.Length - 1)];
 
+        protected static GameObject FindChildNamed(Transform rig, string wanted)
+        {
+            foreach (Transform child in rig.GetComponentsInChildren<Transform>(true))
+                if (child.name == wanted)
+                    return child.gameObject;
+
+            return null;
+        }
+
         protected void CheckTiers(int count)
         {
             if (count > 0 && count < MaxRank)

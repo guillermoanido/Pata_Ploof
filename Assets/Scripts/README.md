@@ -315,8 +315,9 @@ you go deeper**, rather than being farmed.
 Dying gives the Wisp back. That is deliberate: the punishment for dying is losing the descent, not
 losing the pickup, so a bad run is repeatable and a greedy one is not free.
 
-Max HP is permanent and one-way. `Health.maxHealth` is what a brand new save starts with and
-`Health.maxBonusHearts` caps what can ever be added on top of it, across the whole save. A
+Max HP is permanent and one-way. The highest **Health Look** under the wizard is what a brand new
+save starts with (see Health below) and `Health.maxBonusHearts` caps what can ever be added on top
+of it, across the whole save. A
 `HeartPickup` that finds the bar already at that cap pays out in Wisps instead — never leave a
 player standing over dead loot — and is spent all the same, so there is no heart to farm.
 
@@ -363,8 +364,8 @@ resolve; and there would be no way to exempt anything.
 
 As a flag, **the wizard is untouched by construction, and so is their ragdoll** — only things that
 *ask* are slowed, and the ragdoll never asks. Wind is the first thing that asks
-(`WindZone2D.OnPlayerInside` scales `push`, and its streaks scale with it so the two never
-disagree). Anything that moves later reads `Haste.WorldScale` the same way.
+(`WindZone2D.OnPlayerInside` scales `push`). Anything that moves later reads `Haste.WorldScale`
+the same way - the steam vents, wax drips, moving platforms and pressure plates all do.
 
 `usesPerLevel` is the limit, and it means what it says: charges refill on the scene load that
 rebuilds the spellbook, which is what a level transition is. Dying refills it too, since that also
@@ -566,13 +567,13 @@ reaches the limit already on its way back keeps its speed, or every big swing st
 
 ### The knot is the whole mechanic
 
-A vine hangs invisible. What the level shows is a **knot** tied to the ceiling, and it pulses
-between `dormant` and `glow` whenever the wizard is close enough to reach it. Press the button and
-`CallDown()` unrolls the vine over `unrollTime` and you are already swinging on it.
+A vine hangs invisible. What the level shows is a **knot** tied to the ceiling - your own art - and
+the object in `glowLook` is switched on whenever the wizard is close enough to reach it. Press the
+button and `CallDown()` unrolls the vine over `unrollTime` and you are already swinging on it.
 
 That means a vine costs the player nothing to walk past and everything to notice — and it is why
-`glow` matters more than any number here. If a player never learns what a glowing knot means, no
-vine in the game ever gets used.
+the glow look matters more than any number here. If a player never learns what a glowing knot
+means, no vine in the game ever gets used.
 
 `staysDown` (on by default) leaves a called vine hanging for the rest of the run: finding it was
 the achievement, not re-finding it. Turn it off and it rolls back up — and it rolls itself up by
@@ -580,27 +581,31 @@ the achievement, not re-finding it. Turn it off and it rolls back up — and it 
 with Jump never passes through the spell at all.
 
 Reach is measured to the nearest point *on the vine* rather than to the knot, so a long vine can be
-caught anywhere down its length. Both the knot and the rope want a `sortingOrder` above the
-tilemap — at −1 a vine hangs behind the wall it is tied to and simply cannot be seen.
+caught anywhere down its length. Give the knot and the rope a sorting order above the tilemap
+yourself — at −1 a vine hangs behind the wall it is tied to and simply cannot be seen.
 
 The drawn rope leans with the swing: it is turned to the angle the wizard is actually hanging at,
 rather than standing bolt upright while they arc away from underneath it.
 
-## Components do not resize your art
+## Scripts never change your art
 
-A component that builds a stand-in when you have given it nothing may size that stand-in however it
-likes. **A component that finds art you put there must not touch its transform.** `VineAnchor`
-tracks whether it built its own knot and rope and only fits the ones it made; `WindZone2D` has
-`fitHazeToZone` to switch its own fitting off.
+**What you place in a scene or prefab is what the game shows.** No script draws art, recolours it,
+resizes it, swaps its sprite or forces its sorting order, and no script has a slot for a sprite to
+paint with. When something needs to show a state - a vent about to blow, a plate being pressed, a
+live rest site, a knot in reach - it has a **Look** slot: drag in a child object holding your own
+art or animation and the script only switches that object on and off. Leave the slot empty and
+nothing is shown.
 
-This is not a style point. `OnValidate` runs on every inspector change, so a component that writes
-`localScale` there will snap a prop back to its own idea of the right size the instant you finish
-dragging the handle — and it will do it every time, which reads as the editor being broken rather
-than as a component being helpful.
+Spell effects work the same way, as children of the wizard found by name: **Glide Canopy** (under
+`Visual`, so it faces the right way), **Haste Trail** (anywhere under the wizard), and an object
+with a **Fling Arrow** component (a direct child of the wizard, art pointing right, Danger Look
+optional). Missing one just means that effect does not show.
 
-The one exception is a size that *is* the mechanic: the vine's length, which is the rope unrolling,
-and the wall's height, which is it growing. Even then only that one axis is driven — the vine keeps
-whatever width it was authored at.
+The only things a script still moves are the ones where the movement *is* the mechanic: the
+wizard's `Visual` is flipped to face their way and spun when they tumble, the staff sprite is
+flipped, the vine's rope is stretched as it unrolls and leans with the swing, the Wall Growth
+block is scaled as it grows, the fling arrow is pointed along the aim, and a parallax layer lays
+copies of your own sheet side by side so the background never runs out.
 
 ## Getting to the loadout, and making it stick
 
@@ -666,9 +671,8 @@ calls `EditorUtility.SetDirty` afterwards, which was the piece missing all along
 
 ## Prefabs
 
-Everything below is a plain object you drag in — no menu items, no tooling. All the art is Unity's
-built-in Square tinted a flat colour, so each one is visible the moment it lands and is waiting for
-a sprite of yours.
+Everything below is a plain object you drag in. All the art is Unity's built-in Square tinted a
+flat colour, so each one is visible the moment it lands and is waiting for a sprite of yours.
 
 | Prefab | What it does | Layer |
 | --- | --- | --- |
@@ -679,14 +683,27 @@ a sprite of yours.
 | `Ice` | Ground that does not hold you. Nothing else changes. | Hazard |
 | `Stairs` | Lay it over a staircase. Take them fast and you tumble down them. | Hazard |
 | `Slime` | Bounces you three boxes and sends you tumbling. | Hazard |
-| `Wind` | Pushes you sideways, and shows it. | Hazard |
-| `Wind Trap` | The same push, on a timer, behind a shutter that opens and closes. | Hazard |
+| `Wind` | Pushes you the way its arrows point. Rotate it to aim it. | Hazard |
+| `Wind Trap` | The same push, on a timer, with a Warning Look and a Blowing Look. | Hazard |
 | `Hand Hold` | The knot Mage Hand catches. | Default |
 | `Boulder` | What Telekinesis lifts. Solid, so it is also a platform. | **Ground** |
 | `Stone Wall` | What Wall Growth raises. Already wired into the spell. | **Ground** |
 | `Level Exit` | The bottom. Marks the level completed and opens the Level Select. | Default |
 
-The two on **Ground** are there because the wizard has to be able to stand on them, and the ground
+The steampunk set for the second level is made by **Falling Wizard > Build Steampunk Hazards**,
+into `Assets/Prefabs/Steampunk`. It never overwrites a prefab that is already there. Every coloured
+box in them is a child called `Stand-in`: put your art beside it and delete it.
+
+| Prefab | What it does | Layer |
+| --- | --- | --- |
+| `Steam Vent` | Quiet, Warning Look, then a burst of steam that burns while you stand in it. | Hazard |
+| `Wax Candle` | Drips a `Wax Drop` on a rhythm. Select it to see where drops land. | Default |
+| `Wax Drop` | Hangs as a warning, falls, burns whoever it lands on. | Hazard |
+| `Moving Platform` | Slides along `travel` and back, carrying the wizard. | **Ground** |
+| `Pressure Plate` | Stand on it for a second and it throws you up. | Hazard |
+| `Broken Glass` | Cuts you every second you are on it, unless you walk. | Hazard |
+
+The ones on **Ground** are there because the wizard has to be able to stand on them, and the ground
 check only looks at that layer. The seven on **Hazard** are triggers you pass straight through —
 `Hazard.passThrough` sets that on Awake, so ticking the box fixes one already placed.
 
@@ -734,7 +751,7 @@ would bill the wizard for the trip. Health comes back full because `Attach` rest
 
 A checkpoint is an empty object with a trigger `BoxCollider2D`, a `Checkpoint` and a sprite
 child. `respawnOffset` lifts
-the spawn point clear of the floor, and the live checkpoint tints itself — read back from
+the spawn point clear of the floor, and the live checkpoint switches on its Lit Look — read back from
 `Progress` rather than remembered in a static, since the level reloads on every death and a static
 would be pointing at a destroyed object by the time it mattered.
 
@@ -1002,25 +1019,19 @@ tumble is `Ragdoll`'s, shared with every other trip in the game, so all of them 
 
 ### Seeing the wind
 
-A rock and a slime are objects — you can see them coming. Wind is a volume, and a flat tinted
-rectangle tells you nothing about which way it blows or how hard, which makes it the one hazard a
-player can only learn by being caught out. `WindZone2D` draws itself three ways:
+A rock and a slime are objects — you can see them coming. Wind is a volume, so it is the one
+hazard a player can only learn by being caught out unless the level shows it: put your own wind art
+(an animated sprite, particles) inside the zone. The script draws nothing in the game.
 
-- **Streaks.** A drifting scatter of thin bars, turned to face the push and travelling at
-  `streakSpeed` times it. They wrap around the zone, and each one fades in at the edge it enters by
-  and out at the one it leaves by, so nothing blinks into being mid-air. Built at runtime — they
-  live under one container at the scene root rather than parented to the zone, because stretching
-  a wind zone would otherwise stretch every streak with it.
-- **Haze.** The flat rectangle, resized to the collider in `OnValidate`. Stretch the zone and the
-  tint follows; there is no second thing to keep in step.
-- **Arrows.** Scene-view gizmos, drawn *without selecting the zone first* (`alwaysShowArrows`),
-  because the whole point is seeing where your wind is while laying a level out. Arrow length reads
-  the strength against the same scale as everything else: a run is 6 boxes a second, so a gale you
-  cannot walk out of draws longer than the wizard is tall.
+In the editor, `WindZone2D` draws **arrows** as scene-view gizmos *without selecting the zone
+first* (`alwaysShowArrows`). Arrow length reads the strength against the same scale as everything
+else: a run is 6 boxes a second, so a gale you cannot walk out of draws longer than the wizard is
+tall.
 
-`FitHaze` deliberately never creates a sprite, only resizes one — it runs from `OnValidate`, and
-building a texture inside a serialisation callback earns a console full of warnings. `Awake` puts
-the stand-in in place before the first call.
+**`push` turns with the object.** Rotate a Wind or a Wind Trap and its wind - and a trap's
+`kick` - turn with it, which the arrows show. `groundScale` only softens the *sideways* push while
+the wizard is standing; up and down is always felt in full, so an updraft lifts a wizard who is
+standing in it.
 
 **Hazards push you onward, never back.** Rocks, slimes and tumbles all send you the way you were
 already travelling — `Movement.TravelDirection`, which is the direction you *arrived* in, not the
@@ -1044,11 +1055,34 @@ Two things worth knowing:
 
 ## Health and the hat
 
-There is no health bar. **The hat is the health display**: `PlayerAnimator.hatStates` lists one look
-per hat, from the healthiest to the most damaged, and each is worn while `Health.Percent` is at or
-above its `fromHealthPercent`. A look is an Animator Override Controller built on `Player.controller`
-holding that hat's version of every clip. A hit that changes the hat plays the new hat's
-`Hat Change` clip; a hit that does not plays `Take Damage`.
+There is no health bar. **The hat is the health display**, and it lives in the PLAYER prefab, the
+same way the staves do:
+
+```
+PLAYER
+└── Visual           flipped to face left/right, spun when tumbling
+    ├── Health 3     SpriteRenderer + Animator + Health Look (health 3)
+    ├── Health 2     SpriteRenderer + Animator + Health Look (health 2)
+    └── Health 1     SpriteRenderer + Animator + Health Look (health 1)
+```
+
+Each health level is its own child with its own art and its own Animator, and its `Health Look`
+says which health it stands for. The wizard starts with as much health as the highest look, and
+`PlayerAnimator` switches on only the look matching their health right now (the highest one, if a
+heart pickup has given them more). A hit that changes the look plays the new look's `Hat Change`
+clip; a hit that does not plays `Take Damage`.
+
+Every look's Animator uses `Player.controller` - or an Animator Override Controller made from it,
+holding that look's own clips. The clips animate the sprite of the object the Animator is on, so
+one set of clips works for any look.
+
+## Animations
+
+`Player.controller` is built by **Falling Wizard > Build Player Animator**. It makes any clip that
+is missing, wires the states and transitions, and **never touches a clip that already exists** -
+the frames, timing and looping in a clip are yours. To fill a clip: select a Health Look in the
+PLAYER prefab, open Window > Animation > Animation, pick the clip from the drop-down, and drag the
+sliced frames of a sprite sheet onto the timeline. Set Samples (the frame rate) in the same window.
 
 ## HUD
 
@@ -1108,7 +1142,8 @@ life of the scene even as its contents change.
 
 ## Setting a scene up by hand
 
-There is no editor tooling any more. These are the things it used to know.
+The Falling Wizard menu has a few one-time builders (the player animator, the level select, the
+steampunk hazards, tilemap collision). Everything else is set up by hand:
 
 **Tilemap ground**, on the Tilemap that actually has tiles painted on it, never the Grid:
 

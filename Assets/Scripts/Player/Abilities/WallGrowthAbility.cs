@@ -1,4 +1,3 @@
-using FallingWizard.Core;
 using FallingWizard.World;
 using UnityEngine;
 
@@ -10,18 +9,12 @@ namespace FallingWizard.Player
         const float MinGrown = 0.01f;
 
         [Header("Wall")]
-        [Tooltip("Spawned as the block. Its FIRST CHILD carries the sprite and the collider, " +
-                 "ONE BOX SQUARE and centred on itself - the spell scales the root, and works out " +
-                 "where to stand the root from that one box. Leave empty and a plain one is " +
-                 "built from the sprite below.")]
+        [Tooltip("Spawned as the block, and required - with this empty the spell will not cast. " +
+                 "Its FIRST CHILD carries the sprite and the collider, ONE BOX SQUARE and centred " +
+                 "on itself - the spell scales the root, and works out where to stand the root " +
+                 "from that one box. Put it on a layer the wizard's ground check looks at, such " +
+                 "as Ground, or they will walk straight through it.")]
         public GameObject wallPrefab;
-
-        [Tooltip("Used when there is no prefab. A 32x32 sprite at 32 pixels per unit is one box. " +
-                 "Empty draws a flat colour.")]
-        public Sprite wallArt;
-
-        [Tooltip("Tint, and the colour of the plain block when there is no art at all.")]
-        public Color tint = new Color(0.42f, 0.62f, 0.38f);
 
         [Tooltip("Size of the finished block in boxes. One by one is a single tile, which is " +
                  "what the grid is built out of and what snapping expects.")]
@@ -49,17 +42,8 @@ namespace FallingWizard.Player
                  "cast and half-solid to a wizard stood on it.")]
         [Min(0f)] public float growTime = 0.05f;
 
-        [Header("Physics")]
-        [Tooltip("Layer the block lands on. It has to be one the wizard's ground check looks at, " +
-                 "or they will walk straight through it.")]
-        public string groundLayer = "Ground";
-
-        [Tooltip("Sorting order of the built block. It has to be ABOVE the tilemap or the block " +
-                 "is solid, does its job, and cannot be seen at all - which reads exactly like " +
-                 "the spell not working.")]
-        public int sortingOrder = 1;
-
         public override bool CanCast(PlayerLogic wizard) =>
+            wallPrefab != null &&
             wizard.State == PlayerState.Normal &&
             wizard.movement.IsGrounded &&
             wizard.spellbook.StateOf<Growth>(this).wall == null &&
@@ -67,6 +51,10 @@ namespace FallingWizard.Player
 
         public override string WhyNot(PlayerLogic wizard)
         {
+            if (wallPrefab == null)
+                return "this spell has no Wall Prefab - drag the Stone Wall prefab into its " +
+                       "Wall Prefab slot";
+
             if (wizard.State != PlayerState.Normal)
                 return $"you are {wizard.State} and need both feet under you";
 
@@ -90,7 +78,7 @@ namespace FallingWizard.Player
 
             Growth growth = wizard.spellbook.StateOf<Growth>(this);
 
-            growth.wall = Build(new Vector2(TileGrid.CentreOf(cell).x, top - size.y * 0.5f));
+            growth.wall = SpawnWall(new Vector2(TileGrid.CentreOf(cell).x, top - size.y * 0.5f));
             growth.body = Body(growth.wall);
             growth.age = 0f;
 
@@ -159,32 +147,11 @@ namespace FallingWizard.Player
             return false;
         }
 
-        GameObject Build(Vector2 anchor)
+        GameObject SpawnWall(Vector2 anchor)
         {
-            if (wallPrefab != null)
-            {
-                GameObject grown = Instantiate(wallPrefab, anchor, Quaternion.identity);
-                grown.name = displayName;
-                return grown;
-            }
-
-            var root = new GameObject(displayName);
-            root.transform.position = anchor;
-            root.layer = Layer();
-
-            var body = new GameObject("Body");
-            body.transform.SetParent(root.transform, false);
-            body.layer = root.layer;
-
-            var art = body.AddComponent<SpriteRenderer>();
-            art.sprite = wallArt != null ? wallArt : Placeholder.Box;
-            art.color = tint;
-            art.sortingOrder = sortingOrder;
-            art.drawMode = SpriteDrawMode.Simple;
-
-            body.AddComponent<BoxCollider2D>();
-
-            return root;
+            GameObject grown = Instantiate(wallPrefab, anchor, Quaternion.identity);
+            grown.name = displayName;
+            return grown;
         }
 
         static Transform Body(GameObject wall) =>
@@ -198,19 +165,6 @@ namespace FallingWizard.Player
             growth.wall.transform.localScale = new Vector3(
                 Mathf.Max(MinGrown, size.x * grown),
                 Mathf.Max(MinGrown, size.y * grown), 1f);
-        }
-
-        int Layer()
-        {
-            int layer = LayerMask.NameToLayer(groundLayer);
-
-            if (layer >= 0)
-                return layer;
-
-            Debug.LogWarning($"'{name}' wants to build on a layer called '{groundLayer}', which " +
-                             "this project does not have. It will be built on Default and the " +
-                             "wizard will fall through it.", this);
-            return 0;
         }
 
         public class Growth

@@ -15,11 +15,12 @@ namespace FallingWizard.World
 
         [Header("Plate")]
         [Tooltip("Seconds the wizard has to stand on the plate before it throws them. Step off " +
-                 "sooner and the count starts again from nothing next time. It counts while the " +
-                 "wizard is on their feet with any part of them over this object's collider, so " +
-                 "walking across takes longer than the plate is wide - try it at a walk before " +
-                 "settling on a number. The Haste spell slows the count along with the rest of " +
-                 "the world. 0 throws them the moment they step on.")]
+                 "sooner and the count starts again from nothing next time. It counts while any " +
+                 "part of the wizard is over this object's collider, so they are on it for the " +
+                 "plate's width PLUS their own: walking across a 1-box plate takes most of a " +
+                 "second, running across takes under half. Try it at a walk before settling on " +
+                 "a number. The Haste spell slows the count along with the rest of the world. " +
+                 "0 throws them the moment they step on.")]
         [Min(0f)] public float secondsToLaunch = 1f;
 
         [Tooltip("How high it throws the wizard, in boxes. Worked out from gravity, so 3 really " +
@@ -50,23 +51,21 @@ namespace FallingWizard.World
         [Header("Look")]
         [Tooltip("Shown while nobody is stood on the plate, and while it re-arms after a throw. " +
                  "Make it a child object and fill it with your own art or animation - the plate " +
-                 "only ever switches it on and off. Never the plate itself, or the plate " +
-                 "switches itself off with it. Leave it empty for no idle look.")]
+                 "only ever switches it on and off. Never the plate itself or one of its " +
+                 "parents, or the plate switches itself off with it. Leave it empty for no " +
+                 "idle look.")]
         public GameObject idleLook;
 
         [Tooltip("Shown while the wizard is stood on the plate and it is counting down to the " +
                  "throw. A child object again, switched on and off and nothing else. For a plate " +
-                 "that sinks further as the count runs out, animate this yourself, or have a " +
-                 "script read Progress, which goes from 0 to 1 over the count.")]
+                 "that sinks further as the count runs out, give this object an animation as " +
+                 "long as Seconds To Launch.")]
         public GameObject pressedLook;
 
         [NonSerialized] Collider2D hitbox;
-        [NonSerialized] float countdown;
+        [NonSerialized] float secondsStoodOn;
         [NonSerialized] float readyAt;
         [NonSerialized] bool showingPressed;
-
-        public float Progress =>
-            secondsToLaunch > 0f ? Mathf.Clamp01(countdown / secondsToLaunch) : 0f;
 
         bool IsRearming => Time.time < readyAt;
 
@@ -80,11 +79,15 @@ namespace FallingWizard.World
 
         void OnValidate()
         {
-            if (idleLook == gameObject || pressedLook == gameObject)
-                Debug.LogWarning($"{name}: a PressurePlate look is set to the plate itself, so " +
-                                 "switching that look off switches the whole plate off with it. " +
-                                 "Put the art on a child object and use that instead.", this);
+            if (SwitchesThePlateOff(idleLook) || SwitchesThePlateOff(pressedLook))
+                Debug.LogWarning($"{name}: a PressurePlate look is the plate itself or one of its " +
+                                 "parents, so switching that look off switches the whole plate " +
+                                 "off with it. Put the art on a child object and use that " +
+                                 "instead.", this);
         }
+
+        bool SwitchesThePlateOff(GameObject look) =>
+            look != null && transform.IsChildOf(look.transform);
 
         void Awake()
         {
@@ -102,9 +105,9 @@ namespace FallingWizard.World
                 return;
             }
 
-            countdown += Haste.FixedDeltaTime;
+            secondsStoodOn += Haste.FixedDeltaTime;
 
-            if (countdown >= secondsToLaunch)
+            if (secondsStoodOn >= secondsToLaunch)
                 LaunchTheWizard(wizard.Logic);
             else
                 ShowTheRightLook(true);
@@ -140,7 +143,7 @@ namespace FallingWizard.World
 
         void PopBackUp()
         {
-            countdown = 0f;
+            secondsStoodOn = 0f;
             ShowTheRightLook(false);
         }
 

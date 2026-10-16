@@ -37,37 +37,6 @@ namespace FallingWizard.World
                  "number to make a patch survivable.")]
         [Range(0f, 1f)] public float grip = 0.15f;
 
-        [Header("Glaze")]
-        [Tooltip("The thin sheet showing where the slippery floor is. Empty uses the first " +
-                 "sprite found underneath. It is laid along the BOTTOM edge of the collider, so " +
-                 "stretching the zone is the only thing you have to do.")]
-        public SpriteRenderer sheet;
-
-        [Tooltip("Colour of that sheet. Keep the alpha low - the floor tiles underneath are what " +
-                 "tell the player where they are. A pale blue reads as ice, a dull green-grey " +
-                 "as standing water.")]
-        public Color sheetTint = new Color(0.72f, 0.9f, 1f, 0.28f);
-
-        [Tooltip("How tall the visible sheet is, in boxes, measured up from the bottom of the " +
-                 "collider. This is deliberately NOT the height of the zone: the trigger box has " +
-                 "to be tall enough to swallow the wizard's boots without any fiddling, and a " +
-                 "box filled with tint would draw half a box of blue hanging in the air over the " +
-                 "floor. A tenth of a box or so is a glaze; raise it for a deep puddle.")]
-        [Min(0.01f)] public float sheetThickness = 0.15f;
-
-        [Tooltip("Resize the sheet to match the collider whenever the patch changes, so " +
-                 "stretching the zone is the only thing you have to do. Turn it OFF the moment " +
-                 "you want to size or place that art yourself - it will stop touching your " +
-                 "transform.")]
-        public bool fitSheetToZone = true;
-
-        [Tooltip("Sorting order for the sheet. The level's floor tilemap draws at 0 and the " +
-                 "wizard at 1, and there is no number in between - so at 0 the sheet and the " +
-                 "floor tie and Unity is free to pick either, which is a glaze that flickers " +
-                 "behind the tiles. 1 draws it over the floor. If the wizard's boots end up " +
-                 "under the tint, raise the wizard's own Visual rather than lowering this.")]
-        public int sortingOrder = 1;
-
         [Header("Editor")]
         [Tooltip("Draw the skid marks in the scene view without having to select the patch " +
                  "first, which is what you want while laying a level out. Their length reads the " +
@@ -86,33 +55,11 @@ namespace FallingWizard.World
             affectsRagdolled = true;
         }
 
-        void OnValidate()
-        {
-            WarnAboutSpeedGate();
-
-#if UNITY_EDITOR
-            UnityEditor.EditorApplication.delayCall += FitSheetLater;
-#endif
-        }
-
-#if UNITY_EDITOR
-        void FitSheetLater()
-        {
-            UnityEditor.EditorApplication.delayCall -= FitSheetLater;
-
-            if (this != null)
-                FitSheet();
-        }
-#endif
+        void OnValidate() => WarnAboutSpeedGate();
 
         protected override void Awake()
         {
             base.Awake();
-
-            if (sheet == null)
-                sheet = GetComponentInChildren<SpriteRenderer>();
-
-            FitSheet();
             WarnAboutSpeedGate();
         }
 
@@ -124,46 +71,6 @@ namespace FallingWizard.World
                 return;
 
             wizard.Logic.Slicken(grip);
-        }
-
-        void FitSheet()
-        {
-            if (sheet == null)
-                sheet = GetComponentInChildren<SpriteRenderer>();
-
-            if (sheet == null || sheet.sprite == null)
-                return;
-
-            sheet.color = sheetTint;
-            sheet.sortingOrder = sortingOrder;
-
-            var shape = GetComponent<BoxCollider2D>();
-
-            if (shape == null)
-                return;
-
-            Vector2 unit = sheet.sprite.bounds.size;
-
-            if (unit.x <= Epsilon || unit.y <= Epsilon)
-                return;
-
-            if (!fitSheetToZone)
-                return;
-
-            float thick = Mathf.Min(sheetThickness, shape.size.y);
-
-            sheet.transform.localPosition =
-                shape.offset + new Vector2(0f, (thick - shape.size.y) * 0.5f);
-
-            if (sheet.drawMode == SpriteDrawMode.Simple)
-            {
-                sheet.transform.localScale =
-                    new Vector3(shape.size.x / unit.x, thick / unit.y, 1f);
-                return;
-            }
-
-            sheet.transform.localScale = Vector3.one;
-            sheet.size = new Vector2(shape.size.x, thick);
         }
 
         void WarnAboutSpeedGate()

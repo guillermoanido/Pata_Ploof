@@ -9,6 +9,8 @@ namespace FallingWizard.Player
     [RequireComponent(typeof(Rigidbody2D))]
     public class PlayerCharacter : SingletonBehaviour<PlayerCharacter>
     {
+        public const string ArtObjectName = "Visual";
+
         [Header("Body")]
         [Tooltip("Gravity written onto the Rigidbody2D by Reset. 3 with a 2 box jump is the feel " +
                  "the rest of the tuning assumes.")]
@@ -33,12 +35,6 @@ namespace FallingWizard.Player
         [Tooltip("Ask where to go instead of dropping straight back at the last rest: carry on " +
                  "from there, or give the run up and go back to spend what is already banked.")]
         public bool offerChoiceOnDeath = true;
-
-        [Header("Rig")]
-        [Tooltip("The wizard's own sprite - the one the facing flip is applied to. Set it and it " +
-                 "is the one used, whatever else is under here. Empty falls back to the first " +
-                 "SpriteRenderer that is not part of a staff, which is a guess.")]
-        public SpriteRenderer bodyVisual;
 
         [Header("Staves")]
         [Tooltip("One staff per rank, weakest first. Only the staff for the current rank is left " +
@@ -83,7 +79,8 @@ namespace FallingWizard.Player
 
             MoveToCheckpoint();
 
-            logic.Attach(GetComponent<Rigidbody2D>(), FindBodySprite(), Hitbox, staves);
+            logic.health.SetBaseHealth(HighestHealthLook());
+            logic.Attach(GetComponent<Rigidbody2D>(), FindArt(), Hitbox, staves);
             logic.Died += OnDied;
         }
 
@@ -112,18 +109,31 @@ namespace FallingWizard.Player
 
         void OnDrawGizmosSelected() => logic.DrawGizmos(transform.position);
 
-        SpriteRenderer FindBodySprite()
+        Transform FindArt()
         {
-            if (bodyVisual != null)
-                return bodyVisual;
+            Transform art = transform.Find(ArtObjectName);
 
-            foreach (SpriteRenderer sprite in GetComponentsInChildren<SpriteRenderer>(true))
-            {
-                if (sprite.GetComponentInParent<Staff>() == null)
-                    return sprite;
-            }
+            if (art == null)
+                Debug.LogError($"'{name}' has no child called '{ArtObjectName}', so there is " +
+                               "nothing to turn round when the wizard faces the other way or " +
+                               "tumbles. Put the wizard's art under a child with that name.", this);
 
-            return null;
+            return art;
+        }
+
+        int HighestHealthLook()
+        {
+            int highest = 0;
+
+            foreach (HealthLook look in GetComponentsInChildren<HealthLook>(true))
+                highest = Mathf.Max(highest, look.health);
+
+            if (highest == 0)
+                Debug.LogError($"'{name}' has no Health Look under it, so the wizard has the " +
+                               "least health possible. Give every health level its own child " +
+                               "under Visual with a Health Look on it.", this);
+
+            return highest;
         }
 
         void OnDied()

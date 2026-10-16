@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using FallingWizard.Core;
 using FallingWizard.Player;
 using UnityEngine;
 
@@ -10,7 +9,6 @@ namespace FallingWizard.World
     {
         const float Epsilon = 0.0001f;
 
-        static readonly Color RopeColour = new Color(0.34f, 0.55f, 0.29f);
         static readonly Color LineColour = new Color(0.42f, 0.75f, 0.38f);
         static readonly Color ReachColour = new Color(0.42f, 0.75f, 0.38f, 0.25f);
 
@@ -18,7 +16,8 @@ namespace FallingWizard.World
 
         [Header("Vine")]
         [Tooltip("Where the vine is tied, relative to this object. The wizard swings from here, " +
-                 "so put it at the ceiling and not at the loose end.")]
+                 "so put it at the ceiling and not at the loose end. This only moves the swing " +
+                 "and the top of the rope - place your knot art there yourself.")]
         public Vector2 knotOffset = Vector2.zero;
 
         [Tooltip("How far the vine hangs, in boxes. A mage is one box tall.")]
@@ -28,40 +27,24 @@ namespace FallingWizard.World
                  "stiff vine that barely swings.")]
         [Range(0f, 89f)] public float maxSwing = 70f;
 
-        [Tooltip("How close the wizard has to be for the knot to light up and for the spell to " +
+        [Tooltip("How close the wizard has to be for the Glow Look to show and for the spell to " +
                  "reach it, in boxes. Measured to the nearest point ON the vine, not to the knot, " +
                  "so a long vine can be caught anywhere along its length.")]
         [Min(0.5f)] public float grabRange = 2.5f;
 
-        [Header("The Knot")]
-        [Tooltip("The bit that is always there to be seen: a knot tied to the ceiling, with no " +
-                 "vine under it until the wizard calls one down. Empty and one is built.")]
-        public SpriteRenderer knot;
-
-        [Tooltip("Colour of the knot with nobody near it. Dim enough to read as scenery, bright " +
-                 "enough to notice while falling past.")]
-        public Color dormant = new Color(0.38f, 0.46f, 0.34f);
-
-        [Tooltip("Colour it pulses to once the wizard is close enough to reach it. THIS is the " +
-                 "tell - if a player never learns what a glowing knot means, no vine ever gets used.")]
-        public Color glow = new Color(0.72f, 1f, 0.55f);
-
-        [Tooltip("Pulses per second while lit.")]
-        [Min(0f)] public float glowSpeed = 1.6f;
-
-        [Tooltip("How big the STAND-IN knot is drawn, in boxes - the plain block built when " +
-                 "there is no art here at all. A knot you supplied yourself is left exactly the " +
-                 "size you made it.")]
-        [Min(0.05f)] public float knotSize = 0.4f;
+        [Header("Look")]
+        [Tooltip("A child object switched on only while the wizard is close enough to grab this " +
+                 "vine, and off the rest of the time. THIS is the tell - if a player never learns " +
+                 "what it means, no vine ever gets used. Fill it with your own glow art or " +
+                 "animation. Never put the vine itself here, or it switches itself off. Leave it " +
+                 "empty and nothing shows.")]
+        public GameObject glowLook;
 
         [Header("The Rope")]
-        [Tooltip("The vine itself. Hidden until the wizard calls it down. Empty and one is built.")]
+        [Tooltip("The vine itself, as a child with your rope art. It is hidden until the wizard " +
+                 "calls it down, then stretched from the knot and turned to follow the swing - " +
+                 "that is the vine unrolling. Its width is left exactly as you made it.")]
         public SpriteRenderer rope;
-
-        [Tooltip("How wide the STAND-IN vine is drawn, in boxes. A rope you supplied yourself " +
-                 "keeps the width you gave it - only its length is ever driven, because that is " +
-                 "the vine unrolling.")]
-        [Min(0.02f)] public float ropeWidth = 0.2f;
 
         [Tooltip("Seconds the vine takes to unroll once called.")]
         [Min(0f)] public float unrollTime = 0.25f;
@@ -70,15 +53,9 @@ namespace FallingWizard.World
                  "up the moment it is let go, so every swing has to be called again.")]
         public bool staysDown = true;
 
-        [Tooltip("Sorting order for both the knot and the vine. Above the tilemap, or a vine " +
-                 "hangs behind the wall it is tied to and cannot be seen at all.")]
-        public int sortingOrder = 1;
-
         [NonSerialized] float unrolled;
         [NonSerialized] bool called;
-
-        [NonSerialized] bool builtKnot;
-        [NonSerialized] bool builtRope;
+        [NonSerialized] bool showingGlow;
 
         [NonSerialized] float ropeThickness = 1f;
 
@@ -96,18 +73,18 @@ namespace FallingWizard.World
 
         void Awake()
         {
-            Build();
-            Dress();
-        }
+            ShowGlowLook(false);
 
-        void OnValidate() => Dress();
+            if (rope == null)
+                return;
+
+            rope.enabled = false;
+            ropeThickness = rope.transform.localScale.x;
+        }
 
         void Update()
         {
-            if (!Application.isPlaying)
-                return;
-
-            Glow();
+            ShowGlowLookWhenNear();
             Unroll();
         }
 
@@ -179,25 +156,16 @@ namespace FallingWizard.World
 
         float Swing => BeingRidden ? PlayerCharacter.Instance.Logic.vine.Lean : 0f;
 
-        void Glow()
+        bool WizardIsNear
         {
-            if (knot == null)
-                return;
-
-            PlayerCharacter wizard = PlayerCharacter.Instance;
-
-            bool near = wizard != null &&
-                        wizard.Logic.health.IsAlive &&
-                        IsWithinReach(wizard.Logic.movement.Position);
-
-            if (!near)
+            get
             {
-                knot.color = dormant;
-                return;
-            }
+                PlayerCharacter wizard = PlayerCharacter.Instance;
 
-            float pulse = 0.5f + 0.5f * Mathf.Sin(Time.time * glowSpeed * Mathf.PI * 2f);
-            knot.color = Color.Lerp(dormant, glow, pulse);
+                return wizard != null &&
+                       wizard.Logic.health.IsAlive &&
+                       IsWithinReach(wizard.Logic.movement.Position);
+            }
         }
 
         bool BeingRidden
@@ -212,9 +180,25 @@ namespace FallingWizard.World
             }
         }
 
+        void ShowGlowLookWhenNear()
+        {
+            bool near = WizardIsNear;
+
+            if (near != showingGlow)
+                ShowGlowLook(near);
+        }
+
+        void ShowGlowLook(bool near)
+        {
+            showingGlow = near;
+
+            if (glowLook != null)
+                glowLook.SetActive(near);
+        }
+
         void Unroll()
         {
-            if (rope == null)
+            if (rope == null || rope.sprite == null)
                 return;
 
             if (called && !staysDown && !BeingRidden)
@@ -232,73 +216,6 @@ namespace FallingWizard.World
                 return;
 
             Stretch(unrolled, Swing);
-        }
-
-        void Build()
-        {
-            if (knot == null)
-                knot = Make("Knot", ref builtKnot);
-
-            if (rope == null)
-                rope = Make("Rope", ref builtRope);
-
-            if (rope != null)
-            {
-                rope.enabled = false;
-                ropeThickness = rope.transform.localScale.x;
-            }
-        }
-
-        SpriteRenderer Make(string named, ref bool built)
-        {
-            Transform had = transform.Find(named);
-
-            if (had != null)
-                return had.GetComponent<SpriteRenderer>();
-
-            var go = new GameObject(named);
-            go.transform.SetParent(transform, false);
-
-            var art = go.AddComponent<SpriteRenderer>();
-            art.sprite = Placeholder.Box;
-
-            built = true;
-            return art;
-        }
-
-        void Dress()
-        {
-            if (knot != null && knot.sprite != null)
-            {
-                knot.color = dormant;
-                knot.sortingOrder = sortingOrder + 1;
-                knot.transform.localPosition = knotOffset;
-
-                if (builtKnot)
-                    Fit(knot, knotSize);
-            }
-
-            if (rope == null || rope.sprite == null)
-                return;
-
-            rope.sortingOrder = sortingOrder;
-
-            if (builtRope)
-            {
-                rope.color = RopeColour;
-                Fit(rope, ropeWidth);
-                ropeThickness = rope.transform.localScale.x;
-            }
-
-            Stretch(Application.isPlaying ? unrolled : 1f, 0f);
-        }
-
-        static void Fit(SpriteRenderer art, float across)
-        {
-            Vector2 unit = art.sprite.bounds.size;
-
-            if (unit.x > Epsilon && unit.y > Epsilon)
-                art.transform.localScale = new Vector3(across / unit.x, across / unit.y, 1f);
         }
 
         void Stretch(float howFar, float lean)

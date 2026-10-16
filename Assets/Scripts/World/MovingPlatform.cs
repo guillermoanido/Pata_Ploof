@@ -44,7 +44,6 @@ namespace FallingWizard.World
         [Range(0f, 1f)] public float startAlong = 0f;
 
         [NonSerialized] Rigidbody2D body;
-        [NonSerialized] Collider2D surface;
         [NonSerialized] Vector2 start;
         [NonSerialized] float along;
         [NonSerialized] bool headingOut = true;
@@ -70,7 +69,6 @@ namespace FallingWizard.World
         void Awake()
         {
             body = GetComponent<Rigidbody2D>();
-            surface = GetComponent<Collider2D>();
             start = body.position;
 
             along = startAlong;
@@ -117,7 +115,7 @@ namespace FallingWizard.World
             PlayerCharacter wizard = PlayerCharacter.Instance;
 
             if (wizard != null && IsStoodOnBy(wizard))
-                wizard.Logic.Carry(velocity);
+                wizard.Logic.RideAlong(velocity);
         }
 
         bool IsStoodOnBy(PlayerCharacter wizard)
@@ -151,7 +149,7 @@ namespace FallingWizard.World
             Gizmos.color = PathColour;
             Gizmos.DrawLine(PathStart, farEnd);
 
-            Collider2D shape = surface != null ? surface : GetComponent<Collider2D>();
+            var shape = GetComponent<Collider2D>();
 
             if (shape == null)
                 return;

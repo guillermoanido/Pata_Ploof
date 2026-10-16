@@ -8,12 +8,9 @@ namespace FallingWizard.Player
         [Serializable]
         public class Health
         {
-            public const int FullHealthPercent = 100;
+            const int LeastHealth = 1;
 
             [Header("Health")]
-            [Tooltip("Hearts a brand new save starts with, before any heart found in a level.")]
-            [Min(1)] public int maxHealth = 5;
-
             [Tooltip("Most hearts that can ever be added on top, across the whole save. Place " +
                      "fewer hearts than this in the game and the cap never comes up - it is here " +
                      "so a generous level cannot quietly make the wizard unkillable.")]
@@ -23,17 +20,23 @@ namespace FallingWizard.Player
             [Min(0f)] public float invulnerabilityTime = 0.6f;
 
             [NonSerialized] float invulnerableUntil;
+            [NonSerialized] int baseHealth = LeastHealth;
             [NonSerialized] int bonus;
 
-            public int Max => maxHealth + bonus;
+            public int Max => baseHealth + bonus;
             public int Bonus => bonus;
             public int Current { get; private set; }
             public bool IsAlive => Current > 0;
             public bool IsInvulnerable => Time.time < invulnerableUntil;
-            public int Percent => Max > 0 ? Current * FullHealthPercent / Max : 0;
 
             public int Room => Mathf.Max(0, maxBonusHearts - bonus);
             public bool HasRoomToGrow => Room > 0;
+
+            public void SetBaseHealth(int hearts)
+            {
+                baseHealth = Mathf.Max(LeastHealth, hearts);
+                Current = Mathf.Min(Current, Max);
+            }
 
             public void SetBonus(int extra)
             {
@@ -62,7 +65,6 @@ namespace FallingWizard.Player
 
             public void Validate()
             {
-                maxHealth = Mathf.Max(1, maxHealth);
                 maxBonusHearts = Mathf.Max(0, maxBonusHearts);
                 invulnerabilityTime = Mathf.Max(0f, invulnerabilityTime);
             }

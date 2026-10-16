@@ -35,9 +35,6 @@ namespace FallingWizard.Player
                  "travels down or back up. Empty uses the collider on this object.")]
         public Collider2D hitbox;
 
-        [Tooltip("The pole's sprite. Positioned by hand - the code only ever flips it.")]
-        public SpriteRenderer visual;
-
         [Tooltip("A SOLID collider on a child, on the Ground layer, switched on only while the " +
                  "staff is a bridge. Empty means the bridge spell has nothing to stand on.")]
         public Collider2D bridgeCollider;
@@ -113,7 +110,8 @@ namespace FallingWizard.Player
                 return;
             }
 
-            pole.BindPole(hitbox, visual, bridgeCollider, climbCheck);
+            pole.BindPole(hitbox, GetComponentInChildren<SpriteRenderer>(true), bridgeCollider,
+                climbCheck);
         }
 
         [Serializable]

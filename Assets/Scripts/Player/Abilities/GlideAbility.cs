@@ -1,4 +1,3 @@
-using FallingWizard.Core;
 using UnityEngine;
 
 namespace FallingWizard.Player
@@ -6,6 +5,8 @@ namespace FallingWizard.Player
     [CreateAssetMenu(menuName = "Falling Wizard/Abilities/Glide", fileName = "Glide")]
     public class GlideAbility : Ability
     {
+        const string CanopyName = "Glide Canopy";
+
         [Header("Descent")]
         [Tooltip("Fall speed with the canopy out, as a fraction of normal. Set it as low as " +
                  "reads well: fall damage counts BOXES fallen rather than how fast you were " +
@@ -32,19 +33,6 @@ namespace FallingWizard.Player
                  "opposite of gliding.")]
         [Range(0.1f, 1f)] public float drag = 0.45f;
 
-        [Header("Canopy")]
-        [Tooltip("Drawn above the wizard while it is out. Empty draws a flat tinted block.")]
-        public Sprite canopyArt;
-
-        public Color tint = new Color(0.95f, 0.78f, 0.42f, 0.85f);
-
-        [Tooltip("Width and height in boxes, then how high above the wizard's middle it rides. " +
-                 "A mage is one box, so a wing wants to be wider than they are.")]
-        public Vector3 canopy = new Vector3(2.2f, 0.5f, 0.9f);
-
-        [Tooltip("Sorting order. Above the tilemap, or the canopy is out, working, and invisible.")]
-        public int sortingOrder = 1;
-
         [Header("Folding")]
         [Tooltip("Touching down folds it and starts the cooldown.")]
         public bool foldsOnLanding = true;
@@ -61,7 +49,7 @@ namespace FallingWizard.Player
         public override bool OnCast(PlayerLogic wizard)
         {
             wizard.spellbook.StateOf<Wing>(this).flown = false;
-            Show(wizard, true);
+            ShowCanopy(wizard, true);
             return true;
         }
 
@@ -89,13 +77,13 @@ namespace FallingWizard.Player
                 wizard.spellbook.Extinguish(this);
         }
 
-        public override void OnEnded(PlayerLogic wizard) => Show(wizard, false);
+        public override void OnEnded(PlayerLogic wizard) => ShowCanopy(wizard, false);
 
-        public override void OnEquipped(PlayerLogic wizard) => Show(wizard, false);
+        public override void OnEquipped(PlayerLogic wizard) => ShowCanopy(wizard, false);
 
-        public override void OnRunReset(PlayerLogic wizard) => Show(wizard, false);
+        public override void OnRunReset(PlayerLogic wizard) => ShowCanopy(wizard, false);
 
-        public override void OnUnequipped(PlayerLogic wizard) => Fold(wizard);
+        public override void OnUnequipped(PlayerLogic wizard) => ShowCanopy(wizard, false);
 
         protected override void Validate()
         {
@@ -109,53 +97,42 @@ namespace FallingWizard.Player
         Tier Of(PlayerLogic wizard) =>
             TierFor(tiers, wizard.spellbook.RankOf(this)) ?? new Tier();
 
-        void Show(PlayerLogic wizard, bool out_)
+        void ShowCanopy(PlayerLogic wizard, bool shown)
+        {
+            GameObject canopy = CanopyOf(wizard);
+
+            if (canopy != null)
+                canopy.SetActive(shown);
+        }
+
+        GameObject CanopyOf(PlayerLogic wizard)
         {
             Wing wing = wizard.spellbook.StateOf<Wing>(this);
 
-            if (wing.art == null)
-                wing.art = Build(wizard);
+            if (wing.searched || wizard.Rig == null)
+                return wing.canopy;
 
-            if (wing.art != null)
-                wing.art.enabled = out_;
-        }
+            wing.searched = true;
+            wing.canopy = FindChildNamed(wizard.Rig, CanopyName);
 
-        void Fold(PlayerLogic wizard)
-        {
-            Wing wing = wizard.spellbook.StateOf<Wing>(this);
+            if (wing.canopy == null)
+                Debug.LogWarning($"'{name}' found nothing called '{CanopyName}' under the " +
+                                 "wizard, so the canopy will not show. Place your canopy art " +
+                                 "under the wizard's Visual object with exactly that name.", this);
 
-            if (wing.art != null)
-                Destroy(wing.art.gameObject);
-
-            wing.art = null;
-        }
-
-        SpriteRenderer Build(PlayerLogic wizard)
-        {
-            Transform rig = wizard.Rig;
-
-            if (rig == null)
-                return null;
-
-            var go = new GameObject(displayName);
-            go.transform.SetParent(rig, false);
-            go.transform.localPosition = new Vector3(0f, canopy.z, 0f);
-            go.transform.localScale = new Vector3(canopy.x, canopy.y, 1f);
-
-            var art = go.AddComponent<SpriteRenderer>();
-            art.sprite = canopyArt != null ? canopyArt : Placeholder.Box;
-            art.color = tint;
-            art.sortingOrder = sortingOrder;
-            art.enabled = false;
-
-            return art;
+            return wing.canopy;
         }
 
         [System.Serializable]
         public class Tier
         {
+            [Tooltip("Fall speed with the canopy out at this rank, as a fraction of normal.")]
             [Range(0.2f, 1f)] public float fallSpeed = 0.5f;
+
+            [Tooltip("Top sideways speed in the air at this rank, against a run.")]
             [Min(1f)] public float airSpeed = 1.9f;
+
+            [Tooltip("How hard the stick bites in the air at this rank.")]
             [Min(0.5f)] public float airControl = 1.6f;
 
             public void Validate()
@@ -168,8 +145,8 @@ namespace FallingWizard.Player
 
         public class Wing
         {
-            public SpriteRenderer art;
-
+            public GameObject canopy;
+            public bool searched;
             public bool flown;
         }
     }

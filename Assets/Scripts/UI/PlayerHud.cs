@@ -43,9 +43,6 @@ namespace FallingWizard.UI
                  "reads E on a keyboard and X on a pad without anyone touching a setting.")]
         public bool showButtons = true;
 
-        [Tooltip("Optional art for a button with nothing in it. Empty draws a plain box.")]
-        public Sprite emptySlotIcon;
-
         public Color emptyTint = new Color(1f, 1f, 1f, 0.18f);
         public Color readyTint = Color.white;
         public Color notReadyTint = new Color(1f, 1f, 1f, 0.45f);
