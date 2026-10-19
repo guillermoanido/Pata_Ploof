@@ -196,8 +196,6 @@ namespace FallingWizard.Player
 
         public void Heal(int hearts) => health.Heal(hearts);
 
-        public void RestoreHealth() => health.RestoreToFull();
-
         public bool TryGrowHeart(int hearts)
         {
             int taken = Mathf.Min(hearts, health.RoomForBonusHearts);

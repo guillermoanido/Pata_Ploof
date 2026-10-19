@@ -94,7 +94,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   nextScene: 
   startsOver: 1
-  banksWisps: 0
   reachedEffect: {fileID: 0}
 --- !u!1 &840231763
 GameObject:

@@ -17,10 +17,12 @@ namespace FallingWizard.Core
                  "exactly as it was.")]
         public bool active = true;
 
-        [Tooltip("Deal the kit again every time the level loads. OFF - the default - deals it " +
+        [Tooltip("Deal the kit again every time a level loads. OFF - the default - deals it " +
                  "once when you press Play and then leaves it alone, so a loadout you rearranged " +
-                 "at the skill screen survives dying and restarting. That is what this being on " +
-                 "by accident used to break. Turn it on while you are tuning the ticks.")]
+                 "at the skill screen survives going on to the next level. That is what this " +
+                 "being on by accident used to break. A death wipes the playtest too, so the " +
+                 "ticks are dealt afresh after one either way. Turn it on while you are tuning " +
+                 "the ticks.")]
         public bool redealOnEveryLoad = false;
 
         [Tooltip("The catalogue the list below is built from. Filled in when the component is " +
@@ -33,8 +35,9 @@ namespace FallingWizard.Core
         public List<Pick> spells = new List<Pick>();
 
         [Header("Purse")]
-        [Tooltip("Wisps to start with, for trying the skill screen without going and earning them.")]
-        [Min(0)] public int wisps = 5;
+        [Tooltip("Magical Scrap to start with, for trying the skill screen without going and " +
+                 "earning it.")]
+        [Min(0)] public int scrap = 5;
 
         [Tooltip("Extra hearts to start with, on top of the base bar.")]
         [Min(0)] public int bonusHearts = 0;
@@ -83,7 +86,7 @@ namespace FallingWizard.Core
             }
 
             Progress.BeginSandbox(reseed: true);
-            Progress.GiveWisps(wisps);
+            Progress.AddScrap(scrap);
             Progress.SetHearts(bonusHearts);
 
             EquipLockedSpells();

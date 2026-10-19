@@ -9,12 +9,12 @@ namespace FallingWizard.UI
 {
     public class PlayerHud : MonoBehaviour
     {
-        const float WispFontSize = 26f;
+        const float ScrapFontSize = 26f;
 
         const int NotBuilt = -1;
 
-        static readonly Vector2 WispCorner = new Vector2(-24f, -20f);
-        static readonly Vector2 WispSize = new Vector2(360f, 40f);
+        static readonly Vector2 ScrapCorner = new Vector2(-24f, -20f);
+        static readonly Vector2 ScrapSize = new Vector2(360f, 40f);
 
         [Header("Rig")]
         [Tooltip("Spell slots are laid out under here, in spellbook order.")]
@@ -23,23 +23,21 @@ namespace FallingWizard.UI
         [Tooltip("One spell slot, copied once per button. Restyle this and they all follow.")]
         public HudSlot slotTemplate;
 
-        [Tooltip("Reads out what is being risked and what is safe. Leave it empty and one is " +
+        [Tooltip("Reads out how much Magical Scrap is in the purse. Leave it empty and one is " +
                  "built in the top right corner on its own, so a scene needs no wiring to show " +
                  "the number that matters most.")]
-        public TextMeshProUGUI wispLabel;
+        public TextMeshProUGUI scrapLabel;
 
         [Tooltip("Do not build that corner label. For a scene that shows the count some other " +
                  "way, or one that would rather not show it at all.")]
-        public bool hideWispCount = false;
+        public bool hideScrapCount = false;
 
-        [Header("Wisps")]
-        [Tooltip("How the counter reads, for a scene that wants its own wording. {0} is what you " +
-                 "are carrying and would lose, {1} is what is already safely banked. " +
-                 "LEAVE IT " +
-                 "EMPTY, which is what you want almost always: the counter then uses the " +
-                 "translated line and follows the player's language. Anything typed here is used " +
-                 "exactly as typed, in every language.")]
-        public string wispFormat = "";
+        [Header("Magical Scrap")]
+        [Tooltip("How the counter reads, for a scene that wants its own wording. {0} is the " +
+                 "Magical Scrap in the purse. LEAVE IT EMPTY, which is what you want almost " +
+                 "always: the counter then uses the translated line and follows the player's " +
+                 "language. Anything typed here is used exactly as typed, in every language.")]
+        public string scrapFormat = "";
 
         [Header("Spells")]
         [Tooltip("Draw a dimmed slot for an empty button, so the bar never shifts around and the " +
@@ -72,8 +70,8 @@ namespace FallingWizard.UI
             if (slotTemplate != null)
                 slotTemplate.gameObject.SetActive(false);
 
-            if (wispLabel == null && !hideWispCount)
-                wispLabel = BuildWispLabel();
+            if (scrapLabel == null && !hideScrapCount)
+                scrapLabel = BuildScrapLabel();
 
             if (spellBar == null || slotTemplate == null)
                 Debug.LogError("The HUD is missing part of its rig. It wants a spell bar with one " +
@@ -91,7 +89,7 @@ namespace FallingWizard.UI
             if (spellBar != null)
                 spellBar.gameObject.SetActive(showing);
 
-            ShowWispCount(showing);
+            ShowScrapCount(showing);
 
             if (!showing)
                 return;
@@ -102,24 +100,24 @@ namespace FallingWizard.UI
 
         void OnDisable() => Core.Controls.SchemeChanged -= RefreshButtons;
 
-        TextMeshProUGUI BuildWispLabel()
+        TextMeshProUGUI BuildScrapLabel()
         {
             var canvas = GetComponentInParent<Canvas>();
 
             if (canvas == null)
                 return null;
 
-            var labelObject = new GameObject("Wisp Count", typeof(RectTransform));
+            var labelObject = new GameObject("Scrap Count", typeof(RectTransform));
             labelObject.transform.SetParent(canvas.transform, false);
 
             var rectTransform = (RectTransform)labelObject.transform;
             rectTransform.anchorMin = rectTransform.anchorMax = rectTransform.pivot = Vector2.one;
-            rectTransform.anchoredPosition = WispCorner;
-            rectTransform.sizeDelta = WispSize;
+            rectTransform.anchoredPosition = ScrapCorner;
+            rectTransform.sizeDelta = ScrapSize;
 
             var label = labelObject.AddComponent<TextMeshProUGUI>();
-            label.fontSize = WispFontSize;
-            label.color = Ui.Wisp;
+            label.fontSize = ScrapFontSize;
+            label.color = Ui.Accent;
             label.alignment = TextAlignmentOptions.Right;
             label.raycastTarget = false;
 
@@ -137,17 +135,17 @@ namespace FallingWizard.UI
             builtVersion = NotBuilt;
         }
 
-        void ShowWispCount(bool showing)
+        void ShowScrapCount(bool showing)
         {
-            if (wispLabel == null)
+            if (scrapLabel == null)
                 return;
 
-            wispLabel.enabled = showing;
+            scrapLabel.enabled = showing;
 
             if (showing)
-                wispLabel.text = string.IsNullOrEmpty(wispFormat)
-                    ? Loc.Format(Loc.Keys.HudWisps, Progress.CarriedWisps, Progress.Wisps)
-                    : string.Format(wispFormat, Progress.CarriedWisps, Progress.Wisps);
+                scrapLabel.text = string.IsNullOrEmpty(scrapFormat)
+                    ? Loc.Format(Loc.Keys.HudScrap, Progress.Scrap)
+                    : string.Format(scrapFormat, Progress.Scrap);
         }
 
         void RebuildSpellBarIfChanged()

@@ -32,7 +32,7 @@ namespace FallingWizard.World
         [Min(0f)] public float rearmDelay = 0.5f;
 
         [Tooltip("Fire on every step the wizard is inside it, rather than only on the way in. " +
-                 "Off is right for something you HIT - a slime, a rake, a sign - which happens " +
+                 "Off is right for something you HIT - a Bouncy Trash, a rake, a sign - which happens " +
                  "once and is over. On is right for a PLACE, like a staircase, where breaking " +
                  "into a run half way along should count for as much as arriving at a run. The " +
                  "re-arm delay above is what stops it firing every physics step.")]

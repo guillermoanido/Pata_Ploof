@@ -31,7 +31,7 @@ namespace FallingWizard.Player
         public Sprite icon;
 
         [Header("Learning")]
-        [Tooltip("Wisps spent to learn this at the skill screen.")]
+        [Tooltip("Magical Scrap spent to learn this at the skill screen.")]
         [Min(0)] public int cost = 1;
 
         [Tooltip("Cannot be moved out of its slot at the skill screen. Only the Staff wants this.")]
@@ -199,7 +199,7 @@ namespace FallingWizard.Player
         [Serializable]
         public class Upgrade
         {
-            [Tooltip("Wisps to raise the spell to this rank.")]
+            [Tooltip("Magical Scrap to raise the spell to this rank.")]
             [Min(0)] public int cost = 1;
 
             [Tooltip("Short name for the rank: 'Longer staff', 'Up and down', 'Wider stone'.")]

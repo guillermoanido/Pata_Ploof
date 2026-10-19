@@ -13,7 +13,7 @@ namespace FallingWizard.World
                  "reach as well and the shorter of the two wins.")]
         [Min(0.5f)] public float takeRange = 6f;
 
-        [Tooltip("Seconds it stays inert after being set down. Without this a slime put down " +
+        [Tooltip("Seconds it stays inert after being set down. Without this a Bouncy Trash put down " +
                  "beside you bounces you on the next physics step - Awake does not run again " +
                  "when an object is switched back on, so its own re-arm timer is stale.")]
         [Min(0f)] public float settleTime = 0.4f;

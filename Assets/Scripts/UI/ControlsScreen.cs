@@ -95,8 +95,8 @@ namespace FallingWizard.UI
             Ui.CreateLabel(string.Empty, row, HeadingFontSize, NameColumnWidth, HeadingHeight,
                 TextAlignmentOptions.Left);
 
-            DrawCell(row, Loc.Get("controls.keyboard"), HeadingFontSize).color = Ui.Wisp;
-            DrawCell(row, Loc.Get("controls.controller"), HeadingFontSize).color = Ui.Wisp;
+            DrawCell(row, Loc.Get("controls.keyboard"), HeadingFontSize).color = Ui.Accent;
+            DrawCell(row, Loc.Get("controls.controller"), HeadingFontSize).color = Ui.Accent;
         }
 
         void DrawPlayingSection()

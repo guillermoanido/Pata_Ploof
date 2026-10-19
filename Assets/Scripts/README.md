@@ -27,11 +27,11 @@ coming back down it can never hurt you.
 
 | Folder | What lives there |
 | --- | --- |
-| `Core/` | `Game` (pause, scene flow, quit), `GameSettings`, `Controls` (every input lookup, plus which device is in use), `Progress` (what the wizard has learned), `SingletonBehaviour` |
+| `Core/` | `Game` (pause, scene flow, quit), `GameSettings`, `Controls` (every input lookup, plus which device is in use), `Progress` (the save: Magical Scrap, spells, loadout, hearts, finished levels, taken pickups), `SaveFile`, `SingletonBehaviour` |
 | `Player/` | `PlayerCharacter` (the Unity side), `PlayerLogic` (everything the wizard does), `Staff`, `PlayerAnimator`, `HealthLook`, `RagdollBumps` |
 | `Player/Abilities/` | `Ability` and the spells, `AbilityBook` |
 | `Localization/` | `Loc`, `TextBook`, `LocalizedText` |
-| `World/` | `Item` (the base of everything the wizard touches) and `TileGrid`, with subfolders: `Hazards/` (`Hazard`, `TripHazard`, `Slime`, `SteamVent`, `WaxDrop`, `WaxCandle`, `PressurePlate`), `Zones/` (`Zone`, `WindZone2D`, `WindTrap`, `SlipperyFloor`), `Pickups/` (`Pickup`), `Level/` (`Checkpoint`, `RestSite`, `LevelExit`, `MovingPlatform`, `VineAnchor`, `Carryable`), `Camera/` (`FollowCamera`) |
+| `World/` | `Item` (the base of everything the wizard touches) and `TileGrid`, with subfolders: `Hazards/` (`Hazard`, `TripHazard`, `BouncyTrash`, `SteamVent`, `WaxDrop`, `WaxCandle`, `PressurePlate`), `Zones/` (`Zone`, `WindZone2D`, `WindTrap`, `SlipperyFloor`), `Pickups/` (`Pickup`), `Level/` (`ShopStop`, `LevelExit`, `MovingPlatform`, `VineAnchor`, `Carryable`), `Camera/` (`FollowCamera`) |
 | `UI/` | `PlayerHud`, `HudSlot`, `FlingArrow`, `Ui` and the runtime screens |
 | `Menus/`, `Cutscenes/` | `MenuScreen` and the three menus; `CutsceneRunner` |
 
@@ -75,7 +75,7 @@ Every script follows the same six rules, so any one of them reads like the rest:
 2. **Small, simple methods.** One job each, about 20 lines at most, early `return`s instead of deep
    nesting. Plain loops, not LINQ; `if (x != null)`, not `?.`, on anything Unity owns.
 3. **Objects own their data.** Anything another script does not need is `private`, and shared
-   behaviour lives in a base class: `Item`, `Zone`, `Hazard`, `Checkpoint`, `Ability`, `MenuScreen`.
+   behaviour lives in a base class: `Item`, `Zone`, `Hazard`, `Ability`, `MenuScreen`.
 4. **The same order in every class:**
    - constants
    - Inspector fields
@@ -120,7 +120,7 @@ decides for itself whether it applies:
 
 ```csharp
 wizard.TryTrip();                                // rocks
-wizard.TryBounce(heightInBoxes, sideways, resetsFall);  // slimes
+wizard.TryBounce(heightInBoxes, sideways, resetsFall);  // Bouncy Trash
 wizard.TryFling(velocity);                       // the Fling spell, straight into a tumble
 wizard.Push(boxesPerSecond, rampup, groundScale);    // wind, every step you are inside it
 wizard.Shove(velocity, controlLockout);          // one-off knock
@@ -162,7 +162,7 @@ active — otherwise a passive is free and there is no choice in it.
 | `OnCast` | Do it. **Return false for "not yet"** — the press stays buffered and retries, which is what lets you press the staff button just before reaching a ledge. |
 | `OnLit` / `OnEnded` | During and at the end of the lit window. |
 | `OnEquipped` / `OnUnequipped` | Put into a slot; taken out of one. |
-| `OnRunReset` | Died, or rested. Refills `usesPerLevel`. |
+| `OnRunReset` | The wizard died. Refills `usesPerLevel`. |
 | `CleanUp` | Called by both `OnUnequipped` and `OnRunReset`. Undo anything the spell left in the level or on the wizard here, once, instead of in both hooks. |
 
 **Shared pieces live in `Ability`.** `PickTier` and `ValidateTiers` handle the per-rank numbers.
@@ -174,8 +174,8 @@ has the same name as its class. The seven spells also really do behave different
 "spells" class would need a switch over every spell, plus Inspector fields that each mean nothing
 to most spells.
 
-`usesPerRun` above 0 gives a spell a number of casts that only a rest brings back — for something
-a cooldown alone cannot hold back. `Slot.UsesLeft` counts them and the HUD prints it.
+`usesPerLevel` above 0 gives a spell a number of casts that only the next level brings back — for
+something a cooldown alone cannot hold back. `Slot.UsesLeft` counts them and the HUD prints it.
 
 A spell that needs to remember something between frames — a wall it grew, a rope it is holding —
 keeps it in `spellbook.StateOf<T>(this)`, never in a field on itself. The asset is shared; a field
@@ -193,7 +193,7 @@ going off. Not earlier than that — until the buffer expires the press is still
 for a ledge to arrive, which is the whole reason the buffer exists.
 
 It is editor-only, it covers the empty-slot case too (*"there is nothing in that slot"*), and
-`Spellbook.explainRefusals` turns it off. Cooldown and per-run charges are answered generically by
+`Spellbook.explainRefusals` turns it off. Cooldown and per-level charges are answered generically by
 `Spellbook` itself, so `WhyNot` only has to speak for the spell's own conditions.
 
 **Sorting order is the trap it exists to catch.** Both the vine and the wall shipped at −1 and were
@@ -214,8 +214,8 @@ The Staff is yours from the start and welded to E; everything else fights over t
 | **Fling** | Hold to aim up or down (never more than 45° up), let go to be thrown into a tumble. | harder throw |
 
 Two of them want level content and already have it: Mage Hand needs a `Vine`, Telekinesis needs a
-`Carryable` — which the `Slime` and `Wet Floor Sign` prefabs now carry, so every slime and sign
-already in a level can be picked up and put down somewhere better.
+`Carryable` — which the `Bouncy Trash` and `Wet Floor Sign` prefabs now carry, so every Bouncy
+Trash and sign already in a level can be picked up and put down somewhere better.
 
 **Glide does not forgive fall damage, and that is the design.** Feather Fall — the spell that
 used to live in this slot — did, and that forgiveness was the only reason it was worth a button.
@@ -254,11 +254,11 @@ grab and drop on the same press.
 ### Adding spell #5
 
 1. One `.cs` in `Player/Abilities/`, deriving from `Ability`, named the same as its class.
-2. One asset via **Assets ▸ Create ▸ Falling Wizard ▸ Abilities ▸ …**, with a `cost` in Wisps.
+2. One asset via **Assets ▸ Create ▸ Falling Wizard ▸ Abilities ▸ …**, with a `cost` in Magical Scrap.
 3. Drag it into `Assets/Resources/Spellbook.asset` → `spells`.
 
 **No input edits, no scene edits, no HUD edits.** The buttons already exist and belong to the
-slots; the skill screen lists whatever is in the catalogue. Press buffering, cooldown, per-run
+slots; the skill screen lists whatever is in the catalogue. Press buffering, cooldown, per-level
 charges, buying, equipping and persistence all come for free.
 
 A spell that wants to drive the wizard itself takes over a `PlayerState` — see the vine below,
@@ -266,7 +266,7 @@ which is the worked example.
 
 ### Ranks
 
-A spell's rank lives in `Progress.ranks` — `Dictionary<string,int>`, permanent tier, on disk, and
+A spell's rank lives in `Progress.ranks` — `Dictionary<string,int>`, on disk until the wizard dies, and
 it round-tripped values above 1 from the day it was written, so there was no save-format work to
 do. Rank 1 is "learned"; `TryBuy` and `Grant` hand that out and `Progress.TryUpgrade` deliberately
 **refuses to learn**, so no bug in a screen can hand rank 2 to a spell nobody bought.
@@ -280,7 +280,7 @@ waiting to be authored.
 
 A spell reads its rank off the **slot**, not out of `Progress` — `ModifyStats` runs for every slot
 every fixed step. `Reload` caches it, and it writes `slot.Rank` **above** its own early-out: below
-that line, buying an upgrade would not take effect until the wizard next died, and nothing anywhere
+that line, buying an upgrade would not take effect until the next level loaded, and nothing anywhere
 would say why.
 
 A spell overrides `protected override void Validate()` and **never writes its own `OnValidate`** —
@@ -293,62 +293,56 @@ and silently kill every clamp on the chain.
 list, top to bottom — **drag to reorder, nothing in any scene depends on it**. `known` is granted
 free on a new game; the Staff belongs there and nothing else has to.
 
-Everything else is **bought with Wisps** at the skill screen.
+Everything else is **bought with Magical Scrap** at the skill screen.
 
-`Core.Progress` holds all of it, outside the wizard, because dying reloads the level and builds a
-brand new one.
+`Core.Progress` holds all of it, outside the wizard, because every scene load builds a brand new
+wizard.
 
-## Wisps, hearts and runs
+## Magical Scrap, hearts and dying
 
-The risk. Three tiers, and which tier a thing lives in is the entire design:
+There is one purse and one save, and dying empties both:
 
-| Tier | What | Survives death | Survives turning back | On disk |
-| --- | --- | --- | --- | --- |
-| **Dive** | `CarriedWisps`, `carrying` | **no** | banked | no |
-| **Run** | `found`, the checkpoint | yes | **no** | no |
-| **Permanent** | `Wisps`, `spent`, `BonusHearts`, `ranks`, the loadout | yes | yes | yes |
+| What | Where it lives | Kept while alive | After a death |
+| --- | --- | --- | --- |
+| Magical Scrap | `Progress.Scrap` | yes, on disk | gone |
+| Spells and their ranks | `Progress.ranks` | yes, on disk | gone (the `known` spells come back free) |
+| The loadout | `Progress.equipped` | yes, on disk | gone |
+| Bonus hearts | `Progress.BonusHearts` | yes, on disk | gone |
+| Finished levels | `Progress.completedLevels` | yes, on disk | gone |
+| Taken pickups | `Progress.taken` | yes, on disk | gone, so every pickup is back |
+| Settings | `GameSettings` | yes, on disk | **kept** |
 
-**Dying costs the Wisps you are carrying and nothing else.** You keep the hearts, keep the run, and
-pick up from the last rest site. The pickups you already took stay taken — `found` is run-scoped,
-not dive-scoped — so there is nothing to farm by dying on purpose.
+**Magical Scrap goes straight into the purse** the moment a pickup is touched, and is spent at the
+skill screen. There is no carrying and no banking: what you picked up is yours, and it is saved
+straight away, so quitting halfway down and coming back carries on with everything you had.
 
-**Turning back at a rest site banks the Wisps** and ends the run.
+**Dying starts the game again from nothing.** `PlayerCharacter.OnDied` calls `Progress.StartOver()`
+the moment the last heart goes, waits `secondsBeforeRestart` so the death can be seen, then loads
+the Main Menu. `StartOver` is `ResetSave` — the save file is deleted and every list above is
+emptied — except in a `Playtest` sandbox, where it empties the sandbox and leaves the real save
+alone. The wipe happens at the moment of death rather than after the wait, so pausing and going to
+the Main Menu, or quitting, in that second cannot dodge it.
 
-### A level is a finite thing
-
-This is the part that makes the game move. Three id sets, and the difference between them is the
-whole economy:
-
-| Set | Holds | Emptied by |
-| --- | --- | --- |
-| `found` | every pickup touched this run | turning back |
-| `carrying` | the Wisps riding on you right now | **dying**, or banking |
-| `spent` | pickups whose value you actually kept | never |
+### Pickups
 
 There is **one `Pickup` script** for every collectable. Its **Gives** setting picks what it is, and
-**Amount** says how much. `Pickup.Awake` destroys it if its id is in `found` **or** `spent`, and
-what it gives decides how long being taken lasts:
+**Amount** says how much:
 
-| Gives | `StaysTaken` | What it means |
-| --- | --- | --- |
-| Wisps | `OnceBanked` | Rides in `carrying`. **Bank it and that Wisp is gone from the world forever.** Die first and it never reaches `spent`, so it is standing there again next run. |
-| Heart | `ForGood` | Into `spent` the instant it is touched. One heart, once, permanently. |
+| Gives | What it does |
+| --- | --- |
+| Scrap | Adds **Amount** Magical Scrap to the purse. |
+| Heart | Adds **Amount** hearts to the wizard's health and heals them. |
 
-To add a new kind of collectable, add a value to `Pickup.Gift` and a short `TryTake…` method for it.
+Either way the pickup's id goes into `Progress.taken` and `Pickup.Awake` destroys it on every later
+load, so it stays taken until the wizard dies. Then the wipe empties `taken` and it is standing
+there again.
 
-So a level does not refill. Bank Level 1's Wisps and Level 1 has no more Wisps to give — you go
-deeper for the next ones. What Level 1 *does* still have is the parts of it you could not reach,
-and the spells you bought with those Wisps are how you reach them. **The first level opens up as
-you go deeper**, rather than being farmed.
+To add a new kind of collectable, add a value to `Pickup.Gift` and a short `Give…` method for it.
 
-Dying gives the Wisp back. That is deliberate: the punishment for dying is losing the descent, not
-losing the pickup, so a bad run is repeatable and a greedy one is not free.
-
-Max HP is permanent and one-way. The highest **Health Look** under the wizard is what a brand new
-save starts with (see Health below) and `Health.maxBonusHearts` caps what can ever be added on top
-of it, across the whole save. A
-heart pickup that finds the bar already at that cap pays out `wispsIfFull` Wisps instead — never
-leave a player standing over dead loot — and is spent all the same, so there is no heart to farm.
+The highest **Health Look** under the wizard is what a brand new save starts with (see Health
+below) and `Health.maxBonusHearts` caps what can be added on top of it. A heart pickup that finds
+the bar already at that cap pays out `scrapIfFull` Magical Scrap instead — never leave a player
+standing over dead loot — and is taken all the same.
 
 A `Pickup` remembers itself by **where it
 stands** (quarter-box resolution, scene-qualified) unless you type an `id`. That survives renaming
@@ -359,14 +353,24 @@ the position across a quarter-box boundary and quietly rename the pickup between
 being touched. For the same reason **only the art bobs** — `FindArtToBob` refuses to bob a
 `SpriteRenderer` sitting on the root, because that would walk the trigger around with it.
 
-Drag in `Assets/Prefabs/Wisp` and `Assets/Prefabs/Heart Upgrade` and they work as they land: a
-trigger `CircleCollider2D`, the component, and an `Art` child to drop a sprite onto. The code never
-changes that sprite — what you put there is what is drawn.
+Drag in `Assets/Prefabs/Top Level/Basura Mágica` (Magical Scrap) and `Assets/Prefabs/Heart Upgrade`
+and they work as they land: a trigger `CircleCollider2D`, the component, and an `Art` child to drop
+a sprite onto. The code never changes that sprite — what you put there is what is drawn.
 
-`RestSite` is a `Checkpoint` that stops to ask. Reaching one marks the respawn point, then offers
-**rest and press on** (full hearts, charges back, cooldowns cleared) or **turn back** (bank, end
-the run, open the skill screen). Death offers the mirror image: back to the last rest, or give the
-run up and go spend what is banked.
+### Shop stops
+
+A `ShopStop` is the place to spend Magical Scrap mid-level. Walk into one — alive, with no other
+screen open — and it opens the skill screen with `SkillScreen.OpenInLevel`, which pauses the game.
+Buy spells and upgrades, rearrange the loadout, and leave with the back button or Escape: the
+screen's close callback reloads the spellbook so the wizard has exactly what is on the slots, and
+unpauses, and the wizard carries on from where they stand. It does not save a position, heal, or
+end anything.
+
+`Item` reports one entry per visit, so standing in a shop stop does not reopen the screen. Walk
+out and back in to open it again.
+
+Drag in `Assets/Prefabs/Shop Stop.prefab`: a trigger box one box wide and one and a half tall,
+with a `ShopStop` on it and a placeholder block on its `Art` child for you to swap for real art.
 
 `ChoiceScreen` and `SkillScreen` build their own canvas at runtime out of `Ui`, which is the old
 editor `UiFactory` with the editor-only parts taken out — including
@@ -397,8 +401,8 @@ As a flag, **the wizard is untouched by construction, and so is their ragdoll** 
 the same way - the steam vents, wax drips, moving platforms and pressure plates all do.
 
 `usesPerLevel` is the limit, and it means what it says: charges refill on the scene load that
-rebuilds the spellbook, which is what a level transition is. Dying refills it too, since that also
-reloads — self-punishing enough not to be worth policing.
+rebuilds the spellbook, which is what a level transition is. Dying sends you back to the Main Menu
+with nothing, so there is nothing there to police.
 
 ## Fling: aim, then tumble
 
@@ -438,7 +442,7 @@ keeps every field the level author set, keeps its icon available to the HUD whil
 means putting it down cannot lose anything.
 
 `Hazard.Disarm` exists because **`Awake` does not run again when an object is switched back on** —
-without it, a slime set down at your feet still has the re-arm timer it had when you picked it up,
+without it, a Bouncy Trash set down at your feet still has the re-arm timer it had when you picked it up,
 and bounces you on the very next physics step.
 
 **Placement settles; it does not test one row.** `TileGrid.TryFindRestingCell` takes a column and the
@@ -453,10 +457,10 @@ thin air past the lip. Settling has no such failure: the answer is right whether
 started from was or not.
 
 `needsAFloor` only decides what happens to a column with **no** ground within `LookDown`. On, it
-is refused. Off, the thing hangs at the height it was aimed at — which over a drop is a slime the
-player placed exactly where they wanted it.
+is refused. Off, the thing hangs at the height it was aimed at — which over a drop is a Bouncy
+Trash the player placed exactly where they wanted it.
 
-**Set down on the cell's FLOOR, not its middle.** A slime's hitbox is 0.7 of a box tall and a
+**Set down on the cell's FLOOR, not its middle.** A Bouncy Trash's hitbox is 0.7 of a box tall and a
 rock's is 0.6, so `PutDown` on `CentreOf` left both floating a sixth of a box off the ground.
 `PutDownOn` measures the thing's own footprint once it is switched back on — `Physics2D.SyncTransforms`
 first, because a transform move does not reach the physics shapes until the next step and stale
@@ -479,7 +483,7 @@ axes. So nothing carries a constant for it — the two spells each ask the world
 
 | | takes its height from | why that is exact |
 | --- | --- | --- |
-| A carried slime, rock or boulder | `TileGrid.TryFindSurfaceUnder` — a cast straight down inside the cell, and `Footing.y` if it falls through | it is the tile's own top, whatever the slice did |
+| A carried Bouncy Trash, rock or boulder | `TileGrid.TryFindSurfaceUnder` — a cast straight down inside the cell, and `Footing.y` if it falls through | it is the tile's own top, whatever the slice did |
 | Wall Growth's block | `Movement.Footing.y`, the wizard's soles | they are STOOD on the platform being extended, so their soles *are* its surface |
 
 Re-slice the sheet to 32×32 one day and both keep working, having never been told what the old
@@ -604,7 +608,7 @@ That means a vine costs the player nothing to walk past and everything to notice
 the glow look matters more than any number here. If a player never learns what a glowing knot
 means, no vine in the game ever gets used.
 
-`staysDown` (on by default) leaves a called vine hanging for the rest of the run: finding it was
+`staysDown` (on by default) leaves a called vine hanging for the rest of the level: finding it was
 the achievement, not re-finding it. Turn it off and it rolls back up — and it rolls itself up by
 **asking** whether the wizard is still on it rather than waiting to be told, because letting go
 with Jump never passes through the spell at all.
@@ -621,7 +625,7 @@ rather than standing bolt upright while they arc away from underneath it.
 **What you place in a scene or prefab is what the game shows.** No script draws art, recolours it,
 resizes it, swaps its sprite or forces its sorting order, and no script has a slot for a sprite to
 paint with. When something needs to show a state - a vent about to blow, a plate being pressed, a
-live rest site, a knot in reach - it has a **Look** slot: drag in a child object holding your own
+knot in reach - it has a **Look** slot: drag in a child object holding your own
 art or animation and the script only switches that object on and off. Leave the slot empty and
 nothing is shown.
 
@@ -663,29 +667,31 @@ overwrote the target, so dropping one spell onto another lost the second one sil
 `Progress.Place` trades them instead. `Equip` keeps its meaning for the paths that want it.
 
 **`Playtest` re-dealt the loadout on every scene load.** `BeginSandbox()` → `Clear()` blanks
-`ranks`, `equipped`, and the checkpoint, and it ran at execution order −100 — a frame ahead of the
-spellbook reading them. Sandbox is now a property of the play **session** and seeding it is a
-one-time act: `Progress.IsSandboxSeeded` gates it, `redealOnEveryLoad` forces it back for when you
-are tuning the ticks. `SceneManager.LoadScene` does not re-run
-`RuntimeInitializeOnLoadMethod`, so `Progress`'s statics would have survived the reload on their
-own — Playtest was the entire failure. It also fixes a checkpoint quietly dying on every load.
+`ranks` and `equipped`, and it ran at execution order −100 — a frame ahead of the spellbook reading
+them. Sandbox is now a property of the play **session** and seeding it is a one-time act:
+`Progress.IsSandboxSeeded` gates it, `redealOnEveryLoad` forces it back for when you are tuning the
+ticks. `SceneManager.LoadScene` does not re-run `RuntimeInitializeOnLoadMethod`, so `Progress`'s
+statics would have survived the reload on their own — Playtest was the entire failure.
 
-**And you could barely reach the screen.** It opened only from a `RestSite` or the death screen,
-both of which end the run first. Two doors now: **Play** opens it from the main menu, and while a
-`Playtest` sandbox is running, **Escape** opens it mid-level. The second installs only in a sandbox, so
-it cannot exist in a real playthrough and "decide before you go down" is untouched.
+**And you could barely reach the screen.** It used to open only from a rest site or the death
+screen, both of which ended the run first. Now there are three doors: **Play** opens it from the
+main menu, walking into a **shop stop** opens it mid-level, and the **Spellbook** button
+(`UI/Loadout`) opens it mid-level from anywhere. The button's door is the nested `SkillScreen.Door`,
+installed once when the game starts; the shop stop and the button both go through
+`SkillScreen.OpenInLevel`.
 
 ## Testing a spell without earning it
 
 Drop a `Playtest` component on anything in the scene. It lists every spell in the book with a box
 each — tick the ones you want, press Play, and they are already learned and in a slot. The list
 fills itself in from `Assets/Resources/Spellbook.asset` and keeps itself in step, so a spell added
-later turns up on its own. `wisps` and `bonusHearts` start you with a purse and a longer bar for
+later turns up on its own. `scrap` and `bonusHearts` start you with a purse and a longer bar for
 trying the skill screen.
 
-**Nothing it does is written to the save.** `Progress.BeginSandbox()` wipes the in-memory tiers and
+**Nothing it does is written to the save.** `Progress.BeginSandbox()` wipes what is in memory and
 puts `Save()` to sleep for the session, so a playtest cannot spend, unlock or consume anything in
-the real one. It runs early (`[DefaultExecutionOrder(RunBeforeTheWizardWakes)]`, which is −100), ahead of `PlayerCharacter.OnAwake`, which
+the real one. Dying in a playtest wipes the sandbox, not the real save, and the ticks are dealt
+again when the next level loads. It runs early (`[DefaultExecutionOrder(RunBeforeTheWizardWakes)]`, which is −100), ahead of `PlayerCharacter.OnAwake`, which
 is the frame the spellbook reads `Progress` and builds its slots.
 
 Spells welded to a slot are placed **first**, before any tick is honoured. Otherwise a ticked spell
@@ -716,13 +722,13 @@ flat colour, so each one is visible the moment it lands and is waiting for a spr
 
 | Prefab | What it does | Layer |
 | --- | --- | --- |
-| `Wisp` | The currency. Banking it spends it for good. | Default |
-| `Heart Upgrade` | +1 max HP, permanently, once ever. | Default |
+| `Basura Mágica` | Magical Scrap, the currency. Goes straight into the purse. Taken until the wizard dies. | Default |
+| `Heart Upgrade` | +1 max HP. Taken until the wizard dies, like everything else. | Default |
 | `Wet Floor Sign` | `TripHazard`: trips a runner. `minimumSpeed` 3, so a walk is safe. | Hazard |
 | `Rake`, `Rake 1` | `TripHazard` aimed Left or Right: trips you BACKWARDS, the way you came. | Hazard |
 | `Ice` | Ground that does not hold you. Nothing else changes. | Hazard |
 | `Stairs` | `TripHazard`: lay it over a staircase. Take them fast and you tumble down them. | Hazard |
-| `Slime` | Bounces you three boxes and sends you tumbling. | Hazard |
+| `Bouncy Trash` | `BouncyTrash`: bounces you three boxes and sends you tumbling. | Hazard |
 | `Wind` | Pushes you the way its arrows point. Rotate it to aim it. | Hazard |
 | `Wind Trap` | The same push, on a timer, with a Warning Look and a Blowing Look. | Hazard |
 | `Hand Hold` | The knot Mage Hand catches. | Default |
@@ -730,9 +736,9 @@ flat colour, so each one is visible the moment it lands and is waiting for a spr
 | `Stone Wall` | What Wall Growth raises. Already wired into the spell. | **Ground** |
 | `Level Exit` | The bottom. Marks the level completed and opens the Level Select. | Default |
 
-The steampunk set for the second level is made by **Falling Wizard > Build Steampunk Hazards**,
-into `Assets/Prefabs/Steampunk`. It never overwrites a prefab that is already there. Every coloured
-box in them is a child called `Stand-in`: put your art beside it and delete it.
+The steampunk set for the second level lives in `Assets/Prefabs/Mid Level Hazards`, and is set up
+by hand like every other prefab. Every coloured box in them is a child called `Stand-in`: put your
+art beside it and delete it.
 
 | Prefab | What it does | Layer |
 | --- | --- | --- |
@@ -765,64 +771,53 @@ that floor hunt and grows a wall upward instead.
 narrow and tall is a wall to climb or hide behind. Only the axis it is growing along is animated,
 so the other is right from the first frame and there is something solid underfoot immediately.
 
-`Level Exit` marks the level completed (`Progress.CompleteLevel`), clears the last rest site so a
-replay starts from the top, and loads the `Level Select` scene. `banksWisps` banks what is being
-carried on the way out, the way turning back at a rest site does.
+`Level Exit` marks the level completed (`Progress.CompleteLevel`) and loads the `Level Select`
+scene.
 
 ## Level Select
 
-A scene of its own, `Assets/Scenes/Level Select.unity`, made once with **Falling Wizard > Build
-Level Select Scene** (it refuses to run if the scene already exists, so it never overwrites your
-art). It is a black screen, a `Tower Map` image for the map art, and three pips on the map — `Top
-Pip`, `Mid Pip` and `Bottom Pip` — each a button whose label carries a `LocalizedText`
-(`levels.top`, `levels.mid`, `levels.bottom`).
+A scene of its own, `Assets/Scenes/Level Select.unity`, set up by hand. It is a black screen, a
+`Tower Map` image for the map art, and three pips on the map — `Top Pip`, `Mid Pip` and `Bottom
+Pip` — each a button whose label carries a `LocalizedText` (`levels.top`, `levels.mid`,
+`levels.bottom`).
 
 `LevelSelectMenu` sits on the canvas with one entry per pip, top of the tower first: the scene it
 loads and the button. The first level is always open; every other one opens once the level above
-it is completed. Completed levels are saved with the permanent tier, so they stay open across runs
-and launches until the save is reset. A pip whose scene is missing from Build Settings stays locked
-and says so in the console. Selection starts on the deepest open pip.
+it is completed. Completed levels are saved, so they stay open across launches until the wizard
+dies or the save is reset. A pip whose scene is missing from Build Settings stays locked and says
+so in the console. Selection starts on the deepest open pip.
 
-**Level 2 and Level 3 start empty.** They are made with **Falling Wizard > Build Empty Levels 2 and
-3**, which never overwrites a scene that already exists:
-
-1. It copies `Level 1`.
-2. It keeps the wizard, the camera, the light, the HUD, the menus and the tile grid.
-3. It removes everything else.
-4. It lays a strip of floor under the wizard, using the first tile it finds beneath them, and puts
-   one Level Exit ten tiles ahead of them.
-5. It adds both scenes to File > Build Settings, right after Level 1, so the pips can open them.
+**Level 2 and Level 3** were set up by hand from a copy of `Level 1`: the wizard, the camera, the
+light, the HUD, the menus and the tile grid, a strip of floor and one Level Exit. Both are in
+File > Build Settings right after Level 1, so the pips can open them.
 
 Finishing Level 2 opens Level 3, because `LevelExit` completes whichever scene is playing.
 
 
-## Checkpoints
+## Saving
 
-`PlayerCharacter` moves to `Progress.CheckpointPoint` in `OnAwake`, **before** `logic.Attach` —
-attaching records the current height as the one to measure the next fall from, so moving afterwards
-would bill the wizard for the trip. Health comes back full because `Attach` restores it.
+There is no checkpoint and no respawn: every level starts the wizard where the scene places them,
+and dying starts the whole game again from the Main Menu with nothing (see *Magical Scrap, hearts
+and dying*).
 
-A checkpoint is an empty object with a trigger `BoxCollider2D`, a `Checkpoint` and a sprite
-child. `respawnOffset` lifts
-the spawn point clear of the floor, and the live checkpoint switches on its Lit Look — read back from
-`Progress` rather than remembered in a static, since the level reloads on every death and a static
-would be pointing at a destroyed object by the time it mattered.
+**Everything is written the moment it changes.** Picking up Magical Scrap or a heart, buying,
+upgrading, moving a spell and finishing a level each save on the spot, so quitting halfway down and
+coming back carries on with everything you had. The save is also **read back** —
+`Progress.Load()` runs on `BeforeSceneLoad`, after `ResetOnPlay` clears the statics.
+`Progress.ResetSave()` wipes it — on a death, and from Settings ▸ Reset Save — and lets saving
+start again if the old file could not be read. Settings live in their own file and survive both.
 
-**The checkpoint is deliberately not saved to disk.** It belongs to the run, and a run is a
-sitting; quitting halfway down loses the descent — and with it the Wisps you were carrying, which
-means the pickups they came from are waiting for you again. Only the permanent tier is written, and unlike
-the old save it is also **read back** — `Progress.Load()` runs on `BeforeSceneLoad`, after
-`ResetOnPlay` clears the statics. The previous save was write-only: three keys were written on
-every checkpoint and nothing ever called `Load()`, so banked anything would have quietly evaporated
-on the next launch. `Progress.ResetSave()` (Settings ▸ Reset Save) wipes it, and lets saving start
-again if the old file could not be read.
+The save carries a `version`, now **2**. Version 1 kept a banked `wisps` count and a `spent` list;
+`JsonUtility` ignores fields it does not know, so an old save still loads without errors — its
+spells, loadout, hearts and finished levels come across, and the purse and taken pickups start
+empty.
 
-**Where it is written.** The permanent tier is pretty-printed JSON in `<project>/Saves/progress.json`
+**Where it is written.** The save is pretty-printed JSON in `<project>/Saves/progress.json`
 — beside `Assets`, so it is in the working copy where you can open it, read it and diff it. It used
 to be PlayerPrefs, which on Windows is a handful of registry values nobody can track, and which hid a
 stale save so well that turning the playtest sandbox off made a long-forgotten Glide reappear.
 `Assets/Scripts/Core/SaveFile.cs` does the reading and writing: it writes to a scratch file and swaps
-it in, so a crash mid-write cannot truncate the save; it sorts the ranks and the spent list so a diff
+it in, so a crash mid-write cannot truncate the save; it sorts the ranks and the taken list so a diff
 means something; and it answers **three** ways, not two — `Missing`, `Loaded` and `Unreadable`. That
 third one is the whole point. A save that exists but will not open must never read back as "nothing
 saved", or the next purchase writes a blank over it. A build keeps the same promise beside the
@@ -833,7 +828,7 @@ executable, dropping to the OS save folder only when that is read-only.
 A trip **launches you onward** — your speed, plus `launchForward`, never below `minimumLaunch`, and
 `launchUp` of lift so you actually leave the floor. Landing back down, the skid bleeds at
 `slideFriction` boxes per second squared. All of it on `PlayerLogic ▸ Ragdoll`, and all of it the
-same every time: a wet floor sign, a slime and a bad staircase throw you identically, because none of
+same every time: a wet floor sign, a Bouncy Trash and a bad staircase throw you identically, because none of
 them supply their own knock — they just call `TryTrip()`.
 
 The one exception is the **rake**, which calls `TryTrip(int)` to throw you *back the way you came*. That
@@ -857,10 +852,9 @@ something:
 - **Walls:** the tumble turns round just *before* it touches a wall, so a wall hit would never count
   as a collision. `Ragdoll.BouncedOffAWall` reports those bounces instead.
 
-`secondsBetweenBumps` stops a shower of stars. The effect is the **Ragdoll Bump Stars** prefab in
-`Assets/Prefabs/Effects`, a short burst of spinning yellow stars made by **Falling Wizard > Build
-Ragdoll Bump Stars**, which also plugs it into the PLAYER. Edit the prefab freely. Any prefab works
-in the slot, and each copy is cleared away after `secondsToKeepEachBump`.
+`secondsBetweenBumps` stops a shower of stars. The effect is whatever prefab is plugged into the
+PLAYER's `bumpEffect` slot by hand — a short burst of stars is what it is meant for. Any prefab
+works in the slot, and each copy is cleared away after `secondsToKeepEachBump`.
 
 ## Slopes, steps, and why neither of them slows you down
 
@@ -902,7 +896,7 @@ Two things follow from using speed, and both are handled:
   `Run` carries them forward on its own.
 - The leftover speed is **taken back** the moment the lip runs out, or the assist would read as a
   small hop. `steppedLastStep` is what remembers, and the guard only takes back speed the assist
-  could plausibly have produced, so a slime or a fling is left alone. It is the identical
+  could plausibly have produced, so a Bouncy Trash or a fling is left alone. It is the identical
   tidy-up `TryRunAlongRamp` does when a ramp ends.
 
 `stepHeight` stays far below a whole box on purpose. This is for tile seams and the pixel-high
@@ -1050,13 +1044,13 @@ Item                      finds the wizard in its trigger; shared Look helpers
 ├── Zone                  something you are INSIDE: Affects On Staff, Affects Ragdolled
 │   ├── Hazard            catches you: speed gate, re-arm, damage, walking (a plain Hazard just hurts)
 │   │   ├── TripHazard    trips you - wet floor sign, stairs, rakes
-│   │   ├── Slime         bounces you
+│   │   ├── BouncyTrash   bounces you
 │   │   ├── SteamVent     burns on a timer
 │   │   └── WaxDrop       falls and burns
 │   ├── WindZone2D        pushes you (WindTrap: on a timer)
 │   └── SlipperyFloor     takes your grip
-├── Pickup                collectables: Gives Wisps or a Heart
-├── Checkpoint            where you come back (RestSite: also offers a rest)
+├── Pickup                collectables: Gives Magical Scrap or a Heart
+├── ShopStop              opens the skill screen mid-level
 └── LevelExit             the way out
 ```
 
@@ -1068,7 +1062,7 @@ rakes are all `TripHazard`, and broken glass is a plain `Hazard`.
 | --- | --- | --- |
 | `TripHazard` | Something you clip at a run | `minimumSpeed` 3 means a run trips and a walk does not. **Aim** sets the way you go down: the way you were running (wet floor, stairs), Left or Right (the rakes, which throw you back the way you came), or the way its art faces. **Extra Kick** and **Extra Lift** add a shove on top. |
 | `SlipperyFloor` | Ground that does not hold you | Calls `Slicken` every step you are in it; nothing to leave, because not calling IS leaving. |
-| `Slime` | Fall into it, get thrown back up | Launches you on the way past. |
+| `BouncyTrash` | Fall into it, get thrown back up | Launches you on the way past. The `Bouncy Trash` prefab. |
 | `WindZone2D` | A volume that pushes you | One `Vector2` covers left, right, up and down. `groundScale` decides how much you feel with both feet down. |
 | `WindTrap` | A `WindZone2D` on a timer | Shuts, warns, then blows. `Blast` is a one-off `Shove`; the rest is the base class's steady `Push`. |
 
@@ -1084,7 +1078,7 @@ who is on their staff or already tumbling. **A new hazard that only hurts needs 
 use a plain `Hazard`. One that does something new is one subclass with one `Affect` method.
 
 **`Hazard.everyStep` is the difference between a thing and a place.** Off — the default — it fires
-once, on the way in, which is right for anything you HIT: a slime, a rake, a sign. On, it is asked
+once, on the way in, which is right for anything you HIT: a Bouncy Trash, a rake, a sign. On, it is asked
 every physics step you are inside it, which is right for a stretch of floor, where breaking into a
 run half way along has to count for as much as arriving at a run. `rearmDelay` is what stops it
 firing fifty times a second. `SlipperyFloor` and `WindZone2D` are `Zone`s, not hazards: they act
@@ -1104,7 +1098,7 @@ tumble is `Ragdoll`'s, shared with every other trip in the game, so all of them 
 
 ### Seeing the wind
 
-A rock and a slime are objects — you can see them coming. Wind is a volume, so it is the one
+A rock and a Bouncy Trash are objects — you can see them coming. Wind is a volume, so it is the one
 hazard a player can only learn by being caught out unless the level shows it: put your own wind art
 (an animated sprite, particles) inside the zone. The script draws nothing in the game.
 
@@ -1118,7 +1112,7 @@ tall.
 the wizard is standing; up and down is always felt in full, so an updraft lifts a wizard who is
 standing in it.
 
-**Hazards push you onward, never back.** Rocks, slimes and tumbles all send you the way you were
+**Hazards push you onward, never back.** Rocks, Bouncy Trash and tumbles all send you the way you were
 already travelling — `Movement.TravelDirection`, which is the direction you *arrived* in, not the
 direction you happen to be facing and not away from the hazard's own centre. Being thrown back the
 way you came is the least predictable thing a hazard can do: you lose the ground you covered and
@@ -1134,9 +1128,11 @@ Two things worth knowing:
 
 - Hazards go on **layer 8 (Hazard)** and at the **scene root**. Several platforms in the test level
   carry non-uniform scales that would squash anything parented under them.
-- `Item` filters contacts down to the wizard's body collider. The wizard emits two
-  colliders — their body and the staff's trigger, which shares their rigidbody — so without that
-  filter every hazard would fire twice.
+- `Item` only answers to the wizard's **Hurtbox**: a trigger child of PLAYER called `Hurtbox`,
+  shaped to the art and separate from the collider the wizard walks with, so a hazard that touches
+  the hat or the robe counts. Everything else on the wizard's rigidbody — the walking collider, the
+  staff's trigger — is ignored, so no hazard fires twice. If the child is missing,
+  `PlayerCharacter` warns and falls back to the walking collider.
 
 ## Health and the hat
 
@@ -1163,11 +1159,11 @@ one set of clips works for any look.
 
 ## Animations
 
-`Player.controller` is built by **Falling Wizard > Build Player Animator**. It makes any clip that
-is missing, wires the states and transitions, and **never touches a clip that already exists** -
-the frames, timing and looping in a clip are yours. To fill a clip: select a Health Look in the
-PLAYER prefab, open Window > Animation > Animation, pick the clip from the drop-down, and drag the
-sliced frames of a sprite sheet onto the timeline. Set Samples (the frame rate) in the same window.
+`Player.controller` is set up by hand: its states, transitions and clips are yours, and no script
+ever writes to a clip - the frames, timing and looping in a clip are exactly what you put there. To
+fill a clip: select a Health Look in the PLAYER prefab, open Window > Animation > Animation, pick
+the clip from the drop-down, and drag the sliced frames of a sprite sheet onto the timeline. Set
+Samples (the frame rate) in the same window.
 
 ## HUD
 
@@ -1175,22 +1171,28 @@ An ordinary screen-space `Canvas` you can open up and restyle:
 
 ```
 HUD              Canvas (Overlay, order 10) + CanvasScaler + PlayerHud
-└── Spell Bar    bottom-left, HorizontalLayoutGroup + ContentSizeFitter
-    └── Spell Slot   TEMPLATE, inactive - Image + HudSlot
-        ├── Icon         the spell's own icon
-        ├── Charge       Image, Filled/Radial360 - the running and cooling wipe
-        └── Button       TextMeshProUGUI
+├── Spell Bar    bottom-left, HorizontalLayoutGroup + ContentSizeFitter
+│   └── Spell Slot   TEMPLATE, inactive - Image + HudSlot
+│       ├── Icon         the spell's own icon
+│       ├── Charge       Image, Filled/Radial360 - the running and cooling wipe
+│       └── Button       TextMeshProUGUI
+└── Scrap Count  top-right, TextMeshProUGUI - built at runtime unless Scrap Label is set
 ```
 
 Slots are **copies of the template**, made at runtime, one per spell. Restyle the template —
 sprite, size, colour, add a border — and every slot follows. `PlayerHud` only ever fills them in;
 it never builds layout. The icon each slot shows is the spell's own `icon`.
 
+The **Scrap Count** shows the one purse: how much Magical Scrap the wizard has, from the `hud.scrap`
+line (`{0} Magical Scrap`, `{0} Basura Mágica`). Drag your own label into `scrapLabel` to place it
+yourself, tick `hideScrapCount` to show none, or type a `scrapFormat` for a one-off wording.
+
 Set `CanvasScaler.referencePixelsPerUnit` to **32**, not the default 100, or every icon comes out
 at a third of its size.
 
-It finds the wizard through the singleton and re-checks every frame, because dying destroys them
-and builds a new one — anything that had subscribed would be holding a destroyed object.
+It finds the wizard through the singleton and re-checks every frame, because every scene load
+destroys them and builds a new one — anything that had subscribed would be holding a destroyed
+object.
 
 The button under each spell follows **whichever device is actually in use**: `E` on a keyboard,
 `X` on an Xbox pad, `Square` on a DualSense. `Core.Controls` watches only the actions this game
@@ -1227,8 +1229,8 @@ life of the scene even as its contents change.
 
 ## Setting a scene up by hand
 
-The Falling Wizard menu has a few one-time builders (the player animator, the level select, the
-steampunk hazards, tilemap collision). Everything else is set up by hand:
+There are no editor tools: every prefab and scene, including the tilemap collision, is set up by
+hand:
 
 **Tilemap ground**, on the Tilemap that actually has tiles painted on it, never the Grid:
 

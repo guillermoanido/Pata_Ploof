@@ -25,19 +25,11 @@ namespace FallingWizard.Core
 
         public static void LoadMainMenu() => Load(MainMenuScene);
 
-        public static void StartRun()
-        {
-            Progress.ClearCheckpoint();
-            LoadFirstLevel();
-        }
-
         public static void LoadFirstLevel() => Load(FirstLevelScene);
 
         public static void LoadLevelSelect() => Load(LevelSelectScene);
 
         public static void LoadLevel(string sceneName) => Load(sceneName);
-
-        public static void ReloadCurrentScene() => Load(SceneManager.GetActiveScene().name);
 
         public static void Quit()
         {

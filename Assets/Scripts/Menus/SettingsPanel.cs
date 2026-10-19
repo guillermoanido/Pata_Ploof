@@ -24,9 +24,10 @@ namespace FallingWizard.Menus
         [SerializeField] TMP_Text volumeValueLabel;
         [SerializeField] Button backButton;
 
-        [Tooltip("Wipes every spell, wisp and heart and returns to the main menu, after asking. " +
-                 "Leave it empty and the panel builds its own beside the Back button, so the " +
-                 "Pause Menu prefab and the Main Menu scene both get one without being rewired.")]
+        [Tooltip("Wipes every spell, all the Magical Scrap and every heart and returns to the " +
+                 "main menu, after asking. Leave it empty and the panel builds its own beside " +
+                 "the Back button, so the Pause Menu prefab and the Main Menu scene both get one " +
+                 "without being rewired.")]
         [SerializeField] Button resetSaveButton;
 
         [Tooltip("Opens a read-only sheet of every button, keyboard down one column and " +
@@ -156,7 +157,7 @@ namespace FallingWizard.Menus
                 Loc.Get(Loc.Keys.SettingsResetSaveTitle),
                 Loc.Get(Loc.Keys.SettingsResetSaveBlurb));
 
-            screen.Status(Loc.Format(Loc.Keys.SettingsResetSaveStatus, Progress.Wisps));
+            screen.Status(Loc.Format(Loc.Keys.SettingsResetSaveStatus, Progress.Scrap));
 
             screen.Choice(Loc.Get(Loc.Keys.SettingsResetSaveConfirm),
                 () => screen.CloseThen(ResetSaveAndLoadMainMenu));

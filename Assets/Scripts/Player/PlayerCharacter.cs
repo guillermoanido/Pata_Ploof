@@ -1,6 +1,4 @@
 using FallingWizard.Core;
-using FallingWizard.Localization;
-using FallingWizard.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -28,15 +26,11 @@ namespace FallingWizard.Player
         [Min(0f)] public float lookHoldSeconds = 0.4f;
 
         [Header("Death")]
-        [Tooltip("Reload the level when the wizard runs out of hearts.")]
-        public bool restartLevelOnDeath = true;
-
-        [Tooltip("Seconds to wait before that restart, so the death can be seen.")]
-        [Min(0f)] public float respawnDelay = 1.25f;
-
-        [Tooltip("Ask where to go instead of dropping straight back at the last rest: carry on " +
-                 "from there, or give the run up and go back to spend what is already banked.")]
-        public bool offerChoiceOnDeath = true;
+        [Tooltip("Seconds to wait once the wizard runs out of hearts, so the death can be seen, " +
+                 "before the game starts again from the main menu. Dying wipes everything: " +
+                 "Magical Scrap, spells, upgrades, the loadout, bonus hearts, finished levels " +
+                 "and taken pickups. Settings are kept.")]
+        [Min(0f)] public float secondsBeforeRestart = 1.25f;
 
         [Header("Staves")]
         [Tooltip("One staff per rank, weakest first. Only the staff for the current rank is left " +
@@ -82,8 +76,6 @@ namespace FallingWizard.Player
 
             controls = new Controls();
 
-            MoveToCheckpoint();
-
             logic.health.SetBaseHealth(FindHighestLookHealth());
             logic.Attach(GetComponent<Rigidbody2D>(), FindArt(), Hitbox, staves);
             logic.Died += OnDied;
@@ -112,18 +104,6 @@ namespace FallingWizard.Player
                              "collider, so hazards and pickups only notice the collider the " +
                              "wizard walks with.", this);
             return Hitbox;
-        }
-
-        void MoveToCheckpoint()
-        {
-            if (!Progress.IsCheckpointHere)
-                return;
-
-            var body = GetComponent<Rigidbody2D>();
-
-            body.position = Progress.CheckpointPoint;
-            body.linearVelocity = Vector2.zero;
-            transform.position = Progress.CheckpointPoint;
         }
 
         int FindHighestLookHealth()
@@ -155,35 +135,11 @@ namespace FallingWizard.Player
 
         void OnDied()
         {
-            Progress.LoseCarried();
-
-            if (offerChoiceOnDeath)
-                Invoke(nameof(AskWhereToGo), respawnDelay);
-            else if (restartLevelOnDeath)
-                Invoke(nameof(RestartLevel), respawnDelay);
+            Progress.StartOver();
+            Invoke(nameof(RestartTheGame), secondsBeforeRestart);
         }
 
-        void AskWhereToGo()
-        {
-            ChoiceScreen screen = ChoiceScreen.Open(Loc.Get(Loc.Keys.DeathTitle),
-                                                    Loc.Get(Loc.Keys.DeathBlurb));
-
-            screen.Status(Loc.Format(Loc.Keys.DeathStatus, Progress.Wisps));
-
-            if (Progress.HasCheckpoint)
-                screen.Choice(Loc.Get(Loc.Keys.DeathContinue),
-                    () => screen.CloseThen(Game.ReloadCurrentScene));
-
-            screen.Choice(Loc.Get(Loc.Keys.DeathGiveUp), () => screen.CloseThen(GiveUpTheRun));
-        }
-
-        static void GiveUpTheRun()
-        {
-            Progress.EndRun();
-            SkillScreen.Open(Game.LoadFirstLevel);
-        }
-
-        void RestartLevel() => Game.ReloadCurrentScene();
+        void RestartTheGame() => Game.LoadMainMenu();
 
         void OnDrawGizmosSelected() => logic.DrawGizmos(transform.position);
 

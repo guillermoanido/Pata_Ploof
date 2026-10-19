@@ -18,7 +18,7 @@ namespace FallingWizard.Player
 
         [Tooltip("Insist on a floor underneath. ON, it refuses any column with no ground in " +
                  "reach. OFF, such a column still takes the thing, hung at your own height - " +
-                 "over a drop that is a slime you put exactly where you wanted it. Either way " +
+                 "over a drop that is a Bouncy Trash you put exactly where you wanted it. Either way " +
                  "a column that DOES have ground puts it down on that ground, as low as it goes.")]
         public bool needsAFloor = false;
 
@@ -50,7 +50,7 @@ namespace FallingWizard.Player
 
             if (FindCarryableInReach(wizard) == null)
                 return Carryable.All.Count == 0
-                    ? "there is nothing carryable in this scene - put a Carryable on a slime"
+                    ? "there is nothing carryable in this scene - put a Carryable on a Bouncy Trash"
                     : $"nothing within {PickTier(tiers, wizard).reach} boxes of you to take";
 
             return null;

@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace FallingWizard.World
 {
-    public class Slime : Hazard
+    public class BouncyTrash : Hazard
     {
         const float BounceCooldown = 0.25f;
 
@@ -13,7 +13,7 @@ namespace FallingWizard.World
         [Min(0f)] public float bounceHeight = 3f;
 
         [Tooltip("Sideways push as they launch, in boxes per second, carrying them ONWARD the " +
-                 "way they were already going. Bouncing them away from the slime instead would " +
+                 "way they were already going. Bouncing them away from the trash instead would " +
                  "mean the same fall throws you a different way depending on where you landed.")]
         public float shove = 2f;
 

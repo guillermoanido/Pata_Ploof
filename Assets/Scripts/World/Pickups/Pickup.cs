@@ -13,7 +13,7 @@ namespace FallingWizard.World
 
         const float FullCircle = Mathf.PI * 2f;
 
-        const string WispPrefix = "wisp";
+        const string ScrapPrefix = "scrap";
         const string HeartPrefix = "heart";
 
         [Header("Identity")]
@@ -36,22 +36,21 @@ namespace FallingWizard.World
         public GameObject collectedEffect;
 
         [Header("Gift")]
-        [Tooltip("What the wizard gets here. Wisps are carried, and kept only by reaching a rest " +
-                 "site and turning back. A Heart is added to their health for good, and is never " +
-                 "here again.")]
-        public Gift gives = Gift.Wisps;
+        [Tooltip("What the wizard gets here. Magical Scrap goes straight into the purse, to be " +
+                 "spent at a shop stop. A Heart is added to their health. Either way the pickup " +
+                 "stays taken, even after quitting, until the wizard dies - death wipes " +
+                 "everything, and it is back.")]
+        public Gift gives = Gift.Scrap;
 
-        [Tooltip("How many. For Wisps, the wisps carried away from here - die anywhere below " +
-                 "before turning back and they are gone. For a Heart, the hearts added to the " +
-                 "wizard's health, so the hat takes longer to wear down. They are healed on the " +
-                 "spot, they survive dying and turning back, and this heart is never here again - " +
-                 "which is why the next one has to be found somewhere deeper.")]
+        [Tooltip("How many. For Magical Scrap, how much goes into the purse. For a Heart, the " +
+                 "hearts added to the wizard's health, so the hat takes longer to wear down. " +
+                 "They are healed on the spot.")]
         [FormerlySerializedAs("hearts")]
         [Min(1)] public int amount = 1;
 
-        [Tooltip("Hearts only. Wisps given instead when the wizard already has as many hearts as " +
-                 "they can ever get. Never leave a player standing over dead loot.")]
-        [Min(0)] public int wispsIfFull = 3;
+        [Tooltip("Hearts only. Magical Scrap given instead when the wizard already has as many " +
+                 "hearts as they can ever get. Never leave a player standing over dead loot.")]
+        [Min(0)] public int scrapIfFull = 3;
 
         [NonSerialized] string key;
         [NonSerialized] Transform visual;
@@ -68,13 +67,11 @@ namespace FallingWizard.World
             }
         }
 
-        string Prefix => gives == Gift.Heart ? HeartPrefix : WispPrefix;
-
-        StaysTaken StaysTaken => gives == Gift.Heart ? StaysTaken.ForGood : StaysTaken.OnceBanked;
+        string Prefix => gives == Gift.Heart ? HeartPrefix : ScrapPrefix;
 
         void Awake()
         {
-            if (Progress.IsGone(Key))
+            if (Progress.IsTaken(Key))
             {
                 Destroy(gameObject);
                 return;
@@ -94,10 +91,11 @@ namespace FallingWizard.World
 
         protected override void OnPlayerEntered(PlayerCharacter wizard)
         {
-            if (!wizard.Logic.health.IsAlive || !TryTake(wizard))
+            if (!wizard.Logic.health.IsAlive)
                 return;
 
-            Progress.MarkFound(Key, StaysTaken);
+            Give(wizard);
+            Progress.MarkTaken(Key);
 
             if (collectedEffect != null)
                 Instantiate(collectedEffect, transform.position, Quaternion.identity);
@@ -130,35 +128,28 @@ namespace FallingWizard.World
             restingPoint = visual.localPosition;
         }
 
-        bool TryTake(PlayerCharacter wizard)
+        void Give(PlayerCharacter wizard)
         {
             switch (gives)
             {
                 case Gift.Heart:
-                    return TryTakeHeart(wizard);
+                    GiveHeart(wizard);
+                    break;
                 default:
-                    return TryTakeWisps();
+                    Progress.AddScrap(amount);
+                    break;
             }
         }
 
-        bool TryTakeWisps()
+        void GiveHeart(PlayerCharacter wizard)
         {
-            Progress.CarryWisps(amount);
-            return true;
-        }
-
-        bool TryTakeHeart(PlayerCharacter wizard)
-        {
-            if (wizard.Logic.TryGrowHeart(amount))
-                return true;
-
-            Progress.CarryWisps(wispsIfFull);
-            return true;
+            if (!wizard.Logic.TryGrowHeart(amount))
+                Progress.AddScrap(scrapIfFull);
         }
 
         public enum Gift
         {
-            Wisps,
+            Scrap,
             Heart,
         }
     }

@@ -1,17 +1,9 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace FallingWizard.Core
 {
-    public enum StaysTaken
-    {
-        ForThisRun,
-        OnceBanked,
-        ForGood,
-    }
-
     public static class Progress
     {
         public const int SlotCount = 4;
@@ -19,13 +11,13 @@ namespace FallingWizard.Core
 
         const string FileName = "progress.json";
 
-        const int FormatVersion = 1;
+        const int FormatVersion = 2;
 
         const string LegacyKeyPrefix = "FallingWizard.";
-        const string LegacyWispsKey = LegacyKeyPrefix + "Wisps";
+        const string LegacyPurseKey = LegacyKeyPrefix + "Wisps";
         const string LegacyRanksKey = LegacyKeyPrefix + "Ranks";
         const string LegacyLoadoutKey = LegacyKeyPrefix + "Loadout";
-        const string LegacySpentKey = LegacyKeyPrefix + "Spent";
+        const string LegacyTakenKey = LegacyKeyPrefix + "Spent";
         const string LegacyHeartsKey = LegacyKeyPrefix + "Hearts";
         const char LegacyListSeparator = ';';
         const char LegacyRankSeparator = ':';
@@ -33,30 +25,19 @@ namespace FallingWizard.Core
         static readonly Dictionary<string, int> ranks = new Dictionary<string, int>();
         static readonly string[] equipped = new string[SlotCount];
 
-        static readonly HashSet<string> found = new HashSet<string>();
-        static readonly HashSet<string> carried = new HashSet<string>();
-        static readonly HashSet<string> spent = new HashSet<string>();
+        static readonly HashSet<string> taken = new HashSet<string>();
         static readonly HashSet<string> completedLevels = new HashSet<string>();
 
         static bool isSandbox;
-        static string checkpointScene = string.Empty;
 
         static bool isSaveFileUnreadable;
         static bool hasWarnedAboutUnreadable;
 
         public static bool IsSandboxSeeded { get; private set; }
 
-        public static int Wisps { get; private set; }
-
-        public static int CarriedWisps { get; private set; }
+        public static int Scrap { get; private set; }
 
         public static int BonusHearts { get; private set; }
-
-        public static bool HasCheckpoint { get; private set; }
-        public static Vector2 CheckpointPoint { get; private set; }
-
-        public static bool IsCheckpointHere =>
-            HasCheckpoint && checkpointScene == SceneManager.GetActiveScene().name;
 
         public static bool IsSpendingFree { get; set; }
 
@@ -88,14 +69,14 @@ namespace FallingWizard.Core
             Save();
         }
 
-        public static bool CanAfford(int cost) => IsSpendingFree || Wisps >= cost;
+        public static bool CanAfford(int cost) => IsSpendingFree || Scrap >= cost;
 
         public static bool TryBuy(string key, int cost)
         {
             if (string.IsNullOrEmpty(key) || Owns(key) || !CanAfford(cost))
                 return false;
 
-            PayWisps(cost);
+            PayScrap(cost);
             Grant(key);
             return true;
         }
@@ -169,7 +150,7 @@ namespace FallingWizard.Core
             if (rank < 1 || rank >= Mathf.Max(1, cap) || !CanAfford(cost))
                 return false;
 
-            PayWisps(cost);
+            PayScrap(cost);
             ranks[key] = rank + 1;
             Save();
             return true;
@@ -188,39 +169,23 @@ namespace FallingWizard.Core
             Save();
         }
 
-        public static bool IsGone(string id) =>
-            !string.IsNullOrEmpty(id) && (found.Contains(id) || spent.Contains(id));
+        public static bool IsTaken(string id) => !string.IsNullOrEmpty(id) && taken.Contains(id);
 
-        public static void MarkFound(string id, StaysTaken staysTaken)
+        public static void MarkTaken(string id)
         {
-            if (string.IsNullOrEmpty(id))
+            if (string.IsNullOrEmpty(id) || !taken.Add(id))
                 return;
 
-            found.Add(id);
-
-            switch (staysTaken)
-            {
-                case StaysTaken.OnceBanked:
-                    carried.Add(id);
-                    break;
-
-                case StaysTaken.ForGood:
-                    spent.Add(id);
-                    Save();
-                    break;
-            }
+            Save();
         }
 
-        public static void GiveWisps(int amount)
+        public static void AddScrap(int amount)
         {
-            if (amount > 0)
-                Wisps += amount;
-        }
+            if (amount <= 0)
+                return;
 
-        public static void CarryWisps(int amount)
-        {
-            if (amount > 0)
-                CarriedWisps += amount;
+            Scrap += amount;
+            Save();
         }
 
         public static void TakeHearts(int amount)
@@ -234,39 +199,6 @@ namespace FallingWizard.Core
 
         public static void SetHearts(int amount) => BonusHearts = Mathf.Max(0, amount);
 
-        public static void LoseCarried()
-        {
-            CarriedWisps = 0;
-
-            found.ExceptWith(carried);
-            carried.Clear();
-        }
-
-        public static void BankCarried()
-        {
-            Wisps += CarriedWisps;
-            CarriedWisps = 0;
-
-            spent.UnionWith(carried);
-            carried.Clear();
-
-            Save();
-        }
-
-        public static void MarkCheckpoint(Vector2 point)
-        {
-            CheckpointPoint = point;
-            checkpointScene = SceneManager.GetActiveScene().name;
-            HasCheckpoint = true;
-        }
-
-        public static void ClearCheckpoint()
-        {
-            HasCheckpoint = false;
-            checkpointScene = string.Empty;
-            CheckpointPoint = Vector2.zero;
-        }
-
         public static bool HasCompletedLevel(string sceneName) => completedLevels.Contains(sceneName);
 
         public static void CompleteLevel(string sceneName)
@@ -277,12 +209,16 @@ namespace FallingWizard.Core
             Save();
         }
 
-        public static void EndRun()
+        public static void StartOver()
         {
-            BankCarried();
+            if (!isSandbox)
+            {
+                ResetSave();
+                return;
+            }
 
-            found.Clear();
-            ClearCheckpoint();
+            Clear();
+            isSandbox = true;
         }
 
         public static void ResetSave()
@@ -305,10 +241,10 @@ namespace FallingWizard.Core
             IsSandboxSeeded = true;
         }
 
-        static void PayWisps(int cost)
+        static void PayScrap(int cost)
         {
             if (!IsSpendingFree)
-                Wisps -= cost;
+                Scrap -= cost;
         }
 
         static bool IsValidSlot(int slot) => slot >= 0 && slot < SlotCount;
@@ -359,7 +295,7 @@ namespace FallingWizard.Core
             var data = new SaveData
             {
                 version = FormatVersion,
-                wisps = Wisps,
+                scrap = Scrap,
                 bonusHearts = BonusHearts,
                 loadout = new string[SlotCount],
             };
@@ -368,7 +304,7 @@ namespace FallingWizard.Core
                 data.loadout[i] = equipped[i] ?? string.Empty;
 
             data.ranks = PackRanks();
-            data.spent = MakeSortedCopy(spent);
+            data.taken = MakeSortedCopy(taken);
             data.completedLevels = MakeSortedCopy(completedLevels);
 
             return data;
@@ -424,12 +360,12 @@ namespace FallingWizard.Core
             if (data == null)
                 data = new SaveData();
 
-            Wisps = Mathf.Max(0, data.wisps);
+            Scrap = Mathf.Max(0, data.scrap);
             BonusHearts = Mathf.Max(0, data.bonusHearts);
 
             UnpackRanks(data.ranks);
             FillLoadout(data.loadout);
-            Refill(spent, data.spent);
+            Refill(taken, data.taken);
             Refill(completedLevels, data.completedLevels);
         }
 
@@ -471,7 +407,7 @@ namespace FallingWizard.Core
 
         static bool TryImportLegacyPlayerPrefs()
         {
-            if (!PlayerPrefs.HasKey(LegacyWispsKey))
+            if (!PlayerPrefs.HasKey(LegacyPurseKey))
                 return false;
 
             ReadLegacyPlayerPrefs();
@@ -493,12 +429,12 @@ namespace FallingWizard.Core
 
         static void ReadLegacyPlayerPrefs()
         {
-            Wisps = PlayerPrefs.GetInt(LegacyWispsKey, 0);
+            Scrap = PlayerPrefs.GetInt(LegacyPurseKey, 0);
             BonusHearts = PlayerPrefs.GetInt(LegacyHeartsKey, 0);
 
             ReadLegacyRanks();
             FillLoadout(PlayerPrefs.GetString(LegacyLoadoutKey, string.Empty).Split(LegacyListSeparator));
-            Refill(spent, SplitLegacy(PlayerPrefs.GetString(LegacySpentKey, string.Empty)));
+            Refill(taken, SplitLegacy(PlayerPrefs.GetString(LegacyTakenKey, string.Empty)));
         }
 
         static void ReadLegacyRanks()
@@ -529,10 +465,10 @@ namespace FallingWizard.Core
 
         static void DeleteLegacyPlayerPrefs()
         {
-            PlayerPrefs.DeleteKey(LegacyWispsKey);
+            PlayerPrefs.DeleteKey(LegacyPurseKey);
             PlayerPrefs.DeleteKey(LegacyRanksKey);
             PlayerPrefs.DeleteKey(LegacyLoadoutKey);
-            PlayerPrefs.DeleteKey(LegacySpentKey);
+            PlayerPrefs.DeleteKey(LegacyTakenKey);
             PlayerPrefs.DeleteKey(LegacyHeartsKey);
             PlayerPrefs.Save();
         }
@@ -540,32 +476,27 @@ namespace FallingWizard.Core
         static void Clear()
         {
             ranks.Clear();
-            found.Clear();
-            carried.Clear();
-            spent.Clear();
+            taken.Clear();
             completedLevels.Clear();
 
             for (int i = 0; i < SlotCount; i++)
                 equipped[i] = string.Empty;
 
-            Wisps = 0;
-            CarriedWisps = 0;
+            Scrap = 0;
             BonusHearts = 0;
             isSandbox = false;
             IsSandboxSeeded = false;
-
-            ClearCheckpoint();
         }
 
         [Serializable]
         class SaveData
         {
             public int version;
-            public int wisps;
+            public int scrap;
             public int bonusHearts;
             public string[] loadout;
             public List<RankEntry> ranks;
-            public List<string> spent;
+            public List<string> taken;
             public List<string> completedLevels;
         }
 

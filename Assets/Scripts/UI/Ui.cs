@@ -27,7 +27,7 @@ namespace FallingWizard.UI
         public static readonly Color Card = new Color(0.13f, 0.12f, 0.19f, 0.95f);
         public static readonly Color CardLit = new Color(0.20f, 0.19f, 0.30f, 0.98f);
 
-        public static readonly Color Wisp = new Color(0.55f, 0.85f, 1f);
+        public static readonly Color Accent = new Color(0.55f, 0.85f, 1f);
         public static readonly Color Warning = new Color(0.95f, 0.72f, 0.36f);
 
         static readonly Color ButtonInk = new Color(0.11f, 0.10f, 0.14f);

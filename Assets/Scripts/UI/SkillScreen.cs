@@ -111,6 +111,9 @@ namespace FallingWizard.UI
         public static SkillScreen Open(Action onDive, string labelKey = null) =>
             CreateScreen(onDive, labelKey, null);
 
+        public static SkillScreen OpenInLevel(Action onClose) =>
+            CreateScreen(null, Loc.Keys.SkillBack, onClose);
+
         static SkillScreen CreateScreen(Action onDive, string labelKey, Action onClose)
         {
             Game.SetPaused(true);
@@ -188,9 +191,9 @@ namespace FallingWizard.UI
                 TitleHeight);
 
             TextMeshProUGUI purse = Ui.CreateLabel(
-                Loc.Format(Loc.Keys.SkillPurse, Progress.Wisps), body, PurseFontSize, InnerWidth,
+                Loc.Format(Loc.Keys.SkillPurse, Progress.Scrap), body, PurseFontSize, InnerWidth,
                 PurseHeight);
-            purse.color = Ui.Wisp;
+            purse.color = Ui.Accent;
 
             DrawSlots();
             DrawHint();
@@ -390,7 +393,7 @@ namespace FallingWizard.UI
 
             if (spell.HasUpgrades)
                 Ui.CreatePips(heading, rank, spell.MaxRank, PipSize,
-                    owned ? Ui.Wisp : Ui.FadedInk);
+                    owned ? Ui.Accent : Ui.FadedInk);
 
             Ui.CreateLabel(WriteBlurb(spell, owned, rank, slot), words, BlurbFontSize, WordsWidth,
                 BlurbHeight, TextAlignmentOptions.TopLeft).color = Ui.FadedInk;
@@ -572,7 +575,7 @@ namespace FallingWizard.UI
                     return;
 
                 wasPaused = Game.IsPaused;
-                openScreen = CreateScreen(null, Loc.Keys.SkillBack, OnScreenClosed);
+                openScreen = OpenInLevel(OnScreenClosed);
             }
 
             void OnScreenClosed()

@@ -152,9 +152,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FallingWizard.UI.PlayerHud
   spellBar: {fileID: 347286643}
   slotTemplate: {fileID: 958667921}
-  wispLabel: {fileID: 0}
-  hideWispCount: 0
-  wispFormat: 
+  scrapLabel: {fileID: 0}
+  hideScrapCount: 0
+  scrapFormat: 
   showEmptySlots: 1
   showButtons: 1
   emptyTint: {r: 1, g: 1, b: 1, a: 0.18}

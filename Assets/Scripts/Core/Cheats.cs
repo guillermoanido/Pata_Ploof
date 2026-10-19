@@ -70,8 +70,8 @@ namespace FallingWizard.Core
             SetWizardInvulnerable(isActive);
 
             Debug.Log(isActive
-                ? "CHEATS ON - god mode, and every wisp cost is free. Press M again to turn them off."
-                : "CHEATS OFF - damage and wisp costs are back to normal.");
+                ? "CHEATS ON - god mode, and everything costs no Magical Scrap. Press M again to turn them off."
+                : "CHEATS OFF - damage and Magical Scrap costs are back to normal.");
         }
 
         void SetWizardInvulnerable(bool invulnerable)

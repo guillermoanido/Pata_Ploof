@@ -457,9 +457,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FallingWizard.UI.PlayerHud
   spellBar: {fileID: 347286643}
   slotTemplate: {fileID: 958667921}
-  wispLabel: {fileID: 0}
-  hideWispCount: 0
-  wispFormat: 
+  scrapLabel: {fileID: 0}
+  hideScrapCount: 0
+  scrapFormat: 
   showEmptySlots: 1
   showButtons: 1
   emptyTint: {r: 1, g: 1, b: 1, a: 0.18}
@@ -756,7 +756,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2678838225, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_Name
-      value: Slime (5)
+      value: Bouncy Trash (5)
       objectReference: {fileID: 0}
     - target: {fileID: 2678838227, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_LocalPosition.x
@@ -818,7 +818,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2678838225, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_Name
-      value: Slime (9)
+      value: Bouncy Trash (9)
       objectReference: {fileID: 0}
     - target: {fileID: 2678838227, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_LocalPosition.x
@@ -24616,7 +24616,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2678838225, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_Name
-      value: Slime (2)
+      value: Bouncy Trash (2)
       objectReference: {fileID: 0}
     - target: {fileID: 2678838227, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_LocalPosition.x
@@ -25499,7 +25499,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2678838225, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_Name
-      value: Slime (8)
+      value: Bouncy Trash (8)
       objectReference: {fileID: 0}
     - target: {fileID: 2678838227, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_LocalPosition.x
@@ -25561,7 +25561,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2678838225, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_Name
-      value: Slime (6)
+      value: Bouncy Trash (6)
       objectReference: {fileID: 0}
     - target: {fileID: 2678838227, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_LocalPosition.x
@@ -25817,7 +25817,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2678838225, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_Name
-      value: Slime (7)
+      value: Bouncy Trash (7)
       objectReference: {fileID: 0}
     - target: {fileID: 2678838227, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_LocalPosition.x
@@ -26586,7 +26586,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2678838225, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_Name
-      value: Slime (11)
+      value: Bouncy Trash (11)
       objectReference: {fileID: 0}
     - target: {fileID: 2678838227, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_LocalPosition.x
@@ -26891,7 +26891,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2678838225, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_Name
-      value: Slime (3)
+      value: Bouncy Trash (3)
       objectReference: {fileID: 0}
     - target: {fileID: 2678838227, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_LocalPosition.x
@@ -27796,7 +27796,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2678838225, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_Name
-      value: Slime (4)
+      value: Bouncy Trash (4)
       objectReference: {fileID: 0}
     - target: {fileID: 2678838227, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_LocalPosition.x
@@ -27858,7 +27858,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2678838225, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_Name
-      value: Slime
+      value: Bouncy Trash
       objectReference: {fileID: 0}
     - target: {fileID: 2678838227, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_LocalPosition.x
@@ -28395,7 +28395,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2678838225, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_Name
-      value: Slime (1)
+      value: Bouncy Trash (1)
       objectReference: {fileID: 0}
     - target: {fileID: 2678838227, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_LocalPosition.x
@@ -28594,7 +28594,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2678838225, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_Name
-      value: Slime (10)
+      value: Bouncy Trash (10)
       objectReference: {fileID: 0}
     - target: {fileID: 2678838227, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_LocalPosition.x
@@ -28837,7 +28837,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2678838225, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_Name
-      value: Slime
+      value: Bouncy Trash
       objectReference: {fileID: 0}
     - target: {fileID: 2678838227, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_LocalPosition.x

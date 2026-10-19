@@ -22,6 +22,6 @@ namespace FallingWizard.Menus
             exitButton.onClick.AddListener(Game.Quit);
         }
 
-        static void OpenSkillScreen() => UI.SkillScreen.Open(Game.StartRun);
+        static void OpenSkillScreen() => UI.SkillScreen.Open(Game.LoadFirstLevel);
     }
 }

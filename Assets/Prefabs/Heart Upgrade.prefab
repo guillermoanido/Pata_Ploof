@@ -89,7 +89,7 @@ MonoBehaviour:
   collectedEffect: {fileID: 0}
   gives: 1
   amount: 1
-  wispsIfFull: 3
+  scrapIfFull: 3
 --- !u!1 &678188516
 GameObject:
   m_ObjectHideFlags: 0

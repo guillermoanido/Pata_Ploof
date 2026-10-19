@@ -15,15 +15,15 @@ settings.language,Language,Idioma
 settings.back,Back,Volver
 settings.resetSave,Reset Save,Borrar partida
 settings.resetSave.title,Reset save?,¿Borrar la partida?
-settings.resetSave.blurb,"Every spell, wisp and heart you have earned is erased, and the run starts again from the beginning. This cannot be undone.","Se borran todos los hechizos, Basura Mágica y corazones que has ganado, y la bajada empieza otra vez desde el principio. Esto no se puede deshacer."
-settings.resetSave.status,You have {0} Magic Scrap banked.,Tienes {0} Basura Mágica a salvo.
+settings.resetSave.blurb,"Every spell, all the Magical Scrap and every heart you have earned is erased, and the run starts again from the beginning. This cannot be undone.","Se borran todos los hechizos, Basura Mágica y corazones que has ganado, y la bajada empieza otra vez desde el principio. Esto no se puede deshacer."
+settings.resetSave.status,You have {0} Magical Scrap.,Tienes {0} Basura Mágica.
 settings.resetSave.confirm,Erase everything,Borrarlo todo
 settings.resetSave.cancel,Keep my save,Conservar mi partida
 language.english,English,English
 language.spanish,Español,Español
 skill.title,What you carry down,Lo que te llevas abajo
-skill.purse,{0} Magic Scrap,{0} Basura Mágica
-skill.price,{0} Magic Scrap,{0} Basura Mágica
+skill.purse,{0} Magical Scrap,{0} Basura Mágica
+skill.price,{0} Magical Scrap,{0} Basura Mágica
 skill.noBook,No spellbook found at Assets/Resources/Spellbook.asset.,No hay grimorio en Assets/Resources/Spellbook.asset.
 skill.dive,Descend,Bajar
 skill.back,Back to the tower,De vuelta a la torre
@@ -36,17 +36,7 @@ skill.next,{0}  Next: {1} - {2},{0}  Sigue: {1} - {2}
 skill.learn,Learn - {0},Aprender - {0}
 skill.mastered,Mastered,Dominado
 skill.learned,Learned,Aprendido
-death.title,You fell,Te caíste
-death.blurb,"The Magic Scrap you were carrying went out with you, and are back where you found them.","Los Basura Mágica que llevabas se perdió, volvieron a donde los encontraste."
-death.status,{0} Magic Scrap still banked,Aún tienes {0} Basura Mágica a salvo
-death.continue,Take it from the last rest,Seguir desde el último descanso
-death.giveUp,Give up the run and go back,Abandonar la bajada y volver
-rest.title,A place to rest,Un lugar para descansar
-rest.blurb,"Further down, or back the way you came.","Más abajo, o de vuelta por donde viniste."
-rest.status,Carrying {0} Magic Scrap    {1} already banked,{0} en mano    {1} a salvo
-rest.pressOn,"Rest, then press on",Descansar y seguir bajando
-rest.turnBack,Turn back and bank {0} Magic Scrap,Volver y guardar {0} Basura Mágica
-hud.wisps,{0} carried    {1} banked,{0} en mano    {1} a salvo
+hud.scrap,{0} Magical Scrap,{0} Basura Mágica
 ability.fling.name,Fling,Impulso
 ability.fling.desc,"Hold to aim up or down, let go to be thrown into a tumble.","Mantén presionado para apuntar arriba o abajo, suelta para salir lanzado dando vueltas."
 ability.fling.upgrade.0.title,Harder throw,Tiro más fuerte

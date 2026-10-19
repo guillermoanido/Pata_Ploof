@@ -130,9 +130,7 @@ MonoBehaviour:
   gravityScale: 3
   lookThreshold: 0.3
   lookHoldSeconds: 0.4
-  restartLevelOnDeath: 1
-  respawnDelay: 1.25
-  offerChoiceOnDeath: 1
+  secondsBeforeRestart: 1.25
   staves:
   - {fileID: 4439750653072729773}
   - {fileID: 1646938069505509153}

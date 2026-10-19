@@ -99,7 +99,7 @@ namespace FallingWizard.UI
                     Ui.FadedInk;
 
             status = Ui.CreateLabel(string.Empty, column, StatusFontSize, InnerWidth, StatusHeight);
-            status.color = Ui.Wisp;
+            status.color = Ui.Accent;
         }
     }
 }

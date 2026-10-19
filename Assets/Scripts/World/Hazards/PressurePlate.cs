@@ -37,7 +37,7 @@ namespace FallingWizard.World
                  "and the same number carries them much further.")]
         public float sidewaysPush = 0f;
 
-        [Tooltip("Send the wizard tumbling as well as up, like the slime does. The tumble adds " +
+        [Tooltip("Send the wizard tumbling as well as up, like the Bouncy Trash does. The tumble adds " +
                  "its own shove the way they are facing, on top of the push above, and they " +
                  "cannot steer until they get up. Off by default: a plate that lifts you is a " +
                  "ride, a plate that knocks you down is a tax.")]
