@@ -72,13 +72,7 @@ namespace FallingWizard.World
 
         void Catch(PlayerCharacter wizard)
         {
-            if (Time.time < readyAt || !IsDangerousNow || !CanAffect(wizard))
-                return;
-
-            if (wizard.Logic.movement.ApproachSpeed < minimumSpeed)
-                return;
-
-            if (ignoresWalking && IsWalking(wizard))
+            if (!IsReadyToCatch(wizard))
                 return;
 
             readyAt = Time.time + rearmDelay;
@@ -87,6 +81,20 @@ namespace FallingWizard.World
 
             if (damage > 0)
                 wizard.Logic.Hurt(damage);
+        }
+
+        bool IsReadyToCatch(PlayerCharacter wizard)
+        {
+            if (Time.time < readyAt || !IsDangerousNow || !CanAffect(wizard))
+                return false;
+
+            if (damage > 0 && !wizard.Logic.CanBeHurt)
+                return false;
+
+            if (wizard.Logic.movement.ApproachSpeed < minimumSpeed)
+                return false;
+
+            return !ignoresWalking || !IsWalking(wizard);
         }
 
         static bool IsWalking(PlayerCharacter wizard)

@@ -103,8 +103,8 @@ MonoBehaviour:
   damage: 0
   ignoresWalking: 0
   aim: 0
-  extraKick: 0
-  extraLift: 0
+  extraKick: 3.5
+  extraLift: 1
 --- !u!114 &1930921975
 MonoBehaviour:
   m_ObjectHideFlags: 0

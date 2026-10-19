@@ -76,6 +76,8 @@ namespace FallingWizard.Player
         public bool CanGrabVine =>
             health.IsAlive && State == PlayerState.Normal && vine.CanGrab;
 
+        public bool CanBeHurt => health.IsAlive && !Invulnerable && !health.IsInvulnerable;
+
         public void Attach(Rigidbody2D body, Transform art, Collider2D hitbox, Staff[] staffSet)
         {
             movement.Attach(body, art, hitbox);
@@ -183,7 +185,7 @@ namespace FallingWizard.Player
 
         public void Hurt(int hearts)
         {
-            if (hearts <= 0 || !health.IsAlive || Invulnerable)
+            if (hearts <= 0 || !CanBeHurt)
                 return;
 
             health.TakeDamage(hearts);
