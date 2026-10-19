@@ -63,7 +63,7 @@ namespace FallingWizard.World
                  "strength. The push holds the wizard at a speed for as long as they are in " +
                  "it; this is added to whatever they are already doing and then let go of, " +
                  "which is what makes this a launcher rather than a fan: (0,14) throws them 3.3 " +
-                 "boxes up against a jump of 1.5, and (7,0) fires them sideways at nearly twice " +
+                 "boxes up, and (7,0) fires them sideways at nearly twice " +
                  "a run. It turns with the object, like the push. It only catches someone who " +
                  "was already inside when it fired - walk into a running turbine and you get " +
                  "the gale instead.")]

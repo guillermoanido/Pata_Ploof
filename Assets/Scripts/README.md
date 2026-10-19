@@ -29,9 +29,9 @@ coming back down it can never hurt you.
 | --- | --- |
 | `Core/` | `Game` (pause, scene flow, quit), `GameSettings`, `Controls` (every input lookup, plus which device is in use), `Progress` (what the wizard has learned), `SingletonBehaviour` |
 | `Player/` | `PlayerCharacter` (the Unity side), `PlayerLogic` (everything the wizard does), `Staff`, `PlayerAnimator`, `HealthLook`, `RagdollBumps` |
-| `Player/Abilities/` | `Ability` and the spells, `AbilityBook`, `AbilityShrine` |
+| `Player/Abilities/` | `Ability` and the spells, `AbilityBook` |
 | `Localization/` | `Loc`, `TextBook`, `LocalizedText` |
-| `World/` | `Item` (the base of everything the wizard touches) and `TileGrid`, with subfolders: `Hazards/` (`Hazard`, `TripHazard`, `Slime`, `SteamVent`, `WaxDrop`, `WaxCandle`, `PressurePlate`), `Zones/` (`Zone`, `WindZone2D`, `WindTrap`, `SlipperyFloor`), `Pickups/` (`Pickup`, `AbilityShrine`), `Level/` (`Checkpoint`, `RestSite`, `LevelExit`, `MovingPlatform`, `VineAnchor`, `Carryable`), `Camera/` (`FollowCamera`, `ParallaxLayer`) |
+| `World/` | `Item` (the base of everything the wizard touches) and `TileGrid`, with subfolders: `Hazards/` (`Hazard`, `TripHazard`, `Slime`, `SteamVent`, `WaxDrop`, `WaxCandle`, `PressurePlate`), `Zones/` (`Zone`, `WindZone2D`, `WindTrap`, `SlipperyFloor`), `Pickups/` (`Pickup`), `Level/` (`Checkpoint`, `RestSite`, `LevelExit`, `MovingPlatform`, `VineAnchor`, `Carryable`), `Camera/` (`FollowCamera`) |
 | `UI/` | `PlayerHud`, `HudSlot`, `FlingArrow`, `Ui` and the runtime screens |
 | `Menus/`, `Cutscenes/` | `MenuScreen` and the three menus; `CutsceneRunner` |
 
@@ -105,7 +105,7 @@ Three kinds of field, and which one a thing is decides how it is declared:
 
 | Kind | Declared as | Examples |
 | --- | --- | --- |
-| **Tuning** — has a unit | `public` under a `[Header]`, with `[Tooltip]` and `[Min]`/`[Range]` | `runSpeed`, `jumpHeight`, `tripSpeed`, `bounceHeight` |
+| **Tuning** — has a unit | `public` under a `[Header]`, with `[Tooltip]` and `[Min]`/`[Range]` | `runSpeed`, `stepHeight`, `bounceHeight` |
 | **Wiring** — points at something | `public` under a `[Header]` | `hitbox`, `visual`, `bridgeCollider`, `book`, `ability` |
 | **Runtime** — has a lifetime, not a value | `{ get; private set; }` or `[NonSerialized]` private | `IsGrounded`, `Facing`, `Current`, `Progress` |
 
@@ -219,9 +219,8 @@ already in a level can be picked up and put down somewhere better.
 
 **Glide does not forgive fall damage, and that is the design.** Feather Fall — the spell that
 used to live in this slot — did, and that forgiveness was the only reason it was worth a button.
-Glide earns its slot a different way: it roughly **doubles how far a running jump carries you**,
-turning a 2.3-box leap into nearly 4. Giving one spell both would make it two spells over three
-contested buttons.
+Glide earns its slot a different way: it roughly **doubles how far a run off a ledge carries you**
+before you land. Giving one spell both would make it two spells over three contested buttons.
 
 Note what `fallSpeed` does *not* buy. Fall damage counts **boxes fallen**, not how fast
 (`SenseGround` bills `highestPoint - position.y`), so dropping the canopy's fall speed to
@@ -241,7 +240,7 @@ first, `AirDragMultiplier` the second, and Glide pushes them in opposite directi
 
 **`foldsOnLanding` needs the spell's own memory of having flown.** An early version read a
 lifetime air-time counter that only ever counted up, so it guarded exactly one cast — the first of
-a session. After a single jump it was true forever, and throwing the canopy out while stood at a
+a session. After the first fall it was true forever, and throwing the canopy out while stood at a
 ledge folded it on the next physics step, put it on cooldown, and left the wizard falling at
 completely normal speed with nothing to say why. The `Wing.hasFlown` flag is set the first step the
 wizard is off the ground and cleared on every cast. (The counter is gone now; nothing else read it.)
@@ -254,8 +253,7 @@ grab and drop on the same press.
 
 ### Adding spell #5
 
-1. One `.cs` in `Player/Abilities/` — or none at all, if it is only stat changes: make another
-   `StatAbility` asset instead.
+1. One `.cs` in `Player/Abilities/`, deriving from `Ability`, named the same as its class.
 2. One asset via **Assets ▸ Create ▸ Falling Wizard ▸ Abilities ▸ …**, with a `cost` in Wisps.
 3. Drag it into `Assets/Resources/Spellbook.asset` → `spells`.
 
@@ -295,9 +293,7 @@ and silently kill every clamp on the chain.
 list, top to bottom — **drag to reorder, nothing in any scene depends on it**. `known` is granted
 free on a new game; the Staff belongs there and nothing else has to.
 
-Everything else is **bought with Wisps** at the skill screen. An `AbilityShrine` is still there for
-the one spell you want every player to meet whether or not they went looking — it grants
-permanently and free, and drops the spell into the first empty slot so it can be tried at once.
+Everything else is **bought with Wisps** at the skill screen.
 
 `Core.Progress` holds all of it, outside the wizard, because dying reloads the level and builds a
 brand new one.
@@ -502,8 +498,8 @@ because the shape is not stale, it is *absent*.
 
 **A block flush with the platform is the worst case, not the best.** Two box colliders whose top
 faces are exactly level still meet at a vertical face, and gravity sinks the wizard about a fifth
-of a pixel into the floor between solver steps — enough that the face catches them and the block
-has to be jumped onto. The tilemap never shows this because the composite merges its tiles and
+of a pixel into the floor between solver steps — enough that the face catches them and they stop
+dead at the block instead of walking onto it. The tilemap never shows this because the composite merges its tiles and
 there are no internal faces at all.
 
 So `Stone Wall`'s collider is **0.9 square with a `0.05` edge radius**: one box on the outside,
@@ -649,8 +645,7 @@ that name exists, Haste shows nothing.
 The only things a script still moves are the ones where the movement *is* the mechanic: the
 wizard's `Visual` is flipped to face their way and spun when they tumble, the staff sprite is
 flipped, the vine's rope is stretched as it unrolls and leans with the swing, the Wall Growth
-block is scaled as it grows, the fling arrow is pointed along the aim, and a parallax layer lays
-copies of your own sheet side by side so the background never runs out.
+block is scaled as it grows, and the fling arrow is pointed along the aim.
 
 ## Getting to the loadout, and making it stick
 
@@ -793,7 +788,7 @@ and says so in the console. Selection starts on the deepest open pip.
 
 1. It copies `Level 1`.
 2. It keeps the wizard, the camera, the light, the HUD, the menus and the tile grid.
-3. It removes everything else, including the parallax background.
+3. It removes everything else.
 4. It lays a strip of floor under the wizard, using the first tile it finds beneath them, and puts
    one Level Exit ten tiles ahead of them.
 5. It adds both scenes to File > Build Settings, right after Level 1, so the pips can open them.
@@ -907,7 +902,7 @@ Two things follow from using speed, and both are handled:
   `Run` carries them forward on its own.
 - The leftover speed is **taken back** the moment the lip runs out, or the assist would read as a
   small hop. `steppedLastStep` is what remembers, and the guard only takes back speed the assist
-  could plausibly have produced, so a jump, a slime or a fling is left alone. It is the identical
+  could plausibly have produced, so a slime or a fling is left alone. It is the identical
   tidy-up `TryRunAlongRamp` does when a ramp ends.
 
 `stepHeight` stays far below a whole box on purpose. This is for tile seams and the pixel-high
@@ -923,7 +918,7 @@ that stops a tumble.
 
 **Everything the wizard stands on must be on a layer in `Movement.groundLayers`** (Ground, layer 6).
 Physics does not care about that mask, so a wrong layer still holds the wizard up — but every query
-comes back empty, and then `IsGrounded` is never true, which means no jump, permanent air control,
+comes back empty, and then `IsGrounded` is never true, which means permanent air control,
 no ledge detection and no staff. Tilemaps start on Default, which is how you walk into it. The
 wizard logs a warning naming the mask if it has not found ground after three seconds.
 
@@ -940,8 +935,8 @@ than tuned until they happen to add up to it, so the number you type is the numb
 and the number `WhyNot` quotes back at you. Raising `raiseHeight` or `gripHeight` spends part of
 that reach and shortens the pole to pay for it; it does not make the climb taller.
 
-**`Movement.canJump` is off**, and the staff is what replaced it for anything tall. What the staff
-no longer has to do is single steps: `Movement.stepHeight` is 0.55 and a painted tile is 0.5, so the
+**The wizard never jumps.** The staff is how they get up anything tall. What the staff does not have
+to do is single steps: `Movement.stepHeight` is 0.55 and a painted tile is 0.5, so the
 wizard walks up any one-tile lip on their own. The staff is for walls of two tiles and up.
 
 It is a **held** button and a **tapped** one, and the two mean different directions. A hold is the
@@ -1081,7 +1076,7 @@ rakes are all `TripHazard`, and broken glass is a plain `Hazard`.
 `Awake`, so hazards are things you pass straight through that do something to you on the way, not
 things you bump into. That is also why they belong on layer 8: the ground check ignores that layer,
 so a *solid* hazard there would be something the wizard comes to rest on while the game still
-believes they are falling — no jump, and no way out of a tumble, since a ragdoll only recovers once
+believes they are falling — no step assist, and no way out of a tumble, since a ragdoll only recovers once
 grounded. Ticking `passThrough` off is supported, but move it off layer 8 if you do.
 
 `Hazard` handles speed gating, re-arming and damage. `Zone` decides whether it can reach a wizard
@@ -1213,10 +1208,10 @@ cooldown would sit frozen at full with nothing in the console.
 | Action | Keyboard | Gamepad | Read by |
 | --- | --- | --- | --- |
 | `Player/Move` | WASD / arrows | left stick | `PlayerCharacter.Controls` |
-| `Player/Jump` | Space | south | `PlayerCharacter.Controls` |
+| `Player/Jump` | Space | south | `PlayerCharacter.Controls` — only to let go of a vine; the wizard never jumps |
 | `Player/Walk` | Left Shift | left trigger | `PlayerCharacter.Controls` |
-| `Player/Spell1` | Q | left shoulder | slot 1 |
-| `Player/Spell2` | E | west | slot 2 — the Staff, always |
+| `Player/Spell1` | Q | left shoulder | slot 1 — the Staff, always |
+| `Player/Spell2` | E | west | slot 2 |
 | `Player/Spell3` | R | right shoulder | slot 3 |
 | `Player/Spell4` | F | north | slot 4 |
 | `UI/Pause` | Esc | start | `Core.Controls` |
@@ -1256,9 +1251,8 @@ ticking a box.
 `referencePixelsPerUnit` **32** and **no `GraphicRaycaster`**, laid out as the diagram above. The
 template starts inactive; `PlayerHud` copies it.
 
-**Background.** One object per sheet, unparented, roughly where the camera starts, each with a
-`ParallaxLayer`. Put them on a sorting layer below `Default` — **and add that layer to the
-`Light2D`'s Target Sorting Layers**, or in URP 2D they render pure black. Simpler alternative:
+**Background.** Plain sprites placed in the scene. Put them on a sorting layer below `Default` —
+**and add that layer to the `Light2D`'s Target Sorting Layers**, or in URP 2D they render pure black. Simpler alternative:
 leave them on `Default` at negative sorting orders, which the existing light already covers.
 
 ## Worth knowing

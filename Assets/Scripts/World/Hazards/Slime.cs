@@ -14,7 +14,7 @@ namespace FallingWizard.World
 
         [Tooltip("Sideways push as they launch, in boxes per second, carrying them ONWARD the " +
                  "way they were already going. Bouncing them away from the slime instead would " +
-                 "mean the same jump throws you a different way depending on where you landed.")]
+                 "mean the same fall throws you a different way depending on where you landed.")]
         public float shove = 2f;
 
         [Tooltip("Send the wizard tumbling as well as up.")]

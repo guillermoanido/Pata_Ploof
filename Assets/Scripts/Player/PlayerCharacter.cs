@@ -11,6 +11,8 @@ namespace FallingWizard.Player
     {
         const string ArtObjectName = "Visual";
 
+        const string HurtboxObjectName = "Hurtbox";
+
         [Header("Body")]
         [Tooltip("Gravity written onto the Rigidbody2D by Reset. 3 is the feel the rest of the " +
                  "tuning assumes - every fall, bounce and throw is worked out from it.")]
@@ -52,6 +54,8 @@ namespace FallingWizard.Player
 
         public Collider2D Hitbox { get; private set; }
 
+        public Collider2D Hurtbox { get; private set; }
+
         void Reset()
         {
             var rigidbody2d = GetComponent<Rigidbody2D>();
@@ -71,6 +75,7 @@ namespace FallingWizard.Player
         protected override void OnAwake()
         {
             Hitbox = GetComponent<Collider2D>();
+            Hurtbox = FindHurtbox();
 
             if (staves == null || staves.Length == 0)
                 staves = GetComponentsInChildren<Staff>(true);
@@ -93,6 +98,20 @@ namespace FallingWizard.Player
         {
             base.OnDestroy();
             logic.Died -= OnDied;
+        }
+
+        Collider2D FindHurtbox()
+        {
+            Transform child = transform.Find(HurtboxObjectName);
+            Collider2D hurtbox = child != null ? child.GetComponent<Collider2D>() : null;
+
+            if (hurtbox != null)
+                return hurtbox;
+
+            Debug.LogWarning($"'{name}' has no child called '{HurtboxObjectName}' with a trigger " +
+                             "collider, so hazards and pickups only notice the collider the " +
+                             "wizard walks with.", this);
+            return Hitbox;
         }
 
         void MoveToCheckpoint()

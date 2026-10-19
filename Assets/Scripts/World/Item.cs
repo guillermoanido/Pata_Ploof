@@ -84,7 +84,7 @@ namespace FallingWizard.World
                 return null;
 
             var wizard = body.GetComponent<PlayerCharacter>();
-            return wizard != null && other == wizard.Hitbox ? wizard : null;
+            return wizard != null && other == wizard.Hurtbox ? wizard : null;
         }
     }
 }

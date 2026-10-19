@@ -29,7 +29,7 @@ namespace FallingWizard.Player
         [Range(1, 6)] public int reachInTiles = 3;
 
         [Tooltip("Tiles past the lip. 0 is the first empty column - the block hugs the ledge. " +
-                 "1 leaves a one-tile gap you have to jump.")]
+                 "1 leaves a one-tile gap you have to cross some other way.")]
         [Range(0, 3)] public int outFromEdge = 0;
 
         [Tooltip("Which ROW, counted from the one your body is in. -1 is the floor row, so the " +

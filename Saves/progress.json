@@ -1,7 +1,7 @@
 {
     "version": 1,
     "wisps": 0,
-    "bonusHearts": 1,
+    "bonusHearts": 2,
     "loadout": [
         "staff",
         "fling",
@@ -31,7 +31,8 @@
         }
     ],
     "spent": [
-        "heartLevel 1:-4,-105"
+        "heartLevel 1:-4,-105",
+        "heartLevel 1:120,-41"
     ],
     "completedLevels": [
         "Level 1"

@@ -186,7 +186,7 @@ namespace FallingWizard.Player
         public class Tier : ITier
         {
             [Tooltip("How fast the throw sends the wizard at this rank, in boxes per second. A " +
-                     "standing jump leaves at about 9, for scale.")]
+                     "run is about 4, for scale.")]
             [Min(0f)] public float speed = 9f;
 
             public void Validate() => speed = Mathf.Max(0f, speed);
