@@ -101,7 +101,6 @@ namespace FallingWizard.Player
             if (!health.IsAlive)
                 return;
 
-            movement.BufferJump(frame.WasJumpPressed, deltaTime);
             spellbook.Observe(deltaTime);
 
             IsPeeking = (State == PlayerState.OnStaff && !(HasPole && pole.IsClimbing)) ||
@@ -184,7 +183,7 @@ namespace FallingWizard.Player
 
         public void Hurt(int hearts)
         {
-            if (hearts <= 0 || !health.IsAlive || Invulnerable || Stats.IsShielded)
+            if (hearts <= 0 || !health.IsAlive || Invulnerable)
                 return;
 
             health.TakeDamage(hearts);
@@ -355,12 +354,11 @@ namespace FallingWizard.Player
                     break;
 
                 case PlayerState.Ragdoll:
-                    movement.NudgeVelocity(pendingWind * Stats.WindMultiplier * fixedDeltaTime);
+                    movement.NudgeVelocity(pendingWind * fixedDeltaTime);
                     break;
 
                 default:
-                    movement.ApplyWind(pendingWind * Stats.WindMultiplier, pendingRampup,
-                        pendingGroundScale, fixedDeltaTime);
+                    movement.ApplyWind(pendingWind, pendingRampup, pendingGroundScale, fixedDeltaTime);
                     break;
             }
         }
@@ -449,7 +447,7 @@ namespace FallingWizard.Player
             if (excess <= 0f)
                 return;
 
-            Hurt(Mathf.RoundToInt(excess * damagePerBox * Stats.FallDamageMultiplier));
+            Hurt(Mathf.RoundToInt(excess * damagePerBox));
         }
 
         void UpdateOnVine(float fixedDeltaTime)
@@ -568,31 +566,6 @@ namespace FallingWizard.Player
             [Tooltip("Stick tilt below this counts as no input at all.")]
             [Range(0f, 0.5f)] public float steerDeadzone = 0.01f;
 
-            [Header("Jumping")]
-            [Tooltip("Whether the wizard can jump at all. Switch it OFF and the staff becomes the " +
-                     "only way up: a lip shorter than the step assist below is walked over, and " +
-                     "anything taller has to be climbed. Nothing else that throws the wizard into " +
-                     "the air is affected - a slime, a fling and a bounce all go through Launch " +
-                     "instead - and the Jump button keeps its other job of letting go of a vine, " +
-                     "which is the only way off one. A spell handing out extra jumps cannot bring " +
-                     "it back either.")]
-            public bool canJump = false;
-
-            [Tooltip("Height of a full jump, in boxes. The launch speed is worked out from gravity.")]
-            [Min(0f)] public float jumpHeight = 2f;
-
-            [Tooltip("Grace period after walking off a ledge where a jump still counts. It is " +
-                     "ALSO the window the step assist below works in, so it still earns its keep " +
-                     "with jumping switched off - zero it as a dead jump number and the wizard " +
-                     "stops walking over tile seams as well.")]
-            [Min(0f)] public float coyoteTime = 0.12f;
-
-            [Tooltip("A jump pressed this many seconds before landing still fires on touchdown.")]
-            [Min(0f)] public float jumpBuffer = 0.12f;
-
-            [Tooltip("Upward speed kept when the jump button is released early. Lower = shorter hops.")]
-            [Range(0f, 1f)] public float shortHopMultiplier = 0.45f;
-
             [Header("Falling")]
             [Tooltip("Gravity is multiplied by this while falling, so drops feel weighty.")]
             [Min(0f)] public float fallGravityMultiplier = 1.7f;
@@ -655,6 +628,11 @@ namespace FallingWizard.Player
                      "staff again; at 1.0 or more two-tile walls become free too. 0 turns it off.")]
             [Min(0f)] public float stepHeight = 0.55f;
 
+            [Tooltip("Seconds after leaving the ground that the step assist still works. This is " +
+                     "what carries the wizard over tile seams and small lips instead of catching " +
+                     "on them; at 0 they snag on every seam.")]
+            [Min(0f)] public float stepAssistGrace = 0.12f;
+
             [Tooltip("How far PAST THE TOES to look for that lip, in boxes, and how far forward " +
                      "the step carries them. Roughly one physics step of running - keep it small. " +
                      "Reaching far ahead on a ramp finds a lip as tall as the reach itself, and " +
@@ -702,13 +680,10 @@ namespace FallingWizard.Player
             [NonSerialized] Collider2D hull;
 
             [NonSerialized] float baseGravityScale;
-            [NonSerialized] float coyoteTimer;
-            [NonSerialized] float bufferTimer;
+            [NonSerialized] float stepAssistTimer;
             [NonSerialized] float highestPoint;
             [NonSerialized] float pendingFallDistance;
             [NonSerialized] bool hasLanded;
-            [NonSerialized] bool isRising;
-            [NonSerialized] int airJumpsUsed;
 
             [NonSerialized] bool hasEverBeenGrounded;
             [NonSerialized] bool hasWarnedGroundless;
@@ -798,14 +773,6 @@ namespace FallingWizard.Player
                 ApplySurfaceFriction();
             }
 
-            public void BufferJump(bool jumpPressedThisFrame, float deltaTime)
-            {
-                if (jumpPressedThisFrame)
-                    bufferTimer = jumpBuffer;
-                else
-                    bufferTimer -= deltaTime;
-            }
-
             public void FixedTick(Command command, Modifiers stats, float fixedDeltaTime)
             {
                 lockout -= fixedDeltaTime;
@@ -815,9 +782,6 @@ namespace FallingWizard.Player
                 Run(command, stats, fixedDeltaTime);
 
                 StepUpSmallLedges(command, stats);
-
-                JumpIfBuffered(stats);
-                ApplyShortHop(command.IsJumpHeld);
 
                 ApplyFallGravity(stats);
                 ApplyWindLift(fixedDeltaTime);
@@ -846,8 +810,7 @@ namespace FallingWizard.Player
             {
                 highestPoint = height;
                 IsGrounded = false;
-                coyoteTimer = 0f;
-                isRising = false;
+                stepAssistTimer = 0f;
             }
 
             public void UseBaseGravity() => body.gravityScale = baseGravityScale;
@@ -870,8 +833,6 @@ namespace FallingWizard.Player
                     return;
 
                 body.linearVelocity += velocity;
-                isRising = false;
-
                 isClimbingRamp = false;
 
                 lockout = Mathf.Max(lockout, controlLockout);
@@ -890,7 +851,6 @@ namespace FallingWizard.Player
                 if (sideways != 0f)
                     body.linearVelocityX += sideways;
 
-                isRising = false;
                 isClimbingRamp = false;
 
                 if (!resetsFall)
@@ -898,7 +858,7 @@ namespace FallingWizard.Player
 
                 highestPoint = body.position.y;
                 IsGrounded = false;
-                coyoteTimer = 0f;
+                stepAssistTimer = 0f;
             }
 
             public void FitGroundCheckTo(Collider2D collider2d)
@@ -1083,7 +1043,7 @@ namespace FallingWizard.Player
                     return false;
                 }
 
-                if (isRising || body.linearVelocityY > topSpeed)
+                if (body.linearVelocityY > topSpeed)
                     return false;
 
                 RunAlongRamp(targetSpeed, topSpeed, change);
@@ -1092,7 +1052,7 @@ namespace FallingWizard.Player
 
             void TakeBackLeftoverClimb(bool wasClimbing, float topSpeed)
             {
-                if (wasClimbing && IsGrounded && !isRising &&
+                if (wasClimbing && IsGrounded &&
                     body.linearVelocityY > 0f && body.linearVelocityY <= topSpeed)
                     body.linearVelocityY = 0f;
             }
@@ -1124,7 +1084,7 @@ namespace FallingWizard.Player
                 body.linearVelocityX = platformVelocity.x +
                     Mathf.MoveTowards(speedOverTheGround, targetSpeed, change);
 
-                if (IsGrounded && IsOnMovingPlatform && !isRising)
+                if (IsGrounded && IsOnMovingPlatform)
                     body.linearVelocityY = platformVelocity.y;
             }
 
@@ -1163,7 +1123,7 @@ namespace FallingWizard.Player
                 if (lockout > 0f || stats.IsRooted)
                     return false;
 
-                if (coyoteTimer <= 0f || body.linearVelocityY > 0f)
+                if (stepAssistTimer <= 0f || body.linearVelocityY > 0f)
                     return false;
 
                 return true;
@@ -1194,40 +1154,8 @@ namespace FallingWizard.Player
                 return Physics2D.OverlapBox(overhead, overheadSize, 0f, GroundFilter, Overlaps) <= 0;
             }
 
-            void JumpIfBuffered(Modifiers stats)
-            {
-                if (!canJump)
-                    return;
-
-                bool onGroundOrCoyote = coyoteTimer > 0f;
-                bool hasAirJump = airJumpsUsed < stats.ExtraJumps;
-
-                if (bufferTimer <= 0f || (!onGroundOrCoyote && !hasAirJump))
-                    return;
-
-                if (!onGroundOrCoyote)
-                    airJumpsUsed++;
-
-                bufferTimer = 0f;
-                coyoteTimer = 0f;
-                isRising = true;
-
-                body.linearVelocityY = GetSpeedToRise(jumpHeight * stats.JumpHeightMultiplier);
-            }
-
             float GetSpeedToRise(float height) =>
                 Mathf.Sqrt(KineticEnergyFactor * BaseGravity * height);
-
-            void ApplyShortHop(bool jumpHeld)
-            {
-                if (!isRising || jumpHeld)
-                    return;
-
-                if (body.linearVelocityY > 0f)
-                    body.linearVelocityY *= shortHopMultiplier;
-
-                isRising = false;
-            }
 
             void ApplyFallGravity(Modifiers stats)
             {
@@ -1397,7 +1325,7 @@ namespace FallingWizard.Player
                     "there is nothing on the right layer anywhere near them. " +
                     $"Movement.groundLayers is set to [{ListLayerNames(groundLayers)}], and anything " +
                     "they are meant to stand on must be on one of those layers - tilemaps " +
-                    "included, which start on Default. Jumping, ledge detection and the staff " +
+                    "included, which start on Default. Landing, ledge detection and the staff " +
                     "all read this one mask.");
             }
 
@@ -1425,15 +1353,13 @@ namespace FallingWizard.Player
                     hasLanded = true;
                 }
 
-                coyoteTimer = coyoteTime;
+                stepAssistTimer = stepAssistGrace;
                 highestPoint = body.position.y;
-                airJumpsUsed = 0;
-                isRising = false;
             }
 
             void UpdateWhileInTheAir(float fixedDeltaTime)
             {
-                coyoteTimer -= fixedDeltaTime;
+                stepAssistTimer -= fixedDeltaTime;
                 highestPoint = Mathf.Max(highestPoint, body.position.y);
             }
 
@@ -2780,18 +2706,11 @@ namespace FallingWizard.Player
         public class Modifiers
         {
             public float MoveSpeedMultiplier;
-            public float JumpHeightMultiplier;
             public float FallSpeedMultiplier;
-            public float FallDamageMultiplier;
-            public float WindMultiplier;
 
             public float AirSpeedMultiplier;
             public float AirControlMultiplier;
-
             public float AirDragMultiplier;
-
-            public int ExtraJumps;
-            public bool IsShielded;
 
             public bool IsRooted;
 
@@ -2800,15 +2719,10 @@ namespace FallingWizard.Player
             public void Reset()
             {
                 MoveSpeedMultiplier = 1f;
-                JumpHeightMultiplier = 1f;
                 FallSpeedMultiplier = 1f;
-                FallDamageMultiplier = 1f;
-                WindMultiplier = 1f;
                 AirSpeedMultiplier = 1f;
                 AirControlMultiplier = 1f;
                 AirDragMultiplier = 1f;
-                ExtraJumps = 0;
-                IsShielded = false;
                 IsRooted = false;
             }
         }
@@ -2817,7 +2731,6 @@ namespace FallingWizard.Player
         {
             public Vector2 Move;
             public bool WasJumpPressed;
-            public bool IsJumpHeld;
             public bool IsWalking;
             public bool IsLookingDown;
 
@@ -2826,7 +2739,6 @@ namespace FallingWizard.Player
             public Command Command => new Command
             {
                 Steer = Move.x,
-                IsJumpHeld = IsJumpHeld,
                 IsWalking = IsWalking,
             };
         }
@@ -2834,7 +2746,6 @@ namespace FallingWizard.Player
         public struct Command
         {
             public float Steer;
-            public bool IsJumpHeld;
             public bool IsWalking;
         }
     }

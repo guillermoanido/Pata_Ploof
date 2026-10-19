@@ -12,8 +12,8 @@ namespace FallingWizard.Player
         const string ArtObjectName = "Visual";
 
         [Header("Body")]
-        [Tooltip("Gravity written onto the Rigidbody2D by Reset. 3 with a 2 box jump is the feel " +
-                 "the rest of the tuning assumes.")]
+        [Tooltip("Gravity written onto the Rigidbody2D by Reset. 3 is the feel the rest of the " +
+                 "tuning assumes - every fall, bounce and throw is worked out from it.")]
         [Min(PlayerLogic.Movement.MinGravityScale)] public float gravityScale = 3f;
 
         [Header("Stick Feel")]
@@ -196,7 +196,6 @@ namespace FallingWizard.Player
                 {
                     Move = stick,
                     WasJumpPressed = jumpAction != null && jumpAction.WasPressedThisFrame(),
-                    IsJumpHeld = jumpAction != null && jumpAction.IsPressed(),
                     IsWalking = isWalking,
                     IsLookingDown = secondsHeldDown >= holdSeconds && secondsHeldDown > 0f,
                 };

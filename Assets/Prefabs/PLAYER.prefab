@@ -144,11 +144,6 @@ MonoBehaviour:
       groundFriction: 40
       airControl: 0.7
       steerDeadzone: 0.01
-      canJump: 0
-      jumpHeight: 1.5
-      coyoteTime: 0.12
-      jumpBuffer: 0.12
-      shortHopMultiplier: 0.45
       fallGravityMultiplier: 1.7
       maxFallSpeed: 16
       groundLayers:
@@ -166,6 +161,7 @@ MonoBehaviour:
       flatSlopeAngle: 3
       slopeProbeDepth: 0.5
       stepHeight: 0.55
+      stepAssistGrace: 0.12
       stepReach: 0.1
       hopClearance: 0.15
       hopForward: 1

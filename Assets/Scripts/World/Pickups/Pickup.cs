@@ -3,15 +3,18 @@ using FallingWizard.Core;
 using FallingWizard.Player;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Serialization;
 
 namespace FallingWizard.World
 {
-    [RequireComponent(typeof(Collider2D))]
-    public abstract class Pickup : PlayerTrigger
+    public class Pickup : Item
     {
         const float KeySteps = 4f;
 
         const float FullCircle = Mathf.PI * 2f;
+
+        const string WispPrefix = "wisp";
+        const string HeartPrefix = "heart";
 
         [Header("Identity")]
         [Tooltip("Leave empty and this pickup is remembered by where it stands, which survives " +
@@ -32,13 +35,27 @@ namespace FallingWizard.World
         [Tooltip("Optional prefab spawned where it stood.")]
         public GameObject collectedEffect;
 
+        [Header("Gift")]
+        [Tooltip("What the wizard gets here. Wisps are carried, and kept only by reaching a rest " +
+                 "site and turning back. A Heart is added to their health for good, and is never " +
+                 "here again.")]
+        public Gift gives = Gift.Wisps;
+
+        [Tooltip("How many. For Wisps, the wisps carried away from here - die anywhere below " +
+                 "before turning back and they are gone. For a Heart, the hearts added to the " +
+                 "wizard's health, so the hat takes longer to wear down. They are healed on the " +
+                 "spot, they survive dying and turning back, and this heart is never here again - " +
+                 "which is why the next one has to be found somewhere deeper.")]
+        [FormerlySerializedAs("hearts")]
+        [Min(1)] public int amount = 1;
+
+        [Tooltip("Hearts only. Wisps given instead when the wizard already has as many hearts as " +
+                 "they can ever get. Never leave a player standing over dead loot.")]
+        [Min(0)] public int wispsIfFull = 3;
+
         [NonSerialized] string key;
         [NonSerialized] Transform visual;
         [NonSerialized] Vector3 restingPoint;
-
-        protected abstract string Prefix { get; }
-
-        protected abstract StaysTaken StaysTaken { get; }
 
         string Key
         {
@@ -51,9 +68,11 @@ namespace FallingWizard.World
             }
         }
 
-        void Reset() => GetComponent<Collider2D>().isTrigger = true;
+        string Prefix => gives == Gift.Heart ? HeartPrefix : WispPrefix;
 
-        protected virtual void Awake()
+        StaysTaken StaysTaken => gives == Gift.Heart ? StaysTaken.ForGood : StaysTaken.OnceBanked;
+
+        void Awake()
         {
             if (Progress.IsGone(Key))
             {
@@ -73,7 +92,7 @@ namespace FallingWizard.World
             visual.localPosition = restingPoint + new Vector3(0f, rise, 0f);
         }
 
-        protected sealed override void OnPlayerEntered(PlayerCharacter wizard)
+        protected override void OnPlayerEntered(PlayerCharacter wizard)
         {
             if (!wizard.Logic.health.IsAlive || !TryTake(wizard))
                 return;
@@ -85,8 +104,6 @@ namespace FallingWizard.World
 
             Destroy(gameObject);
         }
-
-        protected abstract bool TryTake(PlayerCharacter wizard);
 
         string BuildKey()
         {
@@ -111,6 +128,38 @@ namespace FallingWizard.World
 
             visual = art.transform;
             restingPoint = visual.localPosition;
+        }
+
+        bool TryTake(PlayerCharacter wizard)
+        {
+            switch (gives)
+            {
+                case Gift.Heart:
+                    return TryTakeHeart(wizard);
+                default:
+                    return TryTakeWisps();
+            }
+        }
+
+        bool TryTakeWisps()
+        {
+            Progress.CarryWisps(amount);
+            return true;
+        }
+
+        bool TryTakeHeart(PlayerCharacter wizard)
+        {
+            if (wizard.Logic.TryGrowHeart(amount))
+                return true;
+
+            Progress.CarryWisps(wispsIfFull);
+            return true;
+        }
+
+        public enum Gift
+        {
+            Wisps,
+            Heart,
         }
     }
 }

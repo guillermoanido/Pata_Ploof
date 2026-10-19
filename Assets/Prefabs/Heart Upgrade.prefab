@@ -79,7 +79,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 678188512}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7bc1cbcbc05d1e7408adc7c71e621296, type: 3}
+  m_Script: {fileID: 11500000, guid: 5eb77a79f47b9c74abe50adc5c8706ff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   id: 
@@ -87,7 +87,8 @@ MonoBehaviour:
   bobHeight: 0.1
   bobSpeed: 1
   collectedEffect: {fileID: 0}
-  hearts: 1
+  gives: 1
+  amount: 1
   wispsIfFull: 3
 --- !u!1 &678188516
 GameObject:

@@ -78,7 +78,6 @@ namespace FallingWizard.EditorTools
             LevelExit exit = FindFirst<LevelExit>(scene);
 
             RemoveTheLevel(scene, exit);
-            RemoveTheBackground(scene);
             LayAFloorUnder(scene, wizard);
             PlaceTheExitAhead(exit, wizard);
         }
@@ -126,22 +125,6 @@ namespace FallingWizard.EditorTools
 
             return false;
         }
-
-        static void RemoveTheBackground(Scene scene)
-        {
-            foreach (GameObject root in scene.GetRootGameObjects())
-            {
-                foreach (ParallaxLayer layer in root.GetComponentsInChildren<ParallaxLayer>(true))
-                {
-                    if (CanBeRemoved(layer.gameObject))
-                        Object.DestroyImmediate(layer.gameObject);
-                }
-            }
-        }
-
-        static bool CanBeRemoved(GameObject target) =>
-            !PrefabUtility.IsPartOfPrefabInstance(target) ||
-            PrefabUtility.IsOutermostPrefabInstanceRoot(target);
 
         static void LayAFloorUnder(Scene scene, PlayerCharacter wizard)
         {

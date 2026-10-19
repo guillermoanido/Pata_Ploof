@@ -288,7 +288,10 @@ namespace FallingWizard.Core
         public static void ResetSave()
         {
             Clear();
-            SaveFile.Delete(FileName);
+
+            if (SaveFile.Delete(FileName))
+                UnblockSaving();
+
             DeleteLegacyPlayerPrefs();
         }
 
@@ -300,16 +303,6 @@ namespace FallingWizard.Core
             Clear();
             isSandbox = true;
             IsSandboxSeeded = true;
-        }
-
-        public static void ForgetAll()
-        {
-            if (SaveFile.Delete(FileName))
-                UnblockSaving();
-
-            DeleteLegacyPlayerPrefs();
-
-            Clear();
         }
 
         static void PayWisps(int cost)

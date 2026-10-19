@@ -30,6 +30,9 @@ namespace FallingWizard.EditorTools
 
         const float DropRadius = 0.15f;
 
+        const int GlassCutDamage = 1;
+        const float GlassCutCooldown = 1f;
+
         const float Half = 0.5f;
 
         static readonly Vector2 SteamColumnSize = new Vector2(1f, 3f);
@@ -246,7 +249,12 @@ namespace FallingWizard.EditorTools
             AddTriggerBox(root, GlassZoneSize, GlassZoneCentre);
             AddArt(root, ArtName, ShardsSize, ShardsCentre, ShardsColour);
 
-            ObjectFactory.AddComponent<BrokenGlass>(root);
+            var glass = ObjectFactory.AddComponent<Hazard>(root);
+            glass.damage = GlassCutDamage;
+            glass.rearmDelay = GlassCutCooldown;
+            glass.everyStep = true;
+            glass.ignoresWalking = true;
+            glass.affectsRagdolled = true;
         }
 
         static void AddTriggerBox(GameObject root, Vector2 size, Vector2 offset)

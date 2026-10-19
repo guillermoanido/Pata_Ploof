@@ -71,10 +71,6 @@ namespace FallingWizard.Player
         [FormerlySerializedAs("usesPerRun")]
         [Min(0)] public int usesPerLevel = 0;
 
-        [Header("Pickup")]
-        [Tooltip("Optional prefab spawned where the shrine was, for a puff of sparkles.")]
-        public GameObject collectedEffect;
-
         [Header("Upgrades")]
         [Tooltip("One entry per rank past the first. Element 0 is what rank 2 costs and what it " +
                  "buys, in the player's words. Leave it empty for a spell that never upgrades. " +

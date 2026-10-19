@@ -31,7 +31,7 @@ coming back down it can never hurt you.
 | `Player/` | `PlayerCharacter` (the Unity side), `PlayerLogic` (everything the wizard does), `Staff`, `PlayerAnimator`, `HealthLook`, `RagdollBumps` |
 | `Player/Abilities/` | `Ability` and the spells, `AbilityBook`, `AbilityShrine` |
 | `Localization/` | `Loc`, `TextBook`, `LocalizedText` |
-| `World/` | `PlayerTrigger`, `Hazard` and the seven hazards, `Pickup`, `TileGrid`, `FollowCamera` |
+| `World/` | `Item` (the base of everything the wizard touches) and `TileGrid`, with subfolders: `Hazards/` (`Hazard`, `TripHazard`, `Slime`, `SteamVent`, `WaxDrop`, `WaxCandle`, `PressurePlate`), `Zones/` (`Zone`, `WindZone2D`, `WindTrap`, `SlipperyFloor`), `Pickups/` (`Pickup`, `AbilityShrine`), `Level/` (`Checkpoint`, `RestSite`, `LevelExit`, `MovingPlatform`, `VineAnchor`, `Carryable`), `Camera/` (`FollowCamera`, `ParallaxLayer`) |
 | `UI/` | `PlayerHud`, `HudSlot`, `FlingArrow`, `Ui` and the runtime screens |
 | `Menus/`, `Cutscenes/` | `MenuScreen` and the three menus; `CutsceneRunner` |
 
@@ -75,7 +75,7 @@ Every script follows the same six rules, so any one of them reads like the rest:
 2. **Small, simple methods.** One job each, about 20 lines at most, early `return`s instead of deep
    nesting. Plain loops, not LINQ; `if (x != null)`, not `?.`, on anything Unity owns.
 3. **Objects own their data.** Anything another script does not need is `private`, and shared
-   behaviour lives in a base class: `PlayerTrigger`, `Hazard`, `Pickup`, `Ability`, `MenuScreen`.
+   behaviour lives in a base class: `Item`, `Zone`, `Hazard`, `Checkpoint`, `Ability`, `MenuScreen`.
 4. **The same order in every class:**
    - constants
    - Inspector fields
@@ -329,13 +329,16 @@ whole economy:
 | `carrying` | the Wisps riding on you right now | **dying**, or banking |
 | `spent` | pickups whose value you actually kept | never |
 
-`Pickup.Awake` destroys itself if the id is in `found` **or** `spent`, and each pickup says how
-long being taken lasts:
+There is **one `Pickup` script** for every collectable. Its **Gives** setting picks what it is, and
+**Amount** says how much. `Pickup.Awake` destroys it if its id is in `found` **or** `spent`, and
+what it gives decides how long being taken lasts:
 
-| | `StaysTaken` | What it means |
+| Gives | `StaysTaken` | What it means |
 | --- | --- | --- |
-| `WispPickup` | `OnceBanked` | Rides in `carrying`. **Bank it and that Wisp is gone from the world forever.** Die first and it never reaches `spent`, so it is standing there again next run. |
-| `HeartPickup` | `ForGood` | Into `spent` the instant it is touched. One heart, once, permanently. |
+| Wisps | `OnceBanked` | Rides in `carrying`. **Bank it and that Wisp is gone from the world forever.** Die first and it never reaches `spent`, so it is standing there again next run. |
+| Heart | `ForGood` | Into `spent` the instant it is touched. One heart, once, permanently. |
+
+To add a new kind of collectable, add a value to `Pickup.Gift` and a short `TryTake…` method for it.
 
 So a level does not refill. Bank Level 1's Wisps and Level 1 has no more Wisps to give — you go
 deeper for the next ones. What Level 1 *does* still have is the parts of it you could not reach,
@@ -348,10 +351,10 @@ losing the pickup, so a bad run is repeatable and a greedy one is not free.
 Max HP is permanent and one-way. The highest **Health Look** under the wizard is what a brand new
 save starts with (see Health below) and `Health.maxBonusHearts` caps what can ever be added on top
 of it, across the whole save. A
-`HeartPickup` that finds the bar already at that cap pays out in Wisps instead — never leave a
-player standing over dead loot — and is spent all the same, so there is no heart to farm.
+heart pickup that finds the bar already at that cap pays out `wispsIfFull` Wisps instead — never
+leave a player standing over dead loot — and is spent all the same, so there is no heart to farm.
 
-`WispPickup` and `HeartPickup` both derive from `Pickup`, which remembers itself by **where it
+A `Pickup` remembers itself by **where it
 stands** (quarter-box resolution, scene-qualified) unless you type an `id`. That survives renaming
 and re-parenting; moving one makes it a new pickup. Give two pickups sharing a spot explicit ids.
 
@@ -720,10 +723,10 @@ flat colour, so each one is visible the moment it lands and is waiting for a spr
 | --- | --- | --- |
 | `Wisp` | The currency. Banking it spends it for good. | Default |
 | `Heart Upgrade` | +1 max HP, permanently, once ever. | Default |
-| `Wet Floor Sign` | Trips a runner. `minimumSpeed` 3, so a walk is safe. | Hazard |
-| `Rake` | Trips you BACKWARDS, the way you came. | Hazard |
+| `Wet Floor Sign` | `TripHazard`: trips a runner. `minimumSpeed` 3, so a walk is safe. | Hazard |
+| `Rake`, `Rake 1` | `TripHazard` aimed Left or Right: trips you BACKWARDS, the way you came. | Hazard |
 | `Ice` | Ground that does not hold you. Nothing else changes. | Hazard |
-| `Stairs` | Lay it over a staircase. Take them fast and you tumble down them. | Hazard |
+| `Stairs` | `TripHazard`: lay it over a staircase. Take them fast and you tumble down them. | Hazard |
 | `Slime` | Bounces you three boxes and sends you tumbling. | Hazard |
 | `Wind` | Pushes you the way its arrows point. Rotate it to aim it. | Hazard |
 | `Wind Trap` | The same push, on a timer, with a Warning Look and a Blowing Look. | Hazard |
@@ -743,11 +746,12 @@ box in them is a child called `Stand-in`: put your art beside it and delete it.
 | `Wax Drop` | Hangs as a warning, falls, burns whoever it lands on. | Hazard |
 | `Moving Platform` | Slides along `travel` and back, carrying the wizard. | **Ground** |
 | `Pressure Plate` | Stand on it for a second and it throws you up. | Hazard |
-| `Broken Glass` | Cuts you every second you are on it, unless you walk. | Hazard |
+| `Broken Glass` | A plain `Hazard`: cuts you every second you are on it, unless you walk. | Hazard |
 
 The ones on **Ground** are there because the wizard has to be able to stand on them, and the ground
-check only looks at that layer. The seven on **Hazard** are triggers you pass straight through —
-`Hazard.passThrough` sets that on Awake, so ticking the box fixes one already placed.
+check only looks at that layer. The ones on **Hazard** are triggers you pass straight through.
+`Hazard.passThrough` sets that on Awake, so ticking the box fixes one already placed, and wind and
+ice are triggers in their prefabs.
 
 `Stone Wall` is shaped the way the spell needs: the root carries nothing and the **first child**
 carries the sprite and collider, one box square and centred on itself. The spell moves that child
@@ -815,7 +819,8 @@ means the pickups they came from are waiting for you again. Only the permanent t
 the old save it is also **read back** — `Progress.Load()` runs on `BeforeSceneLoad`, after
 `ResetOnPlay` clears the statics. The previous save was write-only: three keys were written on
 every checkpoint and nothing ever called `Load()`, so banked anything would have quietly evaporated
-on the next launch. `Progress.ForgetAll()` wipes it.
+on the next launch. `Progress.ResetSave()` (Settings ▸ Reset Save) wipes it, and lets saving start
+again if the old file could not be read.
 
 **Where it is written.** The permanent tier is pretty-printed JSON in `<project>/Saves/progress.json`
 — beside `Assets`, so it is in the working copy where you can open it, read it and diff it. It used
@@ -1043,15 +1048,34 @@ from under you.
 
 ## Hazards
 
+**The family tree.** Everything the wizard touches starts from `Item`:
+
+```
+Item                      finds the wizard in its trigger; shared Look helpers
+├── Zone                  something you are INSIDE: Affects On Staff, Affects Ragdolled
+│   ├── Hazard            catches you: speed gate, re-arm, damage, walking (a plain Hazard just hurts)
+│   │   ├── TripHazard    trips you - wet floor sign, stairs, rakes
+│   │   ├── Slime         bounces you
+│   │   ├── SteamVent     burns on a timer
+│   │   └── WaxDrop       falls and burns
+│   ├── WindZone2D        pushes you (WindTrap: on a timer)
+│   └── SlipperyFloor     takes your grip
+├── Pickup                collectables: Gives Wisps or a Heart
+├── Checkpoint            where you come back (RestSite: also offers a rest)
+└── LevelExit             the way out
+```
+
+A hazard only gets its own script when it **does** something different. Hazards that only differ in
+numbers share one script, and the prefab holds the numbers: the wet floor sign, the stairs and both
+rakes are all `TripHazard`, and broken glass is a plain `Hazard`.
+
 | | What it is | Notes |
 | --- | --- | --- |
-| `WetFloorSign` | A wet patch you clip at a run | `minimumSpeed` 3 means a run trips and a walk does not. |
-| `Rake` | Tread on it, go down backwards | The one hazard that reverses you, and deliberately the only one. |
+| `TripHazard` | Something you clip at a run | `minimumSpeed` 3 means a run trips and a walk does not. **Aim** sets the way you go down: the way you were running (wet floor, stairs), Left or Right (the rakes, which throw you back the way you came), or the way its art faces. **Extra Kick** and **Extra Lift** add a shove on top. |
 | `SlipperyFloor` | Ground that does not hold you | Calls `Slicken` every step you are in it; nothing to leave, because not calling IS leaving. |
 | `Slime` | Fall into it, get thrown back up | Launches you on the way past. |
 | `WindZone2D` | A volume that pushes you | One `Vector2` covers left, right, up and down. `groundScale` decides how much you feel with both feet down. |
 | `WindTrap` | A `WindZone2D` on a timer | Shuts, warns, then blows. `Blast` is a one-off `Shove`; the rest is the base class's steady `Push`. |
-| `Stairs` | A stretch of floor that is a staircase | `minimumSpeed` 3 and `everyStep` on: a walk or a jog goes up and down them, a run puts you on your face. |
 
 **Nothing on the Hazard layer blocks you.** `Hazard.passThrough` is on by default and applied on
 `Awake`, so hazards are things you pass straight through that do something to you on the way, not
@@ -1060,23 +1084,24 @@ so a *solid* hazard there would be something the wizard comes to rest on while t
 believes they are falling — no jump, and no way out of a tumble, since a ragdoll only recovers once
 grounded. Ticking `passThrough` off is supported, but move it off layer 8 if you do.
 
-All seven sit on `Hazard`, which handles speed gating, re-arming, damage, and whether it can reach
-a wizard who is on their staff or already tumbling. **Adding hazard #8 is one subclass with one
-`Affect` method.**
+`Hazard` handles speed gating, re-arming and damage. `Zone` decides whether it can reach a wizard
+who is on their staff or already tumbling. **A new hazard that only hurts needs no script at all:**
+use a plain `Hazard`. One that does something new is one subclass with one `Affect` method.
 
 **`Hazard.everyStep` is the difference between a thing and a place.** Off — the default — it fires
 once, on the way in, which is right for anything you HIT: a slime, a rake, a sign. On, it is asked
 every physics step you are inside it, which is right for a stretch of floor, where breaking into a
 run half way along has to count for as much as arriving at a run. `rearmDelay` is what stops it
-firing fifty times a second. `SlipperyFloor` and `WindZone2D` are continuous by their own override
-and deliberately skip the gate entirely — a floor cannot be dodged by being slow.
+firing fifty times a second. `SlipperyFloor` and `WindZone2D` are `Zone`s, not hazards: they act
+every step you are inside them and have no gate at all — a floor cannot be dodged by being slow.
+That is also why they no longer show the Hazard settings, which did nothing on them.
 
 ### Stairs
 
 The steps themselves are **tilemap**, not the hazard. `Movement` already walks them: the slope
-handling steers along the face and the step assist carries the wizard over each tread. `Stairs` is
-a trigger box you lay over the top saying *this stretch of floor is a staircase*, and all it does
-is `TryTrip()` above `minimumSpeed`.
+handling steers along the face and the step assist carries the wizard over each tread. The `Stairs`
+prefab is a `TripHazard` trigger box you lay over the top saying *this stretch of floor is a
+staircase*, and all it does is `TryTrip()` above `minimumSpeed`.
 
 That gives the whole rule in two numbers a designer can see: **run at them and you go down them the
 way you were already travelling; walk, or jog, and you go up and down without noticing.** The
@@ -1114,7 +1139,7 @@ Two things worth knowing:
 
 - Hazards go on **layer 8 (Hazard)** and at the **scene root**. Several platforms in the test level
   carry non-uniform scales that would squash anything parented under them.
-- `PlayerTrigger` filters contacts down to the wizard's body collider. The wizard emits two
+- `Item` filters contacts down to the wizard's body collider. The wizard emits two
   colliders — their body and the staff's trigger, which shares their rigidbody — so without that
   filter every hazard would fire twice.
 
@@ -1222,7 +1247,7 @@ steampunk hazards, tilemap collision). Everything else is set up by hand:
 
 A `Grid` is a coordinate system. A collider or a rigidbody on one is always a mistake.
 
-**Hazards.** A trigger collider plus one of the six above, on layer **Hazard**, at the
+**Hazards.** A trigger collider plus one of the hazard scripts above, on layer **Hazard**, at the
 scene root — several platforms carry non-uniform scales that would squash a child.
 `Hazard.passThrough` sets the collider to a trigger on Awake, so an existing one is fixed by
 ticking a box.
