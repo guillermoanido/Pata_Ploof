@@ -66,37 +66,12 @@ namespace FallingWizard.Player
 
         public override void OnEquipped(PlayerLogic wizard) => ShowCanopy(wizard, false);
 
-        public override void OnRunReset(PlayerLogic wizard) => ShowCanopy(wizard, false);
-
-        public override void OnUnequipped(PlayerLogic wizard) => ShowCanopy(wizard, false);
-
         protected override void Validate() => ValidateTiers(tiers);
 
-        void ShowCanopy(PlayerLogic wizard, bool shown)
-        {
-            GameObject canopy = FindCanopy(wizard);
+        protected override void CleanUp(PlayerLogic wizard) => ShowCanopy(wizard, false);
 
-            if (canopy != null)
-                canopy.SetActive(shown);
-        }
-
-        GameObject FindCanopy(PlayerLogic wizard)
-        {
-            Wing wing = wizard.spellbook.StateOf<Wing>(this);
-
-            if (wing.hasSearched || wizard.Rig == null)
-                return wing.canopy;
-
-            wing.hasSearched = true;
-            wing.canopy = FindChildNamed(wizard.Rig, CanopyName);
-
-            if (wing.canopy == null)
-                Debug.LogWarning($"'{name}' found nothing called '{CanopyName}' under the " +
-                                 "wizard, so the canopy will not show. Place your canopy art " +
-                                 "under the wizard's Visual object with exactly that name.", this);
-
-            return wing.canopy;
-        }
+        void ShowCanopy(PlayerLogic wizard, bool isShown) =>
+            wizard.spellbook.StateOf<Wing>(this).canopy.Show(wizard, this, isShown);
 
         [System.Serializable]
         public class Tier : ITier
@@ -120,8 +95,7 @@ namespace FallingWizard.Player
 
         class Wing
         {
-            public GameObject canopy;
-            public bool hasSearched;
+            public readonly WizardEffect canopy = new WizardEffect(CanopyName);
             public bool hasFlown;
         }
     }

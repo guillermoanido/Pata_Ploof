@@ -130,9 +130,9 @@ namespace FallingWizard.Player
 
         public virtual void OnEquipped(PlayerLogic wizard) { }
 
-        public virtual void OnUnequipped(PlayerLogic wizard) { }
+        public virtual void OnUnequipped(PlayerLogic wizard) => CleanUp(wizard);
 
-        public virtual void OnRunReset(PlayerLogic wizard) { }
+        public virtual void OnRunReset(PlayerLogic wizard) => CleanUp(wizard);
 
         public virtual void ModifyStats(PlayerLogic wizard, PlayerLogic.Modifiers stats) { }
 
@@ -161,6 +161,8 @@ namespace FallingWizard.Player
         public virtual void OnEnded(PlayerLogic wizard) { }
 
         protected virtual void Validate() { }
+
+        protected virtual void CleanUp(PlayerLogic wizard) { }
 
         protected void ValidateTiers(ITier[] tiers)
         {
@@ -217,6 +219,39 @@ namespace FallingWizard.Player
         protected interface ITier
         {
             void Validate();
+        }
+
+        protected class WizardEffect
+        {
+            readonly string effectName;
+            GameObject found;
+            bool hasSearched;
+
+            public WizardEffect(string name) => effectName = name;
+
+            public GameObject Find(PlayerLogic wizard, Ability spell)
+            {
+                if (hasSearched || wizard.Rig == null)
+                    return found;
+
+                hasSearched = true;
+                found = FindChildNamed(wizard.Rig, effectName);
+
+                if (found == null)
+                    Debug.LogWarning($"'{spell.name}' found nothing called '{effectName}' under " +
+                                     "the wizard, so its effect will not show. Place your effect " +
+                                     "under the wizard with exactly that name.", spell);
+
+                return found;
+            }
+
+            public void Show(PlayerLogic wizard, Ability spell, bool isShown)
+            {
+                GameObject effect = Find(wizard, spell);
+
+                if (effect != null)
+                    effect.SetActive(isShown);
+            }
         }
     }
 }

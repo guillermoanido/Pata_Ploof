@@ -4,14 +4,9 @@ using UnityEngine;
 
 namespace FallingWizard.World
 {
-    public abstract class Hazard : PlayerTrigger
+    public class Hazard : Zone
     {
         protected const float RunningOnly = 3f;
-
-        protected const float Epsilon = 0.0001f;
-
-        protected const float UnselectedGizmo = 0.5f;
-        protected const float SelectedGizmo = 1f;
 
         [Header("Hazard")]
         [Tooltip("Hazards are things you pass straight through that do something to you on the " +
@@ -46,13 +41,6 @@ namespace FallingWizard.World
         [Tooltip("Hearts taken on contact. 0 for hazards that only shove you around.")]
         [Min(0)] public int damage = 0;
 
-        [Tooltip("Can this reach the wizard while they hang on their staff? Off makes the staff " +
-                 "a safe perch.")]
-        public bool affectsOnStaff = false;
-
-        [Tooltip("Can this hit a wizard who is already tumbling?")]
-        public bool affectsRagdolled = false;
-
         [Tooltip("Let a WALKING wizard pass untouched. This reads the walk button rather than a " +
                  "speed, so it still fires on a wizard who is falling onto it or shoved into it, " +
                  "and it cannot be fooled by Haste - which lifts a walk to the same 3 boxes a " +
@@ -75,27 +63,12 @@ namespace FallingWizard.World
 
         public void Disarm(float seconds) => readyAt = Time.time + Mathf.Max(0f, seconds);
 
-        protected abstract void Affect(PlayerLogic wizard);
+        protected virtual void Affect(PlayerLogic wizard) { }
 
         protected sealed override void OnPlayerEntered(PlayerCharacter wizard) => Catch(wizard);
 
         protected override void OnPlayerInside(PlayerCharacter wizard, float fixedDeltaTime) =>
             Catch(wizard);
-
-        protected bool CanAffect(PlayerCharacter wizard)
-        {
-            PlayerLogic logic = wizard.Logic;
-
-            return logic.health.IsAlive &&
-                   (affectsOnStaff || logic.State != PlayerState.OnStaff) &&
-                   (affectsRagdolled || logic.State != PlayerState.Ragdoll);
-        }
-
-        protected static Color MakeFaded(Color colour, float strength)
-        {
-            colour.a *= strength;
-            return colour;
-        }
 
         void Catch(PlayerCharacter wizard)
         {

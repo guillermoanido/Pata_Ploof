@@ -54,8 +54,10 @@ namespace FallingWizard.World
 
         ContactFilter2D GroundFilter => Layers.MakeSolidOnlyFilter(groundLayers);
 
-        void Reset()
+        protected override void Reset()
         {
+            base.Reset();
+
             damage = BurnDamage;
             affectsOnStaff = true;
             affectsRagdolled = true;

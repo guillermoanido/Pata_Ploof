@@ -5,13 +5,21 @@ using UnityEngine;
 namespace FallingWizard.World
 {
     [RequireComponent(typeof(Collider2D))]
-    public abstract class PlayerTrigger : MonoBehaviour
+    public abstract class Item : MonoBehaviour
     {
         const float NoStepYet = -1f;
 
         [NonSerialized] float lastStep = NoStepYet;
 
         protected virtual bool IsContinuous => false;
+
+        protected virtual void Reset()
+        {
+            var hitbox = GetComponent<Collider2D>();
+
+            if (hitbox != null)
+                hitbox.isTrigger = true;
+        }
 
         void OnTriggerEnter2D(Collider2D other) => NotifyIfPlayerEntered(other);
 
@@ -32,6 +40,15 @@ namespace FallingWizard.World
         protected abstract void OnPlayerEntered(PlayerCharacter wizard);
 
         protected virtual void OnPlayerInside(PlayerCharacter wizard, float fixedDeltaTime) { }
+
+        protected static void ShowLook(GameObject look, bool isShown)
+        {
+            if (look != null)
+                look.SetActive(isShown);
+        }
+
+        protected bool WouldSwitchItselfOff(GameObject look) =>
+            look != null && transform.IsChildOf(look.transform);
 
         void NotifyIfPlayerEntered(Collider2D other)
         {

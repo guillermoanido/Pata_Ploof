@@ -106,9 +106,7 @@ namespace FallingWizard.Player
 
         public override void OnEnded(PlayerLogic wizard) => RemoveWall(wizard);
 
-        public override void OnRunReset(PlayerLogic wizard) => RemoveWall(wizard);
-
-        public override void OnUnequipped(PlayerLogic wizard) => RemoveWall(wizard);
+        protected override void CleanUp(PlayerLogic wizard) => RemoveWall(wizard);
 
         void RemoveWall(PlayerLogic wizard)
         {

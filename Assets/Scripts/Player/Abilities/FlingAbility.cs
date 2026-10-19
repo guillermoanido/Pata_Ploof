@@ -92,10 +92,6 @@ namespace FallingWizard.Player
         public override void OnEquipped(PlayerLogic wizard) =>
             HideArrow(wizard, wizard.spellbook.StateOf<Aiming>(this));
 
-        public override void OnRunReset(PlayerLogic wizard) => StopAiming(wizard);
-
-        public override void OnUnequipped(PlayerLogic wizard) => StopAiming(wizard);
-
         protected override void Validate()
         {
             highestAngle = Mathf.Max(lowestAngle, highestAngle);
@@ -103,6 +99,8 @@ namespace FallingWizard.Player
 
             ValidateTiers(tiers);
         }
+
+        protected override void CleanUp(PlayerLogic wizard) => StopAiming(wizard);
 
         void StartAiming(Aiming aiming)
         {

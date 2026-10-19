@@ -1,10 +1,9 @@
-using System;
 using FallingWizard.Player;
 using UnityEngine;
 
 namespace FallingWizard.World
 {
-    public class SlipperyFloor : Hazard
+    public class SlipperyFloor : Zone
     {
         const int SkidMarks = 6;
         const int SkidRows = 2;
@@ -39,50 +38,21 @@ namespace FallingWizard.World
                  "grip, so ice draws long streaks and a damp flagstone draws stubs.")]
         public bool alwaysShowSkids = true;
 
-        [NonSerialized] bool hasWarnedAboutSpeedGate;
-
-        protected override bool IsContinuous => true;
-
-        void Reset()
+        protected override void Reset()
         {
-            minimumSpeed = 0f;
-            rearmDelay = 0f;
-            damage = 0;
+            base.Reset();
             affectsRagdolled = true;
         }
 
-        void OnValidate() => WarnAboutSpeedGate();
+        protected override void OnPlayerEntered(PlayerCharacter wizard) => SlickenIfAffected(wizard);
 
-        protected override void Awake()
+        protected override void OnPlayerInside(PlayerCharacter wizard, float fixedDeltaTime) =>
+            SlickenIfAffected(wizard);
+
+        void SlickenIfAffected(PlayerCharacter wizard)
         {
-            base.Awake();
-            WarnAboutSpeedGate();
-        }
-
-        protected override void Affect(PlayerLogic wizard) => wizard.Slicken(grip);
-
-        protected override void OnPlayerInside(PlayerCharacter wizard, float fixedDeltaTime)
-        {
-            if (!CanAffect(wizard))
-                return;
-
-            wizard.Logic.Slicken(grip);
-        }
-
-        void WarnAboutSpeedGate()
-        {
-            if (minimumSpeed <= 0f || hasWarnedAboutSpeedGate)
-                return;
-
-            hasWarnedAboutSpeedGate = true;
-
-            Debug.LogWarning(
-                $"{name}: SlipperyFloor.minimumSpeed is {minimumSpeed}, but a slippery floor " +
-                "works every step you are stood in it and that per-step path is not speed " +
-                "gated. The number cannot make a patch safe to walk across - all it does is " +
-                "skip the first step of contact. Set it to 0. Walking is already four times " +
-                "safer than running on ice on its own, because a walk tops out at half the " +
-                "speed and stopping distance goes as the square of it.");
+            if (CanAffect(wizard))
+                wizard.Logic.Slicken(grip);
         }
 
         void OnDrawGizmos()

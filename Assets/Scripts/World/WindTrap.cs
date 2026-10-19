@@ -193,10 +193,8 @@ namespace FallingWizard.World
 
         void OnValidate() => Validate();
 
-        protected override void Awake()
+        void Awake()
         {
-            base.Awake();
-
             Validate();
             SwitchLooks(IsWindingUp, IsOpen);
         }
@@ -240,6 +238,7 @@ namespace FallingWizard.World
             WarnAboutSettingsLeftAtZero();
             WarnAboutTheShutterTravel();
             WarnAboutTumblingWizards();
+            WarnAboutLooksThatSwitchTheTrapOff();
         }
 
         void WarnAboutSettingsLeftAtZero()
@@ -280,6 +279,15 @@ namespace FallingWizard.World
                                  "Tumble Scale.", this);
         }
 
+        void WarnAboutLooksThatSwitchTheTrapOff()
+        {
+            if (WouldSwitchItselfOff(warningLook) || WouldSwitchItselfOff(blowingLook))
+                Debug.LogWarning("WindTrap has a Look that is the trap itself or one of its " +
+                                 "parents, so switching that look off would switch the whole " +
+                                 "trap off with it. Make the art a child of the trap and drag " +
+                                 "the child in instead.", this);
+        }
+
         void AdvanceTheCycle()
         {
             clock += hasteSlowsCycle ? Haste.DeltaTime : Time.deltaTime;
@@ -306,11 +314,8 @@ namespace FallingWizard.World
             isShowingWarning = warning;
             isShowingBlowing = blowing;
 
-            if (warningLook != null)
-                warningLook.SetActive(warning);
-
-            if (blowingLook != null)
-                blowingLook.SetActive(blowing);
+            ShowLook(warningLook, warning);
+            ShowLook(blowingLook, blowing);
         }
 
         void Blast(PlayerLogic wizard)

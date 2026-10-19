@@ -74,16 +74,14 @@ namespace FallingWizard.Player
             return true;
         }
 
-        public override void OnRunReset(PlayerLogic wizard) => LetGo(wizard);
-
-        public override void OnUnequipped(PlayerLogic wizard) => LetGo(wizard);
-
         protected override void Validate()
         {
             graspRange = Mathf.Clamp(graspRange, ShortestGrasp, LongestGrasp);
 
             ValidateTiers(tiers);
         }
+
+        protected override void CleanUp(PlayerLogic wizard) => LetGo(wizard);
 
         PlayerLogic.Vine.Hold DescribeHold(PlayerLogic wizard, VineAnchor vine)
         {

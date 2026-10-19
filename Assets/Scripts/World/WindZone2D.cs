@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace FallingWizard.World
 {
-    public class WindZone2D : Hazard
+    public class WindZone2D : Zone
     {
         const float ArrowLengthPerBox = 0.25f;
         const float ArrowLengthOfZone = 0.4f;
@@ -43,16 +43,13 @@ namespace FallingWizard.World
 
         protected Vector2 WorldPush => TurnWithThisObject(push);
 
-        protected override bool IsContinuous => true;
-
-        protected virtual void Reset()
+        protected override void Reset()
         {
-            rearmDelay = 0f;
-            damage = 0;
+            base.Reset();
             affectsRagdolled = true;
         }
 
-        protected override void Affect(PlayerLogic wizard) { }
+        protected override void OnPlayerEntered(PlayerCharacter wizard) { }
 
         protected override void OnPlayerInside(PlayerCharacter wizard, float fixedDeltaTime)
         {

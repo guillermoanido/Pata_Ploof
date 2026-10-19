@@ -6,20 +6,9 @@ using UnityEngine;
 
 namespace FallingWizard.World
 {
-    [RequireComponent(typeof(Collider2D))]
-    public class RestSite : PlayerTrigger
+    public class RestSite : Checkpoint
     {
-        const float SamePlace = 0.01f;
-
-        const float MarkerRadius = 0.25f;
-
-        static readonly Color MarkerColour = new Color(0.98f, 0.86f, 0.42f);
-
         [Header("Rest")]
-        [Tooltip("Where the wizard reappears after a fall, relative to this object. Lift it clear " +
-                 "of the floor so they do not come back inside it.")]
-        public Vector2 respawnOffset = new Vector2(0f, 0.5f);
-
         [Tooltip("What the screen is headed with. This is the English. It is only used when the " +
                  "key below is empty, or when no translation has that key yet.")]
         public string title = "A place to rest";
@@ -36,48 +25,13 @@ namespace FallingWizard.World
         [Tooltip("Which translated line the blurb uses. Clear it to use the English above verbatim.")]
         public string blurbKey = Loc.Keys.RestBlurb;
 
-        [Tooltip("Optional prefab spawned the first time this is reached.")]
-        public GameObject reachedEffect;
-
-        [Header("Look")]
-        [Tooltip("A child object with your lit art, switched on only while this is the rest " +
-                 "site the wizard will come back to, and off the rest of the time. Your own art " +
-                 "on this object is never touched. Never put the rest site itself here, or it " +
-                 "switches itself off. Leave it empty and nothing changes when it is reached.")]
-        public GameObject litLook;
-
-        Vector2 RespawnPoint => (Vector2)transform.position + respawnOffset;
-
-        bool IsLive =>
-            Progress.IsCheckpointHere &&
-            (Progress.CheckpointPoint - RespawnPoint).sqrMagnitude < SamePlace * SamePlace;
-
-        void Reset() => GetComponent<Collider2D>().isTrigger = true;
-
-        void Awake() => ShowLitLook(IsLive);
-
         protected override void OnPlayerEntered(PlayerCharacter wizard)
         {
             if (Screens.IsModalOpen)
                 return;
 
-            bool isNewlyReached = !IsLive;
-
-            Progress.MarkCheckpoint(RespawnPoint);
-
-            foreach (RestSite other in FindObjectsByType<RestSite>(FindObjectsSortMode.None))
-                other.ShowLitLook(other == this);
-
-            if (isNewlyReached && reachedEffect != null)
-                Instantiate(reachedEffect, transform.position, Quaternion.identity);
-
+            base.OnPlayerEntered(wizard);
             OfferChoices(wizard);
-        }
-
-        void ShowLitLook(bool lit)
-        {
-            if (litLook != null)
-                litLook.SetActive(lit);
         }
 
         void OfferChoices(PlayerCharacter wizard)
@@ -104,12 +58,6 @@ namespace FallingWizard.World
         {
             Progress.EndRun();
             SkillScreen.Open(Game.LoadFirstLevel);
-        }
-
-        void OnDrawGizmosSelected()
-        {
-            Gizmos.color = MarkerColour;
-            Gizmos.DrawWireSphere(RespawnPoint, MarkerRadius);
         }
     }
 }

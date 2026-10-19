@@ -4,8 +4,7 @@ using UnityEngine;
 
 namespace FallingWizard.World
 {
-    [RequireComponent(typeof(Collider2D))]
-    public class Checkpoint : PlayerTrigger
+    public class Checkpoint : Item
     {
         const float SamePlace = 0.01f;
 
@@ -34,28 +33,36 @@ namespace FallingWizard.World
             Progress.IsCheckpointHere &&
             (Progress.CheckpointPoint - RespawnPoint).sqrMagnitude < SamePlace * SamePlace;
 
-        void Reset() => GetComponent<Collider2D>().isTrigger = true;
+        void OnValidate()
+        {
+            if (WouldSwitchItselfOff(litLook))
+                Debug.LogWarning($"{name}: the Lit Look is the checkpoint itself or one of its " +
+                                 "parents, so switching that look off would switch the whole " +
+                                 "checkpoint off with it. Make the art a child of the checkpoint " +
+                                 "and drag the child in instead.", this);
+        }
 
-        void Awake() => ShowLitLook(IsLive);
+        void Awake() => ShowLook(litLook, IsLive);
 
         protected override void OnPlayerEntered(PlayerCharacter wizard)
         {
-            if (IsLive)
-                return;
+            if (!IsLive)
+                BecomeLive();
+        }
 
+        void BecomeLive()
+        {
             Progress.MarkCheckpoint(RespawnPoint);
-
-            foreach (Checkpoint other in FindObjectsByType<Checkpoint>(FindObjectsSortMode.None))
-                other.ShowLitLook(other == this);
+            LightOnlyThisOne();
 
             if (reachedEffect != null)
                 Instantiate(reachedEffect, transform.position, Quaternion.identity);
         }
 
-        void ShowLitLook(bool lit)
+        void LightOnlyThisOne()
         {
-            if (litLook != null)
-                litLook.SetActive(lit);
+            foreach (Checkpoint other in FindObjectsByType<Checkpoint>(FindObjectsSortMode.None))
+                ShowLook(other.litLook, other == this);
         }
 
         void OnDrawGizmosSelected()

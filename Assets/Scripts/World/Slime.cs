@@ -24,8 +24,10 @@ namespace FallingWizard.World
                  "real landing charges for the whole flight.")]
         public bool resetsFall = true;
 
-        void Reset()
+        protected override void Reset()
         {
+            base.Reset();
+
             rearmDelay = BounceCooldown;
             damage = 0;
         }

@@ -28,44 +28,30 @@ coming back down it can never hurt you.
 | Folder | What lives there |
 | --- | --- |
 | `Core/` | `Game` (pause, scene flow, quit), `GameSettings`, `Controls` (every input lookup, plus which device is in use), `Progress` (what the wizard has learned), `SingletonBehaviour` |
-| `Player/` | `PlayerCharacter`, `PlayerLogic` and its parts, `Staff`, `HealthLook`, `RagdollBumps` |
+| `Player/` | `PlayerCharacter` (the Unity side), `PlayerLogic` (everything the wizard does), `Staff`, `PlayerAnimator`, `HealthLook`, `RagdollBumps` |
 | `Player/Abilities/` | `Ability` and the spells, `AbilityBook`, `AbilityShrine` |
 | `Localization/` | `Loc`, `TextBook`, `LocalizedText` |
 | `World/` | `PlayerTrigger`, `Hazard` and the seven hazards, `Pickup`, `TileGrid`, `FollowCamera` |
 | `UI/` | `PlayerHud`, `HudSlot`, `FlingArrow`, `Ui` and the runtime screens |
 | `Menus/`, `Cutscenes/` | `MenuScreen` and the three menus; `CutsceneRunner` |
 
-### The wizard is one class, eight files
+### The wizard is two scripts
 
-`Movement`, `Ragdoll`, `Health`, `Modifiers`, `Vine`, `Spellbook`, `Intent` and `Command` are all
-**nested classes of `PlayerLogic`** — they are parts of a wizard and meaningless on their own, so
-they stay inside it rather than becoming eight top-level types called things like `Health`.
+- **`PlayerCharacter.cs`** is the Unity side: the component on the PLAYER prefab that reads the
+  buttons, receives Unity's messages and hands everything to the logic.
+- **`PlayerLogic.cs`** is everything the wizard *does*, in one file:
+  - first the wizard's own fields and the state machine
+  - then, in order, its parts as nested classes: `Movement` (with `ClimbRefusal` and
+    `ArcSettings`), `Ragdoll`, `Health`, `Vine` (with `Hold`), `Spellbook` (with `Slot`),
+    `Modifiers`, and the input structs `Intent` and `Command`
+
+The parts are **nested classes** because they are pieces of a wizard and mean nothing on their own.
+The rest of the game reaches them as `PlayerLogic.Movement`, `PlayerLogic.Spellbook` and so on.
 `Staff.cs` likewise holds `Staff.Pole`. Nested `[Serializable]` classes serialize exactly like
-top-level ones and show up as foldouts in the inspector.
+top-level ones and show up as foldouts in the Inspector.
 
-`PlayerLogic` is one `partial` class spread over `Scripts/Player/PlayerLogic/`, a file per part:
-
-| File | Holds |
-| --- | --- |
-| `PlayerLogic.cs` | the wizard's own fields, the state machine, and everything that crosses parts |
-| `PlayerLogic.Movement.cs` | `Movement`, with its `ClimbRefusal` and `ArcSettings` |
-| `PlayerLogic.Spellbook.cs` | `Spellbook` and `Spellbook.Slot` |
-| `PlayerLogic.Vine.cs` | `Vine` and `Vine.Hold` |
-| `PlayerLogic.Ragdoll.cs` | `Ragdoll` |
-| `PlayerLogic.Health.cs` | `Health` |
-| `PlayerLogic.Modifiers.cs` | `Modifiers` |
-| `PlayerLogic.Intent.cs` | `Intent` and `Command` |
-
-The nesting did not change: every part is still `PlayerLogic.Movement` and the rest of the game
-refers to it that way, so nothing outside this folder knows the split happened. Only the file
-boundaries moved.
-
-**The rule that keeps the inspector honest: every field of `PlayerLogic` itself lives in
-`PlayerLogic.cs`.** Unity lays a component out in reflection order and C# does not promise field
-order across `partial` files — but that only bites when the *same* class declares fields in more
-than one file. Each file above adds a nested type and not one field, so the five parts and the two
-fall-damage numbers keep the order they have always had. Add a field to the wizard itself and it
-goes in `PlayerLogic.cs`; a file named for a part contains only that part.
+The file is long (Movement alone is over a thousand lines). Use your editor's outline, or search for
+`public class Movement`, to jump to a part.
 
 ### Rules that keep it working
 
@@ -162,8 +148,8 @@ the whole design: you cannot carry everything, so what you bring is a decision y
 go down.
 
 The Staff is the exception, and only because it is the one spell every route assumes: `locked: 1`
-and `fixedSlot: 1` pin it to **E** for good, and the skill screen will not let it out. That leaves
-**Q, R and F** to fight over.
+and `fixedSlot: 0` pin it to the first slot, **Q**, for good, and the skill screen will not let it
+out. That leaves **E, R and F** to fight over.
 
 A spell with `passive: 1` has no button. It still takes a slot, so bringing one costs you an
 active — otherwise a passive is free and there is no choice in it.
@@ -175,8 +161,18 @@ active — otherwise a passive is free and there is no choice in it.
 | `CanCast` | Whether the button would do anything. Greys the HUD slot. |
 | `OnCast` | Do it. **Return false for "not yet"** — the press stays buffered and retries, which is what lets you press the staff button just before reaching a ledge. |
 | `OnLit` / `OnEnded` | During and at the end of the lit window. |
-| `OnEquipped` / `OnUnequipped` | Put into a slot; taken out of one. Undo anything you spawned in `OnUnequipped`. |
-| `OnRunReset` | Died, or rested. Refills `usesPerRun` and is where anything left lying in the level gets cleaned up. |
+| `OnEquipped` / `OnUnequipped` | Put into a slot; taken out of one. |
+| `OnRunReset` | Died, or rested. Refills `usesPerLevel`. |
+| `CleanUp` | Called by both `OnUnequipped` and `OnRunReset`. Undo anything the spell left in the level or on the wizard here, once, instead of in both hooks. |
+
+**Shared pieces live in `Ability`.** `PickTier` and `ValidateTiers` handle the per-rank numbers.
+`WizardEffect` finds an effect object under the wizard by name, once, and switches it on and off:
+Glide's `Glide Canopy` and Haste's `Haste Trail` both use it.
+
+**Every spell keeps its own script, on purpose.** Unity only loads a spell asset whose script file
+has the same name as its class. The seven spells also really do behave differently, so one shared
+"spells" class would need a switch over every spell, plus Inspector fields that each mean nothing
+to most spells.
 
 `usesPerRun` above 0 gives a spell a number of casts that only a rest brings back — for something
 a cooldown alone cannot hold back. `Slot.UsesLeft` counts them and the HUD prints it.
@@ -819,7 +815,7 @@ means the pickups they came from are waiting for you again. Only the permanent t
 the old save it is also **read back** — `Progress.Load()` runs on `BeforeSceneLoad`, after
 `ResetOnPlay` clears the statics. The previous save was write-only: three keys were written on
 every checkpoint and nothing ever called `Load()`, so banked anything would have quietly evaporated
-on the next launch. `Progress.ForgetAll()` (and `Game.EraseProgress`) wipes it.
+on the next launch. `Progress.ForgetAll()` wipes it.
 
 **Where it is written.** The permanent tier is pretty-printed JSON in `<project>/Saves/progress.json`
 — beside `Assets`, so it is in the working copy where you can open it, read it and diff it. It used
@@ -1040,9 +1036,8 @@ separate solid collider on a child on the Ground layer, because the staff itself
 layer, which the ground check deliberately ignores. Nothing casts it since the Staff Bridge spell
 was retired. It is left in because it works and is one small class away from coming back.
 
-The guards it left behind are still earning their keep. `IsStaffFree` and `IsStaffPlantedAs(mode)`
-say what the pole is busy *with*, not merely that it is busy, and `TryPlantStaff` refuses a pole
-already in the ground. Without that, standing on your own bridge puts you at a lip with `IsAtEdge`
+The guards it left behind are still earning their keep. `IsStaffFree` says whether the pole is busy,
+and `TryPlantStaff` refuses a pole already in the ground. Without that, standing on your own bridge puts you at a lip with `IsAtEdge`
 true and the Staff spell would happily re-plant the same pole as a ladder, pulling the floor out
 from under you.
 

@@ -9,7 +9,6 @@ namespace FallingWizard.Core
         public const string LevelSelectScene = "Level Select";
 
         const string MainMenuScene = "Main Menu";
-        const string CutsceneScene = "Cutscene";
 
         public static bool IsPaused { get; private set; }
 
@@ -31,20 +30,6 @@ namespace FallingWizard.Core
             Progress.ClearCheckpoint();
             LoadFirstLevel();
         }
-
-        public static void RestartRun()
-        {
-            Progress.EndRun();
-            LoadFirstLevel();
-        }
-
-        public static void EraseProgress()
-        {
-            Progress.ForgetAll();
-            LoadFirstLevel();
-        }
-
-        public static void LoadCutscene() => Load(CutsceneScene);
 
         public static void LoadFirstLevel() => Load(FirstLevelScene);
 

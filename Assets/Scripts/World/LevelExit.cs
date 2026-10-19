@@ -6,15 +6,12 @@ using UnityEngine.SceneManagement;
 
 namespace FallingWizard.World
 {
-    [RequireComponent(typeof(Collider2D))]
-    public class LevelExit : PlayerTrigger
+    public class LevelExit : Item
     {
         [Header("Exit")]
         [Tooltip("Bank the wisps being carried when the level is finished, the way turning back " +
                  "at a rest site does.")]
         public bool banksWisps = false;
-
-        void Reset() => GetComponent<Collider2D>().isTrigger = true;
 
         protected override void OnPlayerEntered(PlayerCharacter wizard)
         {

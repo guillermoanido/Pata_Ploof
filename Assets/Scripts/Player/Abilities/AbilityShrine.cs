@@ -4,8 +4,7 @@ using UnityEngine;
 
 namespace FallingWizard.Player
 {
-    [RequireComponent(typeof(Collider2D))]
-    public class AbilityShrine : PlayerTrigger
+    public class AbilityShrine : Item
     {
         [Header("Shrine")]
         [Tooltip("The spell taught here, free and for good. Most spells should be bought with " +
@@ -16,8 +15,6 @@ namespace FallingWizard.Player
         [Tooltip("Put it straight into the first empty slot, so it can be used the moment it is " +
                  "found. With all four slots full it is learned but left on the bench.")]
         public bool equipOnPickup = true;
-
-        void Reset() => GetComponent<Collider2D>().isTrigger = true;
 
         void Awake()
         {

@@ -44,11 +44,9 @@ namespace FallingWizard.Player
 
         public override void OnEnded(PlayerLogic wizard) => StopHaste(wizard);
 
-        public override void OnRunReset(PlayerLogic wizard) => StopHaste(wizard);
-
-        public override void OnUnequipped(PlayerLogic wizard) => StopHaste(wizard);
-
         protected override void Validate() => ValidateTiers(tiers);
+
+        protected override void CleanUp(PlayerLogic wizard) => StopHaste(wizard);
 
         void StopHaste(PlayerLogic wizard)
         {
@@ -56,35 +54,17 @@ namespace FallingWizard.Player
             ShowTrail(wizard, false);
         }
 
-        void ShowTrail(PlayerLogic wizard, bool shown)
+        void ShowTrail(PlayerLogic wizard, bool isShown)
         {
-            GameObject effect = FindTrail(wizard);
+            GameObject effect = wizard.spellbook.StateOf<Trail>(this).effect.Find(wizard, this);
 
             if (effect == null)
                 return;
 
-            effect.SetActive(shown);
+            effect.SetActive(isShown);
 
-            if (shown)
+            if (isShown)
                 ForgetOldTrailPoints(effect);
-        }
-
-        GameObject FindTrail(PlayerLogic wizard)
-        {
-            Trail trail = wizard.spellbook.StateOf<Trail>(this);
-
-            if (trail.hasSearched || wizard.Rig == null)
-                return trail.effect;
-
-            trail.hasSearched = true;
-            trail.effect = FindChildNamed(wizard.Rig, TrailName);
-
-            if (trail.effect == null)
-                Debug.LogWarning($"'{name}' found nothing called '{TrailName}' under the " +
-                                 "wizard, so Haste will show no trail. Place your trail effect " +
-                                 "under the wizard with exactly that name.", this);
-
-            return trail.effect;
         }
 
         static void ForgetOldTrailPoints(GameObject effect)
@@ -111,8 +91,7 @@ namespace FallingWizard.Player
 
         class Trail
         {
-            public GameObject effect;
-            public bool hasSearched;
+            public readonly WizardEffect effect = new WizardEffect(TrailName);
         }
     }
 }

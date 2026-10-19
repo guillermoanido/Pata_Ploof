@@ -60,8 +60,6 @@ namespace FallingWizard.Core
 
         public static bool IsSpendingFree { get; set; }
 
-        public static bool HasSave => SaveFile.Exists(FileName) || PlayerPrefs.HasKey(LegacyWispsKey);
-
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetOnPlay() => Clear();
 

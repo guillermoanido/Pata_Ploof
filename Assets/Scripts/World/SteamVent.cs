@@ -80,8 +80,10 @@ namespace FallingWizard.World
 
         float TimeIntoCycle => Mathf.Repeat(clock + phase * CycleLength, CycleLength);
 
-        void Reset()
+        protected override void Reset()
         {
+            base.Reset();
+
             damage = BurnDamage;
             rearmDelay = BurnCooldown;
             affectsRagdolled = true;
@@ -90,7 +92,7 @@ namespace FallingWizard.World
 
         void OnValidate()
         {
-            if (WouldSwitchTheVentOff(warningLook) || WouldSwitchTheVentOff(steamLook))
+            if (WouldSwitchItselfOff(warningLook) || WouldSwitchItselfOff(steamLook))
                 Debug.LogWarning($"{name}: a SteamVent Look is the vent itself or one of its " +
                                  "parents, so switching that look off would switch the whole " +
                                  "vent off with it. Make the art a child of the vent and drag " +
@@ -125,9 +127,6 @@ namespace FallingWizard.World
             return now >= start && now < end;
         }
 
-        bool WouldSwitchTheVentOff(GameObject look) =>
-            look != null && transform.IsChildOf(look.transform);
-
         void ShowTheRightLook()
         {
             bool warning = IsWarning;
@@ -142,11 +141,8 @@ namespace FallingWizard.World
             isShowingWarning = warning;
             isShowingSteam = bursting;
 
-            if (warningLook != null)
-                warningLook.SetActive(warning);
-
-            if (steamLook != null)
-                steamLook.SetActive(bursting);
+            ShowLook(warningLook, warning);
+            ShowLook(steamLook, bursting);
         }
 
         void OnDrawGizmos()

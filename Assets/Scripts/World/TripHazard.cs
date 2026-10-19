@@ -2,14 +2,16 @@ using FallingWizard.Player;
 
 namespace FallingWizard.World
 {
-    public class WetFloorSign : Hazard
+    public class TripHazard : Hazard
     {
-        const float SlipCooldown = 1f;
+        const float TripCooldown = 1f;
 
-        void Reset()
+        protected override void Reset()
         {
+            base.Reset();
+
             minimumSpeed = RunningOnly;
-            rearmDelay = SlipCooldown;
+            rearmDelay = TripCooldown;
         }
 
         protected override void Affect(PlayerLogic wizard) => wizard.TryTrip();
