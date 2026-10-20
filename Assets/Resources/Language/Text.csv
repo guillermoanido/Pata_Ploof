@@ -37,6 +37,10 @@ skill.learn,Learn - {0},Aprender - {0}
 skill.mastered,Mastered,Dominado
 skill.learned,Learned,Aprendido
 hud.scrap,{0} Magical Scrap,{0} Basura Mágica
+death.title,You fell,Te caíste
+death.blurb,"Everything you carried down is gone: your Magical Scrap, your spells and your hearts.","Todo lo que llevabas se perdió: tu Basura Mágica, tus hechizos y tus corazones."
+death.startAgain,Start again,Empezar de nuevo
+death.mainMenu,Main menu,Menú principal
 ability.fling.name,Fling,Impulso
 ability.fling.desc,"Hold to aim up or down, let go to be thrown into a tumble.","Mantén presionado para apuntar arriba o abajo, suelta para salir lanzado dando vueltas."
 ability.fling.upgrade.0.title,Harder throw,Tiro más fuerte
@@ -64,9 +68,9 @@ ability.hand.desc,"Take a hazard with you, and set it down where you want it.",L
 ability.hand.upgrade.0.title,Longer reach,Mayor alcance
 ability.hand.upgrade.0.desc,Takes hold of things half again as far away.,Agarra cosas la mitad más lejos.
 ability.wall.name,Wall Growth,Muro
-ability.wall.desc,"Grow a block of stone under the lip of a drop, and step down onto it.",Haz crecer piedra bajo el borde de una caída y bájate a ella.
-ability.wall.upgrade.0.title,Longer reach,Mayor alcance
-ability.wall.upgrade.0.desc,"Places a block a tile further out, and it stands for longer.","Pone el bloque una casilla más afuera, y dura más."
+ability.wall.desc,"Grow a block of stone off the edge of the floor you stand on, and walk out onto it.","Haz crecer un bloque de piedra desde el borde del suelo donde estás, y camina sobre él."
+ability.wall.upgrade.0.title,Second block,Segundo bloque
+ability.wall.upgrade.0.desc,"Grow two blocks before the spell rests, so the floor reaches twice as far.","Haz crecer dos bloques antes de que el hechizo descanse: el suelo llega el doble de lejos."
 settings.controls,Controls,Controles
 controls.title,Controls,Controles
 controls.keyboard,Keyboard,Teclado

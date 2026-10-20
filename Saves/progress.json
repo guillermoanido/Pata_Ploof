@@ -1,42 +1,19 @@
 {
-    "version": 1,
-    "wisps": 0,
-    "bonusHearts": 2,
+    "version": 2,
+    "scrap": 0,
+    "bonusHearts": 0,
     "loadout": [
         "staff",
-        "fling",
-        "wall",
-        "vine"
+        "",
+        "",
+        ""
     ],
     "ranks": [
         {
-            "key": "fling",
-            "rank": 2
-        },
-        {
-            "key": "glide",
-            "rank": 1
-        },
-        {
             "key": "staff",
-            "rank": 1
-        },
-        {
-            "key": "vine",
-            "rank": 1
-        },
-        {
-            "key": "wall",
             "rank": 1
         }
     ],
-    "spent": [
-        "heartLevel 1:-4,-105",
-        "heartLevel 1:120,-41"
-    ],
-    "completedLevels": [
-        "Level 1",
-        "Level 2",
-        "Level 3"
-    ]
+    "taken": [],
+    "completedLevels": []
 }

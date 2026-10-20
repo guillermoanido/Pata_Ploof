@@ -207,7 +207,7 @@ The Staff is yours from the start and welded to E; everything else fights over t
 | --- | --- | --- |
 | **Staff** | Plant it at a ledge and climb down, or raise it against a wall and climb up. | longer staff |
 | **Mage Hand** | A spectral hand you swing from. | wider swing / climb it |
-| **Wall Growth** | One tile of stone, put down on the grid beside you. | further reach |
+| **Wall Growth** | One tile of stone off the edge of the floor you stand on, so the floor gets longer. | a second block |
 | **Glide** | A canopy. It barely slows the drop - it carries you. | wider wing |
 | **Telekinesis** | Take a hazard with you and set it down where you want it. | longer reach |
 | **Haste** | You quicken; the world wades. Once per level. | deeper haste |
@@ -317,11 +317,13 @@ skill screen. There is no carrying and no banking: what you picked up is yours, 
 straight away, so quitting halfway down and coming back carries on with everything you had.
 
 **Dying starts the game again from nothing.** `PlayerCharacter.OnDied` calls `Progress.StartOver()`
-the moment the last heart goes, waits `secondsBeforeRestart` so the death can be seen, then loads
-the Main Menu. `StartOver` is `ResetSave` — the save file is deleted and every list above is
-emptied — except in a `Playtest` sandbox, where it empties the sandbox and leaves the real save
-alone. The wipe happens at the moment of death rather than after the wait, so pausing and going to
-the Main Menu, or quitting, in that second cannot dodge it.
+the moment the last heart goes, waits `secondsBeforeDeathMessage` so the death can be seen, then
+`ShowDeathMessage` opens a `ChoiceScreen` saying so (`death.title`, `death.blurb`) with two buttons:
+**Start again** opens the skill screen and then Level 1, exactly like Play on the Main Menu, and
+**Main menu** goes back there. `StartOver` is `ResetSave` — the save file is deleted and every list
+above is emptied — except in a `Playtest` sandbox, where it empties the sandbox and leaves the real
+save alone. The wipe happens at the moment of death rather than when a button is pressed, so
+pausing, quitting or walking away from the message cannot dodge it.
 
 ### Pickups
 
@@ -401,8 +403,8 @@ As a flag, **the wizard is untouched by construction, and so is their ragdoll** 
 the same way - the steam vents, wax drips, moving platforms and pressure plates all do.
 
 `usesPerLevel` is the limit, and it means what it says: charges refill on the scene load that
-rebuilds the spellbook, which is what a level transition is. Dying sends you back to the Main Menu
-with nothing, so there is nothing there to police.
+rebuilds the spellbook, which is what a level transition is. Dying wipes everything and starts the
+game again, so there is nothing there to police.
 
 ## Fling: aim, then tumble
 
@@ -517,12 +519,17 @@ squaring all 212 of them off would wall the level in.
 
 ## Which row is the wizard standing in
 
-Neither spell counts rows off `TileGrid.StandingCell` any more — Wall Growth finds its floor with
-`TryFindFloorRowUnder` and Telekinesis settles with `TryFindRestingCell`, both of which survive the answer being
-a row out. It still has to be right, because it is where they start looking, and **it has to
-answer with the empty
-cell the body is in, never the solid one holding it up.** One row out is not a near miss — it is
-the spell aiming into the ground:
+Telekinesis settles with `TryFindRestingCell`, which survives the answer being a row out. Wall
+Growth does **not** hunt for a floor any more: it takes the row straight under `StandingCell` as
+the floor, on purpose. It used to search down `TryFindFloorRowUnder`, up to six rows, and a wizard
+stood with their middle over a drop found the bottom of the pit instead — and then walked along
+*that* floor and grew a block on the far side of the gap. Now it walks ahead along the floor the
+wizard is on, stops dead at a wall, and only grows in the first empty tile past an edge it has
+followed there, so it can only ever make that floor longer.
+
+So `StandingCell` has to be right, and **it has to answer with the empty cell the body is in, never
+the solid one holding it up.** One row out is not a near miss — it is the spell aiming into the
+ground:
 
 - Telekinesis asked whether the tile ahead was free, got told about the *floor*, and refused every
   cast with "every tile within 3 ahead of you is already filled".
@@ -550,10 +557,16 @@ Both probes now hang from one `ProbeOrigin`. The ground check reads it, the ledg
 and `TryFindLedgeEdge` reports its lip relative to it — otherwise a collider with an x offset of
 its own leaves the two disagreeing about which foot is over the drop.
 
-**Wall Growth wants `IsGrounded`, not just `PlayerState.Normal`.** `Normal` is every state that is
-not staff, vine or ragdoll, and that includes falling — so the spell would grow a block under a
-wizard in mid-air, one press at a time, all the way down. Its own refusal line had been promising
-"both feet under you" the whole time without anything checking.
+**Wall Growth wants the wizard stood still on the floor, not just `PlayerState.Normal`.** `Normal`
+is every state that is not staff, vine or ragdoll, and that includes falling — so the spell would
+grow a block under a wizard in mid-air, one press at a time, all the way down. `IsGrounded` alone
+is not enough either: the ground probe on the PLAYER is wider than the body, so a wizard sliding
+down a wall face counts as grounded while they fall. `IsStandingFirmly` also refuses anyone
+dropping faster than `FallingSpeed`, half a box a second.
+
+**Rank 2 grows two blocks.** `WallGrowthAbility.tiers` holds how many blocks each rank may grow
+before the spell rests. Each block crumbles `activeDuration` seconds after it grew; the spell stays
+lit until the last one goes, and only then does the cooldown start and the count go back to zero.
 
 ## The vine
 
@@ -674,11 +687,12 @@ ticks. `SceneManager.LoadScene` does not re-run `RuntimeInitializeOnLoadMethod`,
 statics would have survived the reload on their own — Playtest was the entire failure.
 
 **And you could barely reach the screen.** It used to open only from a rest site or the death
-screen, both of which ended the run first. Now there are three doors: **Play** opens it from the
-main menu, walking into a **shop stop** opens it mid-level, and the **Spellbook** button
-(`UI/Loadout`) opens it mid-level from anywhere. The button's door is the nested `SkillScreen.Door`,
-installed once when the game starts; the shop stop and the button both go through
-`SkillScreen.OpenInLevel`.
+screen, both of which ended the run first. Now **Play** opens it from the main menu, **Start
+again** on the death message opens it the same way, and walking into a **shop stop** opens it
+mid-level. The **Spellbook** button (`UI/Loadout`, Tab) also opens it mid-level from anywhere, but
+that one is a **debug tool** for testing loadouts, not part of the game. The button's door is the
+nested `SkillScreen.Door`, installed once when the game starts; the shop stop and the button both
+go through `SkillScreen.OpenInLevel`.
 
 ## Testing a spell without earning it
 
@@ -730,7 +744,7 @@ flat colour, so each one is visible the moment it lands and is waiting for a spr
 | `Stairs` | `TripHazard`: lay it over a staircase. Take them fast and you tumble down them. | Hazard |
 | `Bouncy Trash` | `BouncyTrash`: bounces you three boxes and sends you tumbling. | Hazard |
 | `Wind` | Pushes you the way its arrows point. Rotate it to aim it. | Hazard |
-| `Wind Trap` | The same push, on a timer, with a Warning Look and a Blowing Look. | Hazard |
+| `Wind Trap` | The same push, on a timer, with a Warning Look and a Blowing Look. Each blast takes `damage` hearts (1) once from anyone inside it. | Hazard |
 | `Hand Hold` | The knot Mage Hand catches. | Default |
 | `Boulder` | What Telekinesis lifts. Solid, so it is also a platform. | **Ground** |
 | `Stone Wall` | What Wall Growth raises. Already wired into the spell. | **Ground** |
@@ -747,7 +761,7 @@ art beside it and delete it.
 | `Wax Drop` | Hangs as a warning, falls, burns whoever it lands on. | Hazard |
 | `Moving Platform` | Slides along `travel` and back, carrying the wizard. | **Ground** |
 | `Pressure Plate` | Stand on it for a second and it throws you up. | Hazard |
-| `Broken Glass` | A plain `Hazard`: cuts you every second you are on it, unless you walk. | Hazard |
+| `Broken Glass` | A plain `Hazard`: cuts you every second you are on it, unless you are walking across it. Standing still on it hurts, walk mode or not. | Hazard |
 
 The ones on **Ground** are there because the wizard has to be able to stand on them, and the ground
 check only looks at that layer. The ones on **Hazard** are triggers you pass straight through.
@@ -755,21 +769,16 @@ check only looks at that layer. The ones on **Hazard** are triggers you pass str
 ice are triggers in their prefabs.
 
 `Stone Wall` is shaped the way the spell needs: the root carries nothing and the **first child**
-carries the sprite and collider, one box square and centred on itself. The spell moves that child
-to whichever corner it is growing away from and scales the root, so the block grows out of its
-anchor rather than stretching around its middle. Any stone art of your own wants that same
-two-object shape.
+carries the sprite and collider, one box square and centred on itself. The spell centres that
+child on the root and scales the root up from nothing over `growTime`. Any stone art of your own
+wants that same two-object shape.
 
-**Where it grows is the whole spell.** Stood at a ledge it builds *out from the lip* with its top
-level with the floor, so you walk straight onto it — the same anchor the old staff bridge used,
-`edgeX + facing * clearance`, found by `Movement.TryFindLedgeEdge`. The first version hunted for a
-floor **ahead** of the wizard instead, which fails at exactly the one place you would ever cast it:
-the whole reason to cast is that there is no floor ahead. Nowhere near a ledge, it falls back to
-that floor hunt and grows a wall upward instead.
-
-`size` decides which it reads as. Wide and thin (the default 3 x 0.5) is a plank over a gap;
-narrow and tall is a wall to climb or hide behind. Only the axis it is growing along is animated,
-so the other is right from the first frame and there is something solid underfoot immediately.
+**Where it grows is the whole spell.** It only ever makes the floor you are stood on longer. It
+walks ahead of you along that floor, up to `reachInTiles`, and grows one block in the first empty
+tile past its edge, with its top level with your soles so you walk straight onto it. A wall in the
+way stops the hunt, and it will not cast while you are in the air or falling, so there is no way
+to grow a block on the far side of anything. Stand on the first block and cast again (rank 2) and
+the second one carries on from the first.
 
 `Level Exit` marks the level completed (`Progress.CompleteLevel`) and loads the `Level Select`
 scene.
@@ -797,7 +806,7 @@ Finishing Level 2 opens Level 3, because `LevelExit` completes whichever scene i
 ## Saving
 
 There is no checkpoint and no respawn: every level starts the wizard where the scene places them,
-and dying starts the whole game again from the Main Menu with nothing (see *Magical Scrap, hearts
+and dying shows a message and starts the whole game again with nothing (see *Magical Scrap, hearts
 and dying*).
 
 **Everything is written the moment it changes.** Picking up Magical Scrap or a heart, buying,
@@ -1025,6 +1034,17 @@ to nothing, once, after a third of a second, and `StaffAbility.WhyNot` splits th
 look identical from the outside: *nothing in reach to raise it against*, and *what is ahead is too
 tall, or there is no room on top of it*.
 
+**The staff rides whatever it is planted in.** A planted pole is a set of world positions — where
+the pole stands, where the wizard hangs, where a climb lands — so on a `Moving Platform` the
+platform used to slide away and leave the wizard hanging from nothing. Now `Pole.RideOn` looks at
+the ground the pole went into, at the lip it hooked or the ledge it went over, and if that ground
+belongs to a Rigidbody2D that is not Static it remembers it. `Pole.FollowCarrier` runs first thing
+in every `Slide` and shifts all of those positions by however far that body moved since the last
+step. It reads the body's position, so the wizard trails the platform by one physics step, about
+a pixel at the prefab's speed. Climbing down off a platform's edge and climbing up onto one both
+work this way, and topping out leaves the wizard standing on the platform, which carries them from
+there as normal.
+
 `Staff.cs` can still lay the pole flat as a **Bridge** — `StaffMode.Bridge`, `TryPlantAsBridge`, and a
 separate solid collider on a child on the Ground layer, because the staff itself is on the Player
 layer, which the ground check deliberately ignores. Nothing casts it since the Staff Bridge spell
@@ -1064,7 +1084,7 @@ rakes are all `TripHazard`, and broken glass is a plain `Hazard`.
 | `SlipperyFloor` | Ground that does not hold you | Calls `Slicken` every step you are in it; nothing to leave, because not calling IS leaving. |
 | `BouncyTrash` | Fall into it, get thrown back up | Launches you on the way past. The `Bouncy Trash` prefab. |
 | `WindZone2D` | A volume that pushes you | One `Vector2` covers left, right, up and down. `groundScale` decides how much you feel with both feet down. |
-| `WindTrap` | A `WindZone2D` on a timer | Shuts, warns, then blows. `Blast` is a one-off `Shove`; the rest is the base class's steady `Push`. |
+| `WindTrap` | A `WindZone2D` on a timer | Shuts, warns, then blows. `Blast` is a one-off `Shove`; the rest is the base class's steady `Push`. `HurtOncePerBlast` takes `damage` hearts from a wizard inside it while it blows at full strength, once per blast, even if they walked in half way through. It is a `Zone`, not a `Hazard`, so this is its own field rather than `Hazard.damage`. |
 
 **Nothing on the Hazard layer blocks you.** `Hazard.passThrough` is on by default and applied on
 `Awake`, so hazards are things you pass straight through that do something to you on the way, not

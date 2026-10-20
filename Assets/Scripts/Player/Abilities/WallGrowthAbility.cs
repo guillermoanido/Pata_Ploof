@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using FallingWizard.World;
 using UnityEngine;
 
@@ -9,6 +11,8 @@ namespace FallingWizard.Player
         const float SmallestScale = 0.01f;
 
         const float Half = 0.5f;
+
+        const float FallingSpeed = 0.5f;
 
         [Header("Wall")]
         [Tooltip("Spawned as the block, and required - with this empty the spell will not cast. " +
@@ -23,20 +27,11 @@ namespace FallingWizard.Player
         public Vector2 size = Vector2.one;
 
         [Header("Where It Grows")]
-        [Tooltip("How many tiles ahead to hunt for the lip of a drop. The block is placed " +
-                 "relative to THAT, not to where you happen to be stood, so it lands in the same " +
-                 "spot whether you walked right up to the edge or stopped a tile short.")]
+        [Tooltip("How many tiles ahead, along the floor you are stood on, to hunt for its edge. " +
+                 "The block always comes out level with that floor, in the first empty tile past " +
+                 "the edge, so it only ever makes the floor longer. The hunt stops at a wall, so " +
+                 "it never grows on the far side of one.")]
         [Range(1, 6)] public int reachInTiles = 3;
-
-        [Tooltip("Tiles past the lip. 0 is the first empty column - the block hugs the ledge. " +
-                 "1 leaves a one-tile gap you have to cross some other way.")]
-        [Range(0, 3)] public int outFromEdge = 0;
-
-        [Tooltip("Which ROW, counted from the one your body is in. -1 is the floor row, so the " +
-                 "block comes out level with the ground you are stood on and you can walk " +
-                 "straight onto it. -2 is one below that, a step down into the drop. 0 is knee " +
-                 "height, which is almost never what you want.")]
-        [Range(-4, 1)] public int liftInTiles = -1;
 
         [Header("Growing")]
         [Tooltip("Seconds it takes to reach full size. Keep it SHORT: the collider follows " +
@@ -44,12 +39,16 @@ namespace FallingWizard.Player
                  "cast and half-solid to a wizard stood on it.")]
         [Min(0f)] public float growTime = 0.05f;
 
+        [Header("Ranks")]
+        [Tooltip("One block per rank. Element 0 is what learning it gives you.")]
+        public Tier[] tiers = { new Tier() };
+
         public override bool CanCast(PlayerLogic wizard) =>
             wallPrefab != null &&
             wizard.State == PlayerState.Normal &&
-            wizard.movement.IsGrounded &&
-            wizard.spellbook.StateOf<Growth>(this).wall == null &&
-            TryFindCell(wizard, out _, out _);
+            IsStandingFirmly(wizard.movement) &&
+            HasBlocksLeft(wizard) &&
+            TryFindCell(wizard.movement, out _);
 
         public override string WhyNot(PlayerLogic wizard)
         {
@@ -60,93 +59,96 @@ namespace FallingWizard.Player
             if (wizard.State != PlayerState.Normal)
                 return $"you are {wizard.State} and need both feet under you";
 
-            if (!wizard.movement.IsGrounded)
-                return "you are in the air - this grows out of the ground you are stood on";
+            if (!IsStandingFirmly(wizard.movement))
+                return "you are in the air or falling - this grows out of the floor you are stood on";
 
-            if (wizard.spellbook.StateOf<Growth>(this).wall != null)
-                return "your last block is still standing";
+            if (!HasBlocksLeft(wizard))
+                return $"you have grown all {PickTier(tiers, wizard).blocks} block(s) this rank " +
+                       "allows - wait for them to crumble and the spell to cool down";
 
-            if (TryFindCell(wizard, out _, out _))
+            if (TryFindCell(wizard.movement, out _))
                 return null;
 
-            return $"no lip within {reachInTiles} tiles ahead of you, or the tile past it is " +
-                   "already filled - this wants an edge to build off";
+            return $"the floor you are stood on has no edge within {reachInTiles} tiles ahead " +
+                   "of you, or a wall is in the way - this only ever makes that floor longer";
         }
 
         public override bool OnCast(PlayerLogic wizard)
         {
-            if (!TryFindCell(wizard, out Vector2Int cell, out float top))
+            if (!TryFindCell(wizard.movement, out Vector2Int cell))
                 return false;
 
             Growth growth = wizard.spellbook.StateOf<Growth>(this);
 
-            growth.wall = SpawnWall(new Vector2(TileGrid.CentreOf(cell).x, top - size.y * Half));
-            growth.age = 0f;
+            var block = new Block { wall = SpawnWall(FindAnchor(cell, wizard.movement.Footing.y)) };
 
-            Transform body = FindBody(growth.wall);
+            Transform body = FindBody(block.wall);
 
             if (body != null)
                 body.localPosition = Vector3.zero;
 
-            ScaleWall(growth, growTime <= 0f ? 1f : 0f);
+            ScaleWall(block);
+
+            growth.blocks.Add(block);
+            growth.grown++;
             return true;
         }
 
         public override void OnLit(PlayerLogic wizard, float fixedDeltaTime)
         {
-            Growth growth = wizard.spellbook.StateOf<Growth>(this);
+            List<Block> blocks = wizard.spellbook.StateOf<Growth>(this).blocks;
 
-            if (growth.wall == null)
-                return;
+            for (int i = blocks.Count - 1; i >= 0; i--)
+            {
+                Block block = blocks[i];
+                block.age += fixedDeltaTime;
 
-            growth.age += fixedDeltaTime;
-
-            ScaleWall(growth, growTime <= 0f ? 1f : Mathf.Clamp01(growth.age / growTime));
+                if (HasCrumbled(block))
+                    RemoveBlockAt(blocks, i);
+                else
+                    ScaleWall(block);
+            }
         }
 
-        public override void OnEnded(PlayerLogic wizard) => RemoveWall(wizard);
+        public override void OnEnded(PlayerLogic wizard) => RemoveAllBlocks(wizard);
 
-        protected override void CleanUp(PlayerLogic wizard) => RemoveWall(wizard);
+        protected override void Validate() => ValidateTiers(tiers);
 
-        void RemoveWall(PlayerLogic wizard)
+        protected override void CleanUp(PlayerLogic wizard) => RemoveAllBlocks(wizard);
+
+        static bool IsStandingFirmly(PlayerLogic.Movement movement) =>
+            movement.IsGrounded && movement.Velocity.y > -FallingSpeed;
+
+        bool HasBlocksLeft(PlayerLogic wizard) =>
+            wizard.spellbook.StateOf<Growth>(this).grown < PickTier(tiers, wizard).blocks;
+
+        bool TryFindCell(PlayerLogic.Movement movement, out Vector2Int cell)
         {
-            Growth growth = wizard.spellbook.StateOf<Growth>(this);
-
-            if (growth.wall != null)
-                Destroy(growth.wall);
-
-            growth.wall = null;
-            growth.age = 0f;
-        }
-
-        bool TryFindCell(PlayerLogic wizard, out Vector2Int cell, out float top)
-        {
-            PlayerLogic.Movement movement = wizard.movement;
-            Vector2Int standingCell = TileGrid.StandingCell(movement);
+            Vector2Int standing = TileGrid.StandingCell(movement);
+            var ahead = new Vector2Int(movement.Facing, 0);
+            LayerMask ground = movement.groundLayers;
 
             cell = default;
-            top = 0f;
-
-            if (!TileGrid.TryFindFloorRowUnder(standingCell, movement.groundLayers, out int floorRow))
-                return false;
 
             for (int step = 0; step <= reachInTiles; step++)
             {
-                int column = standingCell.x + movement.Facing * step;
+                Vector2Int floor = standing + ahead * step + Vector2Int.down;
 
-                if (TileGrid.IsSolid(new Vector2Int(column, floorRow), movement.groundLayers))
+                if (TileGrid.IsSolid(floor + Vector2Int.up, ground))
+                    return false;
+
+                if (TileGrid.IsSolid(floor, ground))
                     continue;
 
-                cell = new Vector2Int(column + movement.Facing * outFromEdge,
-                    floorRow + 1 + liftInTiles);
-
-                top = movement.Footing.y + (cell.y - floorRow);
-
-                return TileGrid.IsFree(cell, movement.groundLayers);
+                cell = floor;
+                return TileGrid.IsSolid(floor - ahead, ground);
             }
 
             return false;
         }
+
+        Vector2 FindAnchor(Vector2Int cell, float floorTop) =>
+            new Vector2(TileGrid.CentreOf(cell).x, floorTop - size.y * Half);
 
         GameObject SpawnWall(Vector2 anchor)
         {
@@ -158,17 +160,56 @@ namespace FallingWizard.Player
         static Transform FindBody(GameObject wall) =>
             wall != null && wall.transform.childCount > 0 ? wall.transform.GetChild(0) : null;
 
-        void ScaleWall(Growth growth, float progress)
+        void ScaleWall(Block block)
         {
-            if (growth.wall == null)
+            if (block.wall == null)
                 return;
 
-            growth.wall.transform.localScale = new Vector3(
+            float progress = growTime <= 0f ? 1f : Mathf.Clamp01(block.age / growTime);
+
+            block.wall.transform.localScale = new Vector3(
                 Mathf.Max(SmallestScale, size.x * progress),
                 Mathf.Max(SmallestScale, size.y * progress), 1f);
         }
 
+        bool HasCrumbled(Block block) => block.wall == null || block.age >= activeDuration;
+
+        static void RemoveBlockAt(List<Block> blocks, int index)
+        {
+            if (blocks[index].wall != null)
+                Destroy(blocks[index].wall);
+
+            blocks.RemoveAt(index);
+        }
+
+        void RemoveAllBlocks(PlayerLogic wizard)
+        {
+            Growth growth = wizard.spellbook.StateOf<Growth>(this);
+
+            for (int i = growth.blocks.Count - 1; i >= 0; i--)
+                RemoveBlockAt(growth.blocks, i);
+
+            growth.grown = 0;
+        }
+
+        [Serializable]
+        public class Tier : ITier
+        {
+            [Tooltip("How many blocks the spell grows before it has to rest. Each one crumbles " +
+                     "Active Duration seconds after it grew, and the cooldown starts once the " +
+                     "last one is gone.")]
+            [Min(1)] public int blocks = 1;
+
+            public void Validate() => blocks = Mathf.Max(1, blocks);
+        }
+
         class Growth
+        {
+            public readonly List<Block> blocks = new List<Block>();
+            public int grown;
+        }
+
+        class Block
         {
             public GameObject wall;
             public float age;

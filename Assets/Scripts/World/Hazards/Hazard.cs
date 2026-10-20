@@ -8,6 +8,8 @@ namespace FallingWizard.World
     {
         protected const float RunningOnly = 3f;
 
+        const float StandingStill = 0.1f;
+
         [Header("Hazard")]
         [Tooltip("Hazards are things you pass straight through that do something to you on the " +
                  "way, rather than things you bump into. Applied on Awake, so ticking this fixes " +
@@ -41,10 +43,12 @@ namespace FallingWizard.World
         [Tooltip("Hearts taken on contact. 0 for hazards that only shove you around.")]
         [Min(0)] public int damage = 0;
 
-        [Tooltip("Let a WALKING wizard pass untouched. This reads the walk button rather than a " +
-                 "speed, so it still fires on a wizard who is falling onto it or shoved into it, " +
-                 "and it cannot be fooled by Haste - which lifts a walk to the same 3 boxes a " +
-                 "second that Minimum Speed would have to sit at to tell a walk from a run.")]
+        [Tooltip("Let a wizard WALKING ACROSS it pass untouched. This reads the walk toggle rather " +
+                 "than a speed, so it still fires on a wizard who is falling onto it or shoved " +
+                 "into it, and it cannot be fooled by Haste - which lifts a walk to the same 3 " +
+                 "boxes a second that Minimum Speed would have to sit at to tell a walk from a " +
+                 "run. Walk mode only protects while the wizard is actually moving: standing " +
+                 "still on it hurts, toggle or not.")]
         public bool ignoresWalking = false;
 
         [NonSerialized] float readyAt;
@@ -94,14 +98,15 @@ namespace FallingWizard.World
             if (wizard.Logic.movement.ApproachSpeed < minimumSpeed)
                 return false;
 
-            return !ignoresWalking || !IsWalking(wizard);
+            return !ignoresWalking || !IsWalkingAcross(wizard);
         }
 
-        static bool IsWalking(PlayerCharacter wizard)
+        static bool IsWalkingAcross(PlayerCharacter wizard)
         {
             PlayerLogic logic = wizard.Logic;
 
-            return logic.Steering.IsWalking && logic.movement.IsGrounded;
+            return logic.Steering.IsWalking && logic.movement.IsGrounded &&
+                   logic.movement.ApproachSpeed > StandingStill;
         }
     }
 }

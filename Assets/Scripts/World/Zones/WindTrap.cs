@@ -91,6 +91,11 @@ namespace FallingWizard.World
                  "them through the blast without the trap owning them.")]
         [Range(0f, 1f)] public float tumbleScale = 0.25f;
 
+        [Tooltip("Hearts taken by each blast, once, from a wizard inside it while it blows at " +
+                 "full strength - walking in half way through a blast counts as much as being " +
+                 "there when it fired. 0 makes it a shove and nothing more.")]
+        [Min(0)] public int damage = 1;
+
         [Header("Look")]
         [Tooltip("A child object switched on only while the trap is winding up - the Shutter " +
                  "Travel seconds just before it blows - and off the rest of the time. This is " +
@@ -109,6 +114,7 @@ namespace FallingWizard.World
         [NonSerialized] float clock;
         [NonSerialized] float armedUntil = NotArmed;
         [NonSerialized] bool wasOpen;
+        [NonSerialized] bool hasHurtThisBlast;
 
         [NonSerialized] bool isShowingWarning;
         [NonSerialized] bool isShowingBlowing;
@@ -222,11 +228,10 @@ namespace FallingWizard.World
 
             logic.Push(WorldPush * strength * Haste.WorldScale, rampup, groundScale);
 
-            if (openness < 1f || tumbling || clock > armedUntil)
-                return;
+            if (IsReadyToBlast(openness, tumbling))
+                Blast(logic);
 
-            armedUntil = NotArmed;
-            Blast(logic);
+            HurtOncePerBlast(logic);
         }
 
         void Validate()
@@ -295,7 +300,10 @@ namespace FallingWizard.World
             bool isOpenNow = IsOpen;
 
             if (isOpenNow && !wasOpen)
+            {
                 armedUntil = clock + KickGrace;
+                hasHurtThisBlast = false;
+            }
 
             wasOpen = isOpenNow;
         }
@@ -318,12 +326,26 @@ namespace FallingWizard.World
             ShowLook(blowingLook, blowing);
         }
 
+        bool IsReadyToBlast(float openness, bool tumbling) =>
+            openness >= 1f && !tumbling && clock <= armedUntil;
+
         void Blast(PlayerLogic wizard)
         {
+            armedUntil = NotArmed;
+
             if (tumbles)
                 wizard.TryTrip();
 
             wizard.Shove(TurnWithThisObject(kick), kickLockout);
+        }
+
+        void HurtOncePerBlast(PlayerLogic wizard)
+        {
+            if (hasHurtThisBlast || damage <= 0 || !IsOpen || !wizard.CanBeHurt)
+                return;
+
+            hasHurtThisBlast = true;
+            wizard.Hurt(damage);
         }
     }
 }

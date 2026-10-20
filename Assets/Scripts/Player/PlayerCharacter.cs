@@ -1,4 +1,6 @@
 using FallingWizard.Core;
+using FallingWizard.Localization;
+using FallingWizard.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -27,10 +29,11 @@ namespace FallingWizard.Player
 
         [Header("Death")]
         [Tooltip("Seconds to wait once the wizard runs out of hearts, so the death can be seen, " +
-                 "before the game starts again from the main menu. Dying wipes everything: " +
-                 "Magical Scrap, spells, upgrades, the loadout, bonus hearts, finished levels " +
-                 "and taken pickups. Settings are kept.")]
-        [Min(0f)] public float secondsBeforeRestart = 1.25f;
+                 "before the message saying so comes up. The message offers to start again or " +
+                 "go back to the main menu. Dying wipes everything: Magical Scrap, spells, " +
+                 "upgrades, the loadout, bonus hearts, finished levels and taken pickups. " +
+                 "Settings are kept.")]
+        [Min(0f)] public float secondsBeforeDeathMessage = 1.25f;
 
         [Header("Staves")]
         [Tooltip("One staff per rank, weakest first. Only the staff for the current rank is left " +
@@ -136,10 +139,19 @@ namespace FallingWizard.Player
         void OnDied()
         {
             Progress.StartOver();
-            Invoke(nameof(RestartTheGame), secondsBeforeRestart);
+            Invoke(nameof(ShowDeathMessage), secondsBeforeDeathMessage);
         }
 
-        void RestartTheGame() => Game.LoadMainMenu();
+        void ShowDeathMessage()
+        {
+            ChoiceScreen screen = ChoiceScreen.Open(Loc.Get(Loc.Keys.DeathTitle),
+                Loc.Get(Loc.Keys.DeathBlurb));
+
+            screen.Choice(Loc.Get(Loc.Keys.DeathStartAgain), () => screen.CloseThen(StartAgain));
+            screen.Choice(Loc.Get(Loc.Keys.DeathMainMenu), () => screen.CloseThen(Game.LoadMainMenu));
+        }
+
+        static void StartAgain() => SkillScreen.Open(Game.LoadFirstLevel);
 
         void OnDrawGizmosSelected() => logic.DrawGizmos(transform.position);
 

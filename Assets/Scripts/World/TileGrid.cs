@@ -40,23 +40,6 @@ namespace FallingWizard.World
             Physics2D.OverlapBox(CentreOf(cell), Vector2.one * (Inset * BothSides), 0f,
                 Layers.MakeSolidOnlyFilter(groundLayers), Overlaps) > 0;
 
-        public static bool IsFree(Vector2Int cell, LayerMask groundLayers) =>
-            !IsSolid(cell, groundLayers);
-
-        public static bool TryFindFloorRowUnder(Vector2Int from, LayerMask groundLayers, out int row)
-        {
-            for (int drop = 0; drop < LookDown; drop++)
-            {
-                row = from.y - drop;
-
-                if (IsSolid(new Vector2Int(from.x, row), groundLayers))
-                    return true;
-            }
-
-            row = from.y - 1;
-            return false;
-        }
-
         public static bool TryFindRestingCell(int column, int fromRow, LayerMask groundLayers,
             bool mustLand, out Vector2Int cell)
         {
@@ -98,5 +81,22 @@ namespace FallingWizard.World
 
         static Vector2Int FindCellOf(Vector2 worldPoint) =>
             new Vector2Int(Mathf.FloorToInt(worldPoint.x), Mathf.FloorToInt(worldPoint.y));
+
+        static bool TryFindFloorRowUnder(Vector2Int from, LayerMask groundLayers, out int row)
+        {
+            for (int drop = 0; drop < LookDown; drop++)
+            {
+                row = from.y - drop;
+
+                if (IsSolid(new Vector2Int(from.x, row), groundLayers))
+                    return true;
+            }
+
+            row = from.y - 1;
+            return false;
+        }
+
+        static bool IsFree(Vector2Int cell, LayerMask groundLayers) =>
+            !IsSolid(cell, groundLayers);
     }
 }

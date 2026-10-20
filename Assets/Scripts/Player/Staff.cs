@@ -131,6 +131,8 @@ namespace FallingWizard.Player
 
             const float FloorSlack = 0.05f;
 
+            const float CarrierProbe = 0.05f;
+
             const float Half = 0.5f;
 
             const float NotMounting = -1f;
@@ -224,6 +226,9 @@ namespace FallingWizard.Player
             [NonSerialized] float hookSideOffset;
             [NonSerialized] float poleBoxOffset;
             [NonSerialized] float ridingOffset;
+
+            [NonSerialized] Rigidbody2D carrier;
+            [NonSerialized] Vector2 carrierWas;
 
             public bool IsPlanted { get; private set; }
 
@@ -351,6 +356,7 @@ namespace FallingWizard.Player
                     return false;
                 }
 
+                RideOn(new Vector2(lip.x + facing * CarrierProbe, lip.y - CarrierProbe));
                 SetUpTheClimb(landing);
                 HangWielderOnTheLadder();
                 return true;
@@ -360,6 +366,8 @@ namespace FallingWizard.Player
             {
                 if (!IsPlanted || !HasWielder || Mode != StaffMode.Ladder)
                     return StaffHold.LetGo;
+
+                FollowCarrier();
 
                 if (IsMounting)
                     return Mount(fixedDeltaTime);
@@ -591,6 +599,7 @@ namespace FallingWizard.Player
                     return false;
                 }
 
+                RideOn(new Vector2(edgeX - facing * CarrierProbe, surfaceY - CarrierProbe));
                 HangWielderOnTheLadder();
                 return true;
             }
@@ -631,6 +640,23 @@ namespace FallingWizard.Player
                     return rawReach;
 
                 return Mathf.Clamp(surfaceY - Rays[0].point.y, 0f, rawReach);
+            }
+
+            void RideOn(Vector2 groundPoint)
+            {
+                carrier = FindMovingBodyAt(groundPoint);
+
+                if (carrier != null)
+                    carrierWas = carrier.position;
+            }
+
+            Rigidbody2D FindMovingBodyAt(Vector2 point)
+            {
+                if (Physics2D.OverlapPoint(point, GroundFilter, Overlaps) == 0)
+                    return null;
+
+                Rigidbody2D body = Overlaps[0].attachedRigidbody;
+                return body != null && body.bodyType != RigidbodyType2D.Static ? body : null;
             }
 
             void HangWielderOnTheLadder()
@@ -707,6 +733,21 @@ namespace FallingWizard.Player
                 climbHangX = wielder.position.x;
 
                 dropTimer = -dropHoldTime;
+            }
+
+            void FollowCarrier()
+            {
+                if (carrier == null)
+                    return;
+
+                Vector2 shift = carrier.position - carrierWas;
+                carrierWas = carrier.position;
+
+                anchor += shift;
+                plantedPosition += (Vector3)shift;
+                climbLanding += shift;
+                climbHangX += shift.x;
+                mountFrom += shift;
             }
 
             StaffHold Mount(float fixedDeltaTime)
@@ -792,6 +833,7 @@ namespace FallingWizard.Player
             {
                 IsPlanted = false;
                 isClimbingUp = false;
+                carrier = null;
                 mountTimer = NotMounting;
                 aim = StaffAim.Neutral;
                 ridingOffset = 0f;
