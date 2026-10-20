@@ -34,6 +34,13 @@ namespace FallingWizard.Player
                  "full health dies on the eighth.")]
         [Min(0f)] public float damagePerBox = 1f;
 
+        [Header("Hits")]
+        [Tooltip("Print a line to the console every time the wizard loses hearts, saying what " +
+                 "hurt them and how many are left. Editor only. Health only shows on the hat, so " +
+                 "until there is a Health Look for every heart and a Take Damage animation, this " +
+                 "is the only way to see a hit land before the one that kills.")]
+        public bool reportHits = true;
+
         [NonSerialized] Staff.Pole pole;
         [NonSerialized] Staff[] staves;
         [NonSerialized] Staff carried;
@@ -183,12 +190,13 @@ namespace FallingWizard.Player
                 movement.AddImpulse(velocity, controlLockout);
         }
 
-        public void Hurt(int hearts)
+        public void Hurt(int hearts, string cause)
         {
             if (hearts <= 0 || !CanBeHurt)
                 return;
 
             health.TakeDamage(hearts);
+            ReportHit(hearts, cause);
 
             if (!health.IsAlive)
                 Die();
@@ -447,7 +455,7 @@ namespace FallingWizard.Player
             if (excess <= 0f)
                 return;
 
-            Hurt(Mathf.RoundToInt(excess * damagePerBox));
+            Hurt(Mathf.RoundToInt(excess * damagePerBox), $"A fall of {fallDistance:0.0} boxes");
         }
 
         void UpdateOnVine(float fixedDeltaTime)
@@ -463,6 +471,14 @@ namespace FallingWizard.Player
             pole?.Face(movement.Facing);
 
             CheckLanding();
+        }
+
+        void ReportHit(int hearts, string cause)
+        {
+#if UNITY_EDITOR
+            if (reportHits)
+                Debug.Log($"{cause} took {hearts} heart(s) from the wizard - {health.Current} left.");
+#endif
         }
 
         void Die()

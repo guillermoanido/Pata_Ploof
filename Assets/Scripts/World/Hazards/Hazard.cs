@@ -84,7 +84,7 @@ namespace FallingWizard.World
             Affect(wizard.Logic);
 
             if (damage > 0)
-                wizard.Logic.Hurt(damage);
+                wizard.Logic.Hurt(damage, name);
         }
 
         bool IsReadyToCatch(PlayerCharacter wizard)

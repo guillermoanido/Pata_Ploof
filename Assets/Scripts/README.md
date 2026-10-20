@@ -744,7 +744,7 @@ flat colour, so each one is visible the moment it lands and is waiting for a spr
 | `Stairs` | `TripHazard`: lay it over a staircase. Take them fast and you tumble down them. | Hazard |
 | `Bouncy Trash` | `BouncyTrash`: bounces you three boxes and sends you tumbling. | Hazard |
 | `Wind` | Pushes you the way its arrows point. Rotate it to aim it. | Hazard |
-| `Wind Trap` | The same push, on a timer, with a Warning Look and a Blowing Look. Each blast takes `damage` hearts (1) once from anyone inside it. | Hazard |
+| `Wind Trap` | The same push, on a timer, with a Warning Look and a Blowing Look. It shoves, it never hurts. | Hazard |
 | `Hand Hold` | The knot Mage Hand catches. | Default |
 | `Boulder` | What Telekinesis lifts. Solid, so it is also a platform. | **Ground** |
 | `Stone Wall` | What Wall Growth raises. Already wired into the spell. | **Ground** |
@@ -1084,7 +1084,7 @@ rakes are all `TripHazard`, and broken glass is a plain `Hazard`.
 | `SlipperyFloor` | Ground that does not hold you | Calls `Slicken` every step you are in it; nothing to leave, because not calling IS leaving. |
 | `BouncyTrash` | Fall into it, get thrown back up | Launches you on the way past. The `Bouncy Trash` prefab. |
 | `WindZone2D` | A volume that pushes you | One `Vector2` covers left, right, up and down. `groundScale` decides how much you feel with both feet down. |
-| `WindTrap` | A `WindZone2D` on a timer | Shuts, warns, then blows. `Blast` is a one-off `Shove`; the rest is the base class's steady `Push`. `HurtOncePerBlast` takes `damage` hearts from a wizard inside it while it blows at full strength, once per blast, even if they walked in half way through. It is a `Zone`, not a `Hazard`, so this is its own field rather than `Hazard.damage`. |
+| `WindTrap` | A `WindZone2D` on a timer | Shuts, warns, then blows. `Blast` is a one-off `Shove`; the rest is the base class's steady `Push`. No damage: it is a `Zone`, not a `Hazard`. |
 
 **Nothing on the Hazard layer blocks you.** `Hazard.passThrough` is on by default and applied on
 `Awake`, so hazards are things you pass straight through that do something to you on the way, not
@@ -1172,6 +1172,13 @@ says which health it stands for. The wizard starts with as much health as the hi
 `PlayerAnimator` switches on only the look matching their health right now (the highest one, if a
 heart pickup has given them more). A hit that changes the look plays the new look's `Hat Change`
 clip; a hit that does not plays `Take Damage`.
+
+**Right now the PLAYER has only `Health 3`, and `TakeDamage.anim` is empty**, so a hit changes
+nothing you can see: the hearts go, the hat stays, and the third hit kills. That reads exactly
+like hazards not working. Until `Health 2`, `Health 1` and the clip are filled in,
+`PlayerLogic.reportHits` (on by default, editor only) prints every hit to the console - *"Broken
+Glass took 1 heart(s) from the wizard - 2 left."* `PlayerLogic.Hurt` takes that cause as its second
+argument: a hazard passes its own name, a fall passes how far it was.
 
 Every look's Animator uses `Player.controller` - or an Animator Override Controller made from it,
 holding that look's own clips. The clips animate the sprite of the object the Animator is on, so
