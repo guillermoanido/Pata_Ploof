@@ -1,13 +1,25 @@
 fileFormatVersion: 2
-guid: 4d4bdd092c95d424d956eba7f74564e3
+guid: 4e883b3bf84b90b4ba983eb0b3613b97
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 1043185223787547419
-    second: Falling_WIP2_0
+      213: -6073670392937445461
+    second: SpriteSheet_Falling_0
   - first:
-      213: 5057388492066860714
-    second: Falling_WIP2_1
+      213: -7756775419873091343
+    second: SpriteSheet_Falling_1
+  - first:
+      213: 2172125700921563879
+    second: SpriteSheet_Falling_2
+  - first:
+      213: 2769669471290463062
+    second: SpriteSheet_Falling_3
+  - first:
+      213: -6183982898367471830
+    second: SpriteSheet_Falling_4
+  - first:
+      213: 4365808635261534176
+    second: SpriteSheet_Falling_5
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -54,7 +66,7 @@ TextureImporter:
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 64
+  spritePixelsToUnits: 32
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -78,7 +90,7 @@ TextureImporter:
     maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 1
+    textureCompression: 0
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -103,12 +115,34 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Falling_WIP2_0
+      name: SpriteSheet_Falling_0
+      rect:
+        serializedVersion: 2
+        x: 2
+        y: 29
+        width: 30
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ba7082215fcf5bba0800000000000000
+      internalID: -6073670392937445461
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SpriteSheet_Falling_1
       rect:
         serializedVersion: 2
         x: 2
         y: 3
-        width: 30
+        width: 31
         height: 26
       alignment: 0
       pivot: {x: 0, y: 0}
@@ -118,20 +152,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: b1b0bca1f632a7e00800000000000000
-      internalID: 1043185223787547419
+      spriteID: 1f0abff4ad56a5490800000000000000
+      internalID: -7756775419873091343
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Falling_WIP2_1
+      name: SpriteSheet_Falling_2
       rect:
         serializedVersion: 2
-        x: 3
-        y: 28
+        x: 33
+        y: 29
         width: 29
-        height: 34
+        height: 33
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -140,8 +174,74 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: aae2bc0d9047f2640800000000000000
-      internalID: 5057388492066860714
+      spriteID: 7ea1dea01d0f42e10800000000000000
+      internalID: 2172125700921563879
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SpriteSheet_Falling_3
+      rect:
+        serializedVersion: 2
+        x: 35
+        y: 3
+        width: 29
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6531385b5b7df6620800000000000000
+      internalID: 2769669471290463062
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SpriteSheet_Falling_4
+      rect:
+        serializedVersion: 2
+        x: 64
+        y: 29
+        width: 29
+        height: 33
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a2f57bd61541e2aa0800000000000000
+      internalID: -6183982898367471830
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SpriteSheet_Falling_5
+      rect:
+        serializedVersion: 2
+        x: 67
+        y: 3
+        width: 29
+        height: 26
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0efb81e92d7769c30800000000000000
+      internalID: 4365808635261534176
       vertices: []
       indices: 
       edges: []
@@ -160,8 +260,12 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Falling_WIP2_0: 1043185223787547419
-      Falling_WIP2_1: 5057388492066860714
+      SpriteSheet_Falling_0: -6073670392937445461
+      SpriteSheet_Falling_1: -7756775419873091343
+      SpriteSheet_Falling_2: 2172125700921563879
+      SpriteSheet_Falling_3: 2769669471290463062
+      SpriteSheet_Falling_4: -6183982898367471830
+      SpriteSheet_Falling_5: 4365808635261534176
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
