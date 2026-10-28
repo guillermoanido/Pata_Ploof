@@ -52,14 +52,20 @@ namespace FallingWizard.World
         public Vector2 push = Vector2.zero;
 
         [Header("Look")]
-        [Tooltip("A child object switched on only while the vent sputters its warning. Fill it " +
-                 "with your own art or animation. Never put the vent itself or one of its " +
-                 "parents here: switching that off would switch the whole vent off.")]
+        [Tooltip("A child object switched on while the vent sits silent, and off the rest of " +
+                 "the time: the vent shut. Fill it with your own art or animation. Never put the " +
+                 "vent itself or one of its parents here: switching that off would switch the " +
+                 "whole vent off.")]
+        public GameObject quietLook;
+
+        [Tooltip("A child object switched on only while the vent sputters its warning. Its " +
+                 "animation starts over each time it is switched on, so a clip as long as " +
+                 "Warning Seconds opens the vent just as the blast arrives.")]
         public GameObject warningLook;
 
-        [Tooltip("A child object switched on only while the steam blasts. Fill it with your own " +
-                 "art or animation and size it to the trigger collider on this object, because " +
-                 "that collider IS the column that burns.")]
+        [Tooltip("A child object switched on only while the steam blasts: the vent fully open. " +
+                 "This is the only time it burns, and it burns anyone inside the trigger " +
+                 "collider on this object, so keep that collider the size of this art.")]
         public GameObject steamLook;
 
         [NonSerialized] float clock;
@@ -92,7 +98,8 @@ namespace FallingWizard.World
 
         void OnValidate()
         {
-            if (WouldSwitchItselfOff(warningLook) || WouldSwitchItselfOff(steamLook))
+            if (WouldSwitchItselfOff(quietLook) || WouldSwitchItselfOff(warningLook) ||
+                WouldSwitchItselfOff(steamLook))
                 Debug.LogWarning($"{name}: a SteamVent Look is the vent itself or one of its " +
                                  "parents, so switching that look off would switch the whole " +
                                  "vent off with it. Make the art a child of the vent and drag " +
@@ -141,6 +148,7 @@ namespace FallingWizard.World
             isShowingWarning = warning;
             isShowingSteam = bursting;
 
+            ShowLook(quietLook, !warning && !bursting);
             ShowLook(warningLook, warning);
             ShowLook(steamLook, bursting);
         }

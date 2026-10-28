@@ -34,6 +34,7 @@ coming back down it can never hurt you.
 | `World/` | `Item` (the base of everything the wizard touches) and `TileGrid`, with subfolders: `Hazards/` (`Hazard`, `TripHazard`, `BouncyTrash`, `SteamVent`, `WaxDrop`, `WaxCandle`, `PressurePlate`), `Zones/` (`Zone`, `WindZone2D`, `WindTrap`, `SlipperyFloor`), `Pickups/` (`Pickup`), `Level/` (`ShopStop`, `LevelExit`, `MovingPlatform`, `VineAnchor`, `Carryable`), `Camera/` (`FollowCamera`) |
 | `UI/` | `PlayerHud`, `HudSlot`, `FlingArrow`, `Ui` and the runtime screens |
 | `Menus/`, `Cutscenes/` | `MenuScreen` and the three menus; `CutsceneRunner` |
+| `Editor/` | `PixelArtImporter` (import settings for everything in `Assets/Art/Sprites`; editor only, never in the build) |
 
 ### The wizard is two scripts
 
@@ -744,23 +745,24 @@ flat colour, so each one is visible the moment it lands and is waiting for a spr
 | `Stairs` | `TripHazard`: lay it over a staircase. Take them fast and you tumble down them. | Hazard |
 | `Bouncy Trash` | `BouncyTrash`: bounces you three boxes and sends you tumbling. | Hazard |
 | `Wind` | Pushes you the way its arrows point. Rotate it to aim it. | Hazard |
-| `Wind Trap` | The same push, on a timer, with a Warning Look and a Blowing Look. It shoves, it never hurts. | Hazard |
+| `Wind Trap` | The same push, on a timer: a wall mouth that opens and blows left. Shut, Warning and Blowing Looks. It shoves, it never hurts. | Hazard |
 | `Hand Hold` | The knot Mage Hand catches. | Default |
 | `Boulder` | What Telekinesis lifts. Solid, so it is also a platform. | **Ground** |
 | `Stone Wall` | What Wall Growth raises. Already wired into the spell. | **Ground** |
 | `Level Exit` | The bottom. Marks the level completed and opens the Level Select. | Default |
 
 The steampunk set for the second level lives in `Assets/Prefabs/Mid Level Hazards`, and is set up
-by hand like every other prefab. Every coloured box in them is a child called `Stand-in`: put your
-art beside it and delete it.
+by hand like every other prefab. `Steam Vent`, `Pressure Plate` and `Wind Trap` already carry your
+frames and animations (see [Animations > Hazards](#hazards-1)). Any coloured box left in the
+others is a child called `Stand-in`: put your art beside it and delete it.
 
 | Prefab | What it does | Layer |
 | --- | --- | --- |
-| `Steam Vent` | Quiet, Warning Look, then a burst of steam that burns while you stand in it. | Hazard |
+| `Steam Vent` | The gas trap: a floor vent that sits shut, opens over its warning, and burns anyone on it while fully open. | Hazard |
 | `Wax Candle` | Drips a `Wax Drop` on a rhythm. Select it to see where drops land. | Default |
 | `Wax Drop` | Hangs as a warning, falls, burns whoever it lands on. | Hazard |
 | `Moving Platform` | Slides along `travel` and back, carrying the wizard. | **Ground** |
-| `Pressure Plate` | Stand on it for a second and it throws you up. | Hazard |
+| `Pressure Plate` | Stand on it for a second and it throws you up. It sinks while it counts and springs up as it throws. | Hazard |
 | `Broken Glass` | A plain `Hazard`: cuts you every second you are on it, unless you are walking across it. Standing still on it hurts, walk mode or not. | Hazard |
 
 The ones on **Ground** are there because the wizard has to be able to stand on them, and the ground
@@ -1192,6 +1194,34 @@ fill a clip: select a Health Look in the PLAYER prefab, open Window > Animation 
 the clip from the drop-down, and drag the sliced frames of a sprite sheet onto the timeline. Set
 Samples (the frame rate) in the same window.
 
+### Hazards
+
+A hazard with frames has **one Look child per state**, and its script only switches them on and
+off. A Look that animates has its own Animator with a one-state controller, and a clip that plays
+**once** and holds its last frame. Switching the Look on starts the clip over, so the animation
+always begins when the state does, and a clip that runs a little short just waits on its last
+frame. The clips and controllers live in `Assets/Animations/Hazards`.
+
+| Prefab | Looks, in the order they show | Frames | Clip |
+| --- | --- | --- | --- |
+| `Pressure Plate` | Idle → Pressed → Launched → Idle | `PressurePlate_0` → `_1`, `_2` → `_3` | `Pressure Plate Pressed`: 1 s, as long as Seconds To Launch |
+| `Steam Vent` | Quiet → Warning → Steam → Quiet | `Gas trap` frame 5 (shut) → 4, 3, 2 → frame 1 (open), counting from the left | `Steam Vent Warning`: 0.6 s, as long as Warning Seconds |
+| `Wind Trap` | Shut → Warning → Blowing → Shut | `SteamValve_0` → `_1`, `_2` → `_3` | `Wind Trap Warning`: 0.6 s, as long as Shutter Travel |
+
+The steam vent burns only while the Steam Look shows, which is the vent fully open.
+
+**Every piece of hazard art is at its own size.** Transform scale 1, Draw Mode Simple, so a sprite
+is exactly as many boxes as it has pixels divided by 32. A 32×16 frame is 1 × 0.5 boxes. Never
+size art with the Transform or with a Sliced Size. Each prefab's root sits **on the floor**, at the
+bottom middle of the art: the Looks are lifted by half the frame height (0.25 for a 16 px frame,
+0.5 for a 32 px one), and the trigger collider is the frame's rectangle. The one exception is
+the Wind Trap's collider, which is where the wind reaches: one box tall (the frame's height) and
+three boxes long, starting at the mouth. The mouth faces left, so `push` and `kick` both point
+left.
+
+To change a timing, change the number on the script and the clip's length together. To add a
+frame, open the Look's clip in the Animation window and drag the frame onto the timeline.
+
 ## HUD
 
 An ordinary screen-space `Canvas` you can open up and restyle:
@@ -1283,6 +1313,18 @@ template starts inactive; `PlayerHud` copies it.
 **Background.** Plain sprites placed in the scene. Put them on a sorting layer below `Default` —
 **and add that layer to the `Light2D`'s Target Sorting Layers**, or in URP 2D they render pure black. Simpler alternative:
 leave them on `Default` at negative sorting orders, which the existing light already covers.
+
+## Importing sprites
+
+Any picture in `Assets/Art/Sprites` (or a folder inside it) is imported as pixel art by
+`PixelArtImporter`: Sprite, 32 Pixels Per Unit, Full Rect, Extrude Edges 1, Center pivot, Generate
+Physics Shape on, Clamp, Point (no filter), Max Size 2048, Mitchell, Automatic, no compression.
+
+- These are set on every import, so changing one of them in the Inspector puts it straight back.
+  To change the rule, change the constants or the lines in `PixelArtImporter`.
+- **Sprite Mode is the exception.** A new picture starts as Single, and after that the importer
+  never touches it. Switch it to Multiple and slice it, and it stays that way.
+- To bring old sprites in line, right-click `Assets/Art/Sprites` and pick **Reimport**.
 
 ## Worth knowing
 

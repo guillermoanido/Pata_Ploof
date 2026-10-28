@@ -69,7 +69,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0.30462384, y: -0.09035358}
+  m_Offset: {x: 0.23381022, y: 0.057830572}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -79,7 +79,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 0.6047369, y: 0.3274088}
+  m_Size: {x: 0.4631096, y: 0.4034679}
   m_EdgeRadius: 0
 --- !u!114 &1471028346
 MonoBehaviour:
@@ -93,13 +93,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: abeb548adb8419c2d47ab319649803e8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  affectsOnStaff: 0
+  affectsRagdolled: 1
   passThrough: 1
   minimumSpeed: 0
   rearmDelay: 1.25
   everyStep: 0
   damage: 0
-  affectsOnStaff: 0
-  affectsRagdolled: 1
   ignoresWalking: 1
   aim: 2
   extraKick: 3
@@ -117,8 +117,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   takeRange: 6
-  icon: {fileID: 0}
-  tint: {r: 0.62, g: 0.44, b: 0.24, a: 1}
   settleTime: 0.4
 --- !u!1 &1471028350
 GameObject:
@@ -147,8 +145,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 1
+  m_LocalScale: {x: -1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1471028342}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -201,7 +199,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 2
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: 8e37f1dbb5f9910459f94d0621c59f8f, type: 3}
+  m_Sprite: {fileID: 4659054376141200989, guid: 036bcd9687b266343b9b6b7781f2c04b, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0

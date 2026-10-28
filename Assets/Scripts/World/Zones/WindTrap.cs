@@ -92,11 +92,17 @@ namespace FallingWizard.World
         [Range(0f, 1f)] public float tumbleScale = 0.25f;
 
         [Header("Look")]
+        [Tooltip("A child object switched on while the trap is shut and not winding up, and off " +
+                 "the rest of the time: the mouth closed. Never put the trap itself here, or it " +
+                 "switches itself off. Leave it empty and nothing shows while it is shut.")]
+        public GameObject shutLook;
+
         [Tooltip("A child object switched on only while the trap is winding up - the Shutter " +
                  "Travel seconds just before it blows - and off the rest of the time. This is " +
                  "the one thing the player learns to read, so fill it with art or an animation " +
-                 "nothing else in the level uses. Never put the trap itself here, or it " +
-                 "switches itself off. Leave it empty and there is no warning to see.")]
+                 "nothing else in the level uses. Its animation starts over each time it is " +
+                 "switched on, so a clip as long as Shutter Travel opens the mouth just as the " +
+                 "blast arrives. Leave it empty and there is no warning to see.")]
         public GameObject warningLook;
 
         [Tooltip("A child object switched on only while the trap blows at full strength, and " +
@@ -281,7 +287,8 @@ namespace FallingWizard.World
 
         void WarnAboutLooksThatSwitchTheTrapOff()
         {
-            if (WouldSwitchItselfOff(warningLook) || WouldSwitchItselfOff(blowingLook))
+            if (WouldSwitchItselfOff(shutLook) || WouldSwitchItselfOff(warningLook) ||
+                WouldSwitchItselfOff(blowingLook))
                 Debug.LogWarning("WindTrap has a Look that is the trap itself or one of its " +
                                  "parents, so switching that look off would switch the whole " +
                                  "trap off with it. Make the art a child of the trap and drag " +
@@ -314,6 +321,7 @@ namespace FallingWizard.World
             isShowingWarning = warning;
             isShowingBlowing = blowing;
 
+            ShowLook(shutLook, !warning && !blowing);
             ShowLook(warningLook, warning);
             ShowLook(blowingLook, blowing);
         }

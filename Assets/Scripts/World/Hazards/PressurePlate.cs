@@ -44,28 +44,32 @@ namespace FallingWizard.World
         public bool tumbles = false;
 
         [Tooltip("Seconds after a throw before it can start counting again. Until then it shows " +
-                 "its idle look and takes no notice of the wizard. It mostly matters for low " +
+                 "its Launched Look and takes no notice of the wizard. It mostly matters for low " +
                  "throws, which can land them back on the plate before this runs out.")]
         [Min(0f)] public float rearmSeconds = 0.5f;
 
         [Header("Look")]
-        [Tooltip("Shown while nobody is stood on the plate, and while it re-arms after a throw. " +
-                 "Make it a child object and fill it with your own art or animation - the plate " +
-                 "only ever switches it on and off. Never the plate itself or one of its " +
-                 "parents, or the plate switches itself off with it. Leave it empty for no " +
-                 "idle look.")]
+        [Tooltip("Shown while nobody is stood on the plate. Make it a child object and fill it " +
+                 "with your own art or animation - the plate only ever switches it on and off. " +
+                 "Never the plate itself or one of its parents, or the plate switches itself off " +
+                 "with it. Leave it empty for no idle look.")]
         public GameObject idleLook;
 
         [Tooltip("Shown while the wizard is stood on the plate and it is counting down to the " +
-                 "throw. A child object again, switched on and off and nothing else. For a plate " +
-                 "that sinks further as the count runs out, give this object an animation as " +
-                 "long as Seconds To Launch.")]
+                 "throw. A child object again, switched on and off and nothing else. Its " +
+                 "animation starts over each time it is switched on, so a clip as long as " +
+                 "Seconds To Launch makes the plate sink as the count runs out.")]
         public GameObject pressedLook;
+
+        [Tooltip("Shown for Rearm Seconds right after the throw: the plate springing back up. A " +
+                 "child object again, switched on and off and nothing else. Leave it empty and " +
+                 "nothing shows while it re-arms.")]
+        public GameObject launchedLook;
 
         [NonSerialized] Collider2D hitbox;
         [NonSerialized] float secondsStoodOn;
         [NonSerialized] float readyAt;
-        [NonSerialized] bool isShowingPressed;
+        [NonSerialized] PlateLook shownLook = PlateLook.Idle;
 
         bool IsRearming => Time.time < readyAt;
 
@@ -79,7 +83,8 @@ namespace FallingWizard.World
 
         void OnValidate()
         {
-            if (WouldSwitchThePlateOff(idleLook) || WouldSwitchThePlateOff(pressedLook))
+            if (WouldSwitchThePlateOff(idleLook) || WouldSwitchThePlateOff(pressedLook) ||
+                WouldSwitchThePlateOff(launchedLook))
                 Debug.LogWarning($"{name}: a PressurePlate look is the plate itself or one of its " +
                                  "parents, so switching that look off switches the whole plate " +
                                  "off with it. Put the art on a child object and use that " +
@@ -94,9 +99,12 @@ namespace FallingWizard.World
 
         void FixedUpdate()
         {
+            if (IsRearming)
+                return;
+
             PlayerCharacter wizard = PlayerCharacter.Instance;
 
-            if (IsRearming || !IsStoodOnBy(wizard))
+            if (!IsStoodOnBy(wizard))
             {
                 PopBackUp();
                 return;
@@ -107,7 +115,7 @@ namespace FallingWizard.World
             if (secondsStoodOn >= secondsToLaunch)
                 LaunchTheWizard(wizard.Logic);
             else
-                ShowTheRightLook(true);
+                ShowTheRightLook(PlateLook.Pressed);
         }
 
         bool WouldSwitchThePlateOff(GameObject look) =>
@@ -132,8 +140,9 @@ namespace FallingWizard.World
 
         void LaunchTheWizard(PlayerLogic wizard)
         {
-            PopBackUp();
+            secondsStoodOn = 0f;
             readyAt = Time.time + rearmSeconds;
+            ShowTheRightLook(PlateLook.Launched);
 
             if (tumbles)
                 wizard.TryTrip();
@@ -144,25 +153,36 @@ namespace FallingWizard.World
         void PopBackUp()
         {
             secondsStoodOn = 0f;
-            ShowTheRightLook(false);
+            ShowTheRightLook(PlateLook.Idle);
         }
 
-        void ShowTheRightLook(bool pressed)
+        void ShowTheRightLook(PlateLook look)
         {
-            if (pressed == isShowingPressed)
+            if (look == shownLook)
                 return;
 
-            isShowingPressed = pressed;
+            shownLook = look;
             SwitchTheLooks();
         }
 
         void SwitchTheLooks()
         {
-            if (idleLook != null)
-                idleLook.SetActive(!isShowingPressed);
+            ShowLook(idleLook, shownLook == PlateLook.Idle);
+            ShowLook(pressedLook, shownLook == PlateLook.Pressed);
+            ShowLook(launchedLook, shownLook == PlateLook.Launched);
+        }
 
-            if (pressedLook != null)
-                pressedLook.SetActive(isShowingPressed);
+        static void ShowLook(GameObject look, bool isShown)
+        {
+            if (look != null)
+                look.SetActive(isShown);
+        }
+
+        enum PlateLook
+        {
+            Idle,
+            Pressed,
+            Launched,
         }
     }
 }

@@ -81,12 +81,12 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 1
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Color: {r: 1, g: 0.65, b: 0.2, a: 1}
+  m_Sprite: {fileID: 776365293835802216, guid: c8149c1bbae03d042bf69b82e4d4cbdd, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 1
-  m_Size: {x: 0.3, y: 0.3}
+  m_Size: {x: 1, y: 1}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
@@ -201,13 +201,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 274182aa5d440714a84aabdcca3dbbaa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FallingWizard.World.WaxDrop
+  affectsOnStaff: 1
+  affectsRagdolled: 1
   passThrough: 1
   minimumSpeed: 0
   rearmDelay: 0.5
   everyStep: 0
   damage: 1
-  affectsOnStaff: 1
-  affectsRagdolled: 1
   ignoresWalking: 0
   hangSeconds: 0.5
   fallSpeed: 6
