@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using FallingWizard.Core;
 using FallingWizard.UI;
@@ -12,8 +13,8 @@ namespace FallingWizard.Menus
         [Tooltip("The worlds on the tower map, from the top of the tower to the bottom. The first " +
                  "level of the first world is always open, and each level after it opens once " +
                  "the level before it has been completed, so finishing a world's last level " +
-                 "opens the next world. The dotted line runs in this same order: a world's name, " +
-                 "its levels, then the next world's name.")]
+                 "opens the next world. With cheats on, every level is open. The dotted line runs " +
+                 "in this same order: a world's name, its levels, then the next world's name.")]
         public World[] worlds = new World[0];
 
         [Header("Dotted Line")]
@@ -26,11 +27,29 @@ namespace FallingWizard.Menus
                  "world's name on the map and the line follows it by itself.")]
         [Min(1f)] public float dotSpacing = 15f;
 
+        [Header("Travelling")]
+        [Tooltip("One dot of the journey: a switched-off child of the map holding your own art. " +
+                 "Picking a level lays copies of this along the line, from the top of the tower " +
+                 "down to that level, and then the level loads. Leave it empty and the level " +
+                 "loads straight away.")]
+        public RectTransform travelDot;
+
+        [Tooltip("Seconds between one travel dot and the next. Each level further down the tower " +
+                 "is a longer journey.")]
+        [Min(0f)] public float secondsPerDot = 0.03f;
+
+        [NonSerialized] bool isTravelling;
+
+        void OnEnable() => Cheats.Toggled += OpenTheLevels;
+
         void Start()
         {
             DrawTheDottedLine();
+            WireThePips();
             OpenTheLevels();
         }
+
+        void OnDisable() => Cheats.Toggled -= OpenTheLevels;
 
         void DrawTheDottedLine()
         {
@@ -40,7 +59,10 @@ namespace FallingWizard.Menus
             List<RectTransform> stops = StopsInOrder();
 
             for (int i = 1; i < stops.Count; i++)
-                DrawDotsBetween(stops[i - 1], stops[i]);
+            {
+                foreach (Vector3 spot in SpotsBetween(stops[i - 1], stops[i]))
+                    PlaceCopyOf(dot, spot);
+            }
         }
 
         List<RectTransform> StopsInOrder()
@@ -58,9 +80,10 @@ namespace FallingWizard.Menus
             return stops;
         }
 
-        void DrawDotsBetween(RectTransform from, RectTransform to)
+        List<Vector3> SpotsBetween(RectTransform from, RectTransform to)
         {
-            float spacing = dotSpacing * dot.lossyScale.x;
+            var spots = new List<Vector3>();
+            float spacing = dotSpacing * transform.lossyScale.x;
             int steps = Mathf.RoundToInt(Vector3.Distance(from.position, to.position) / spacing);
 
             for (int i = 1; i < steps; i++)
@@ -68,20 +91,61 @@ namespace FallingWizard.Menus
                 Vector3 spot = Vector3.Lerp(from.position, to.position, (float)i / steps);
 
                 if (!IsCovering(from, spot) && !IsCovering(to, spot))
-                    PlaceDot(spot);
+                    spots.Add(spot);
             }
+
+            return spots;
         }
 
         static bool IsCovering(RectTransform stop, Vector3 spot) =>
             stop.rect.Contains(stop.InverseTransformPoint(spot));
 
-        void PlaceDot(Vector3 spot)
+        static void PlaceCopyOf(RectTransform template, Vector3 spot)
         {
-            RectTransform copy = Instantiate(dot, dot.parent);
+            RectTransform copy = Instantiate(template, template.parent);
 
             copy.position = spot;
-            copy.SetAsFirstSibling();
+            copy.SetSiblingIndex(template.GetSiblingIndex());
             copy.gameObject.SetActive(true);
+        }
+
+        void WireThePips()
+        {
+            foreach (World world in worlds)
+            {
+                foreach (Level level in world.levels)
+                    level.pip.onClick.AddListener(() => StartTravellingTo(level));
+            }
+        }
+
+        void StartTravellingTo(Level level)
+        {
+            if (isTravelling)
+                return;
+
+            isTravelling = true;
+
+            if (travelDot == null)
+                Game.LoadLevel(level.sceneName);
+            else
+                StartCoroutine(TravelTo(level));
+        }
+
+        IEnumerator TravelTo(Level level)
+        {
+            List<RectTransform> stops = StopsInOrder();
+            int destination = stops.IndexOf((RectTransform)level.pip.transform);
+
+            for (int i = 1; i <= destination; i++)
+            {
+                foreach (Vector3 spot in SpotsBetween(stops[i - 1], stops[i]))
+                {
+                    PlaceCopyOf(travelDot, spot);
+                    yield return new WaitForSeconds(secondsPerDot);
+                }
+            }
+
+            Game.LoadLevel(level.sceneName);
         }
 
         void OpenTheLevels()
@@ -109,14 +173,11 @@ namespace FallingWizard.Menus
 
             level.pip.interactable = isOpen;
 
-            if (isOpen)
-                level.pip.onClick.AddListener(() => Game.LoadLevel(level.sceneName));
-
             return isOpen;
         }
 
         static bool IsUnlocked(string sceneBefore) =>
-            sceneBefore == null || Progress.HasCompletedLevel(sceneBefore);
+            Cheats.IsActive || sceneBefore == null || Progress.HasCompletedLevel(sceneBefore);
 
         static bool IsInTheBuild(Level level)
         {

@@ -1,4 +1,6 @@
+using System;
 using FallingWizard.Player;
+using FallingWizard.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -20,6 +22,10 @@ namespace FallingWizard.Core
         static Cheats instance;
         static bool isActive;
 
+        public static event Action Toggled;
+
+        public static bool IsActive => isActive;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Install()
         {
@@ -38,8 +44,13 @@ namespace FallingWizard.Core
             if (keyboard != null && keyboard.mKey.wasPressedThisFrame)
                 Toggle();
 
-            if (isActive)
-                SetWizardInvulnerable(true);
+            if (!isActive)
+                return;
+
+            SetWizardInvulnerable(true);
+
+            if (keyboard != null && keyboard.lKey.wasPressedThisFrame && !Screens.IsModalOpen)
+                Game.LoadLevelSelect();
         }
 
         void OnGUI()
@@ -59,7 +70,7 @@ namespace FallingWizard.Core
             var area = new Rect(Screen.width - (LabelWidth + LabelRightMargin), LabelTopMargin,
                                 LabelWidth, LabelHeight);
 
-            GUI.Label(area, "CHEATS ON  (M)", style);
+            GUI.Label(area, "CHEATS ON (M)  LEVELS (L)", style);
         }
 
         void Toggle()
@@ -70,8 +81,10 @@ namespace FallingWizard.Core
             SetWizardInvulnerable(isActive);
 
             Debug.Log(isActive
-                ? "CHEATS ON - god mode, and everything costs no Magical Scrap. Press M again to turn them off."
-                : "CHEATS OFF - damage and Magical Scrap costs are back to normal.");
+                ? "CHEATS ON - god mode, everything costs no Magical Scrap, and every level is open. Press L for the Level Select, M to turn cheats off."
+                : "CHEATS OFF - damage, Magical Scrap costs and locked levels are back to normal.");
+
+            Toggled?.Invoke();
         }
 
         void SetWizardInvulnerable(bool invulnerable)

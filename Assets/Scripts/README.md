@@ -31,7 +31,7 @@ coming back down it can never hurt you.
 | `Player/` | `PlayerCharacter` (the Unity side), `PlayerLogic` (everything the wizard does), `Staff`, `PlayerAnimator`, `HealthLook`, `RagdollBumps` |
 | `Player/Abilities/` | `Ability` and the spells, `AbilityBook` |
 | `Localization/` | `Loc`, `TextBook`, `LocalizedText` |
-| `World/` | `Item` (the base of everything the wizard touches) and `TileGrid`, with subfolders: `Hazards/` (`Hazard`, `TripHazard`, `BouncyTrash`, `SteamVent`, `WaxDrop`, `WaxCandle`, `PressurePlate`), `Zones/` (`Zone`, `WindZone2D`, `WindTrap`, `SlipperyFloor`), `Pickups/` (`Pickup`), `Level/` (`ShopStop`, `LevelExit`, `MovingPlatform`, `VineAnchor`, `Carryable`), `Camera/` (`FollowCamera`) |
+| `World/` | `Item` (the base of everything the wizard touches) and `TileGrid`, with subfolders: `Hazards/` (`Hazard`, `TripHazard`, `BouncyTrash`, `SteamVent`, `WaxDrop`, `WaxCandle`, `PressurePlate`), `Zones/` (`Zone`, `WindZone2D`, `WindTrap`, `SlipperyFloor`), `Pickups/` (`Pickup`, `TimedReward`), `Level/` (`ShopStop`, `LevelExit`, `MovingPlatform`, `VineAnchor`, `Carryable`), `Camera/` (`FollowCamera`) |
 | `UI/` | `PlayerHud`, `HudSlot`, `FlingArrow`, `Ui` and the runtime screens |
 | `Menus/`, `Cutscenes/` | `MenuScreen` and the three menus; `CutsceneRunner` |
 | `Editor/` | `PixelArtImporter` (import settings for everything in `Assets/Art/Sprites`; editor only, never in the build) |
@@ -359,6 +359,30 @@ being touched. For the same reason **only the art bobs** — `FindArtToBob` refu
 Drag in `Assets/Prefabs/Top Level/Basura Mágica` (Magical Scrap) and `Assets/Prefabs/Heart Upgrade`
 and they work as they land: a trigger `CircleCollider2D`, the component, and an `Art` child to drop
 a sprite onto. The code never changes that sprite — what you put there is what is drawn.
+
+### Timed rewards
+
+`Assets/Prefabs/Timed Reward` is one Magical Scrap and one Heart Upgrade the wizard can only grab
+within **90 seconds** of the level starting. Every level has one, on the way to its exit. Drag it to
+move it: its root sits on the floor, at the middle of the pair.
+
+```
+Timed Reward    TimedReward: Seconds Allowed
+├── Basura Mágica, Heart Upgrade    the real pickups
+└── Faded Scrap, Faded Heart, Time Limit    switched off until time is up
+```
+
+`TimedReward` reads `Time.timeSinceLevelLoad`, so the clock starts over every time a level loads and
+stops while the game is paused or a menu is open. Haste does not slow it, because Haste does not
+touch `Time.timeScale`, so the spell really does help you beat it. When time is up, each pickup still
+there is switched off and its faded copy switched on, and `Time Limit` shows the red `1:30`. A
+reward already taken leaves no faded copy, and with none left the timer does not show either.
+
+The fading is not done by the script: `Faded Scrap` and `Faded Heart` are ordinary sprites with the
+alpha turned down on their Sprite Renderers, so restyle them there. `Time Limit` is a sprite too,
+`Art/Sprites/Time Limit 1-30.png`, because the project has no pixel font. **It does not read Seconds
+Allowed**, so if you change the time, redraw it. To change what a reward gives, select its pickup in
+the prefab, or in one level to change only that level.
 
 ### Shop stops
 
@@ -739,6 +763,7 @@ flat colour, so each one is visible the moment it lands and is waiting for a spr
 | --- | --- | --- |
 | `Basura Mágica` | Magical Scrap, the currency. Goes straight into the purse. Taken until the wizard dies. | Default |
 | `Heart Upgrade` | +1 max HP. Taken until the wizard dies, like everything else. | Default |
+| `Timed Reward` | A Magical Scrap and a Heart Upgrade to grab within 90 seconds of the level starting. After that they fade under a red `1:30`. | Default |
 | `Wet Floor Sign` | `TripHazard`: trips a runner. `minimumSpeed` 3, so a walk is safe. | Hazard |
 | `Rake`, `Rake 1` | `TripHazard` aimed Left or Right: trips you BACKWARDS, the way you came. | Hazard |
 | `Ice` | Ground that does not hold you. Nothing else changes. | Hazard |
@@ -815,6 +840,15 @@ screen opens. Restyle `Dot` (sprite, size, colour) and every dot follows. Move a
 the map and the line follows it. `Dot Spacing` sets the gap, and no dot lands on top of a label or
 a button, so a spacing that is large for the room between stops can leave very few dots. At 15 each
 gap gets three. The line only shows in Play mode, because the copies do not exist before then.
+
+**Travelling.** Picking a level lays copies of `Travel Dot` along the line, one at a time, from the
+top of the tower down to that level, and then the level loads. Restyle `Travel Dot` the same way as
+`Dot`, and set the pace with `Seconds Per Dot`. A level further down is a longer journey: `3-3` takes
+about a second.
+
+**Cheats.** Press **M** anywhere to turn cheats on: every level on this screen opens, whatever has
+been completed, and **L** jumps here from any scene. It changes nothing in the save, so turning
+cheats off locks the levels again.
 
 `2-1` and `3-1` started as empty levels: the wizard, the camera, the light, the HUD, the menus and
 the tile grid, a strip of floor and one Level Exit. The other new levels are copies of that same
@@ -1333,9 +1367,14 @@ ticking a box.
 `referencePixelsPerUnit` **32** and **no `GraphicRaycaster`**, laid out as the diagram above. The
 template starts inactive; `PlayerHud` copies it.
 
-**Background.** Plain sprites placed in the scene. Put them on a sorting layer below `Default` —
-**and add that layer to the `Light2D`'s Target Sorting Layers**, or in URP 2D they render pure black. Simpler alternative:
-leave them on `Default` at negative sorting orders, which the existing light already covers.
+**Background.** Every level's `Grid` has a second tilemap called `Background`, for tiles that are only
+scenery: no collider, sorting layer `Default`, Order in Layer **-10**. Pick it under Active Tilemap in
+the Tile Palette before painting. The lowest order on any prefab is -3, so everything draws in front
+of it. A plain sprite behind it goes lower still, like the `BG` object in `1-1` at -11.
+
+Keep background art on `Default`. The other two sorting layers both go wrong: the light does not
+target `Background`, so anything on it renders pure black, and `BG` is lit but sits after `Default`,
+so anything on it draws in front of the whole game.
 
 ## Importing sprites
 
