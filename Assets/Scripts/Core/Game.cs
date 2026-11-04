@@ -5,7 +5,7 @@ namespace FallingWizard.Core
 {
     public static class Game
     {
-        public const string FirstLevelScene = "Level 1";
+        public const string FirstLevelScene = "1-1";
         public const string LevelSelectScene = "Level Select";
 
         const string MainMenuScene = "Main Menu";

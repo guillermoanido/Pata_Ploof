@@ -57,7 +57,7 @@ The file is long (Movement alone is over a thousand lines). Use your editor's ou
 ### Rules that keep it working
 
 - **Never rename `PlayerCharacter.cs`, `Staff.cs` or `FollowCamera.cs`**, or their
-  classes. `Level 1.unity` refers to them by GUID, and the GUID lives in the `.meta` beside the
+  classes. `1-1.unity` refers to them by GUID, and the GUID lives in the `.meta` beside the
   file. Moving a file is fine — the `.meta` travels with it. Renaming is not.
 - **Never use `[SerializeReference]`.** It writes assembly, namespace and class names into the
   scene; renaming a class silently nulls every reference to it.
@@ -320,7 +320,7 @@ straight away, so quitting halfway down and coming back carries on with everythi
 **Dying starts the game again from nothing.** `PlayerCharacter.OnDied` calls `Progress.StartOver()`
 the moment the last heart goes, waits `secondsBeforeDeathMessage` so the death can be seen, then
 `ShowDeathMessage` opens a `ChoiceScreen` saying so (`death.title`, `death.blurb`) with two buttons:
-**Start again** opens the skill screen and then Level 1, exactly like Play on the Main Menu, and
+**Start again** opens the skill screen and then level `1-1`, exactly like Play on the Main Menu, and
 **Main menu** goes back there. `StartOver` is `ResetSave` — the save file is deleted and every list
 above is emptied — except in a `Playtest` sandbox, where it empties the sandbox and leaves the real
 save alone. The wipe happens at the moment of death rather than when a button is pressed, so
@@ -472,7 +472,7 @@ bounds would settle it against wherever it used to be standing.
 ## The grid line is not the floor
 
 `mainlev_build.png` is sliced **34×35 px on a 32 px grid**, so every tile is drawn — and collides
-— about a pixel proud of its cell. Read it straight off the composite collider in `Level 1`: the
+— about a pixel proud of its cell. Read it straight off the composite collider in `1-1`: the
 outline sits on `x.03125`, not on whole numbers.
 
 That is not a rounding error to ignore. **It is the surface everything else has to line up with.**
@@ -550,7 +550,7 @@ row low. `Movement.Footing` asks the collider itself — `bounds.center.x` and `
 `FitGroundCheckTo` now measures from the collider's bottom and its own middle rather than from half
 its height about the transform, so a collider carrying an offset — which is what Unity's
 fit-to-sprite button writes — no longer bakes that drift in the moment someone hits Reset. The
-PLAYER in `Level 1` has been refitted to its collider: `groundCheckOffset` went from
+PLAYER in `1-1` has been refitted to its collider: `groundCheckOffset` went from
 `(0, -0.596875)` to `(-0.050636888, -0.5525605)`, and `groundCheckSize.x` from `0.703125` to
 `0.64969389`.
 
@@ -751,7 +751,7 @@ flat colour, so each one is visible the moment it lands and is waiting for a spr
 | `Stone Wall` | What Wall Growth raises. Already wired into the spell. | **Ground** |
 | `Level Exit` | The bottom. Marks the level completed and opens the Level Select. | Default |
 
-The steampunk set for the second level lives in `Assets/Prefabs/Mid Level Hazards`, and is set up
+The steampunk set for the second world lives in `Assets/Prefabs/Mid Level Hazards`, and is set up
 by hand like every other prefab. `Steam Vent`, `Pressure Plate` and `Wind Trap` already carry your
 frames and animations (see [Animations > Hazards](#hazards-1)). Any coloured box left in the
 others is a child called `Stand-in`: put your art beside it and delete it.
@@ -787,22 +787,37 @@ scene.
 
 ## Level Select
 
-A scene of its own, `Assets/Scenes/Level Select.unity`, set up by hand. It is a black screen, a
-`Tower Map` image for the map art, and three pips on the map — `Top Pip`, `Mid Pip` and `Bottom
-Pip` — each a button whose label carries a `LocalizedText` (`levels.top`, `levels.mid`,
-`levels.bottom`).
+The tower is **three worlds of three levels each**, and each level is a scene named after its
+number:
 
-`LevelSelectMenu` sits on the canvas with one entry per pip, top of the tower first: the scene it
-loads and the button. The first level is always open; every other one opens once the level above
-it is completed. Completed levels are saved, so they stay open across launches until the wizard
-dies or the save is reset. A pip whose scene is missing from Build Settings stays locked and says
-so in the console. Selection starts on the deepest open pip.
+| World | Name on the map | Scenes |
+| --- | --- | --- |
+| 1, the top of the tower | `levels.top` | `1-1`, `1-2`, `1-3` |
+| 2, the middle | `levels.mid` | `2-1`, `2-2`, `2-3` |
+| 3, the bottom | `levels.bottom` | `3-1`, `3-2`, `3-3` |
 
-**Level 2 and Level 3** were set up by hand from a copy of `Level 1`: the wizard, the camera, the
-light, the HUD, the menus and the tile grid, a strip of floor and one Level Exit. Both are in
-File > Build Settings right after Level 1, so the pips can open them.
+`Assets/Scenes/Level Select.unity` is set up by hand. It is a black screen and a `Tower Map` image
+for the map art. On the map, each world's name is a plain label, and each level is a button named
+after its scene, whose label carries a `LocalizedText` (`levels.level1` to `levels.level3`).
 
-Finishing Level 2 opens Level 3, because `LevelExit` completes whichever scene is playing.
+`LevelSelectMenu` sits on the canvas with a list of **Worlds**, top of the tower first. A world holds
+its name label and its levels, and a level holds the scene it loads and its button. `1-1` is always
+open, and every other level opens once the one before it is completed, so finishing `1-3` opens
+`2-1`. `LevelExit` completes whichever scene is playing. Completed levels are saved, so they stay
+open across launches until the wizard dies or the save is reset. A level whose scene is missing
+from Build Settings stays locked and says so in the console. Selection starts on the deepest open
+level.
+
+**The dotted line** runs through the Worlds list in order: a world's name, its levels, then the next
+world's name. It is made of copies of `Dot`, a switched-off child of `Tower Map`, placed when the
+screen opens. Restyle `Dot` (sprite, size, colour) and every dot follows. Move a level or a name on
+the map and the line follows it. `Dot Spacing` sets the gap, and no dot lands on top of a label or
+a button. The line only shows in Play mode, because the copies do not exist before then.
+
+`2-1` and `3-1` started as empty levels: the wizard, the camera, the light, the HUD, the menus and
+the tile grid, a strip of floor and one Level Exit. The other new levels are copies of that same
+empty level, so every level can be finished from the start. To add one, duplicate a scene in the
+Project window, add it to File > Build Settings, and add it to a world in the Worlds list.
 
 
 ## Saving

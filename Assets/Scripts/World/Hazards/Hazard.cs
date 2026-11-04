@@ -22,7 +22,7 @@ namespace FallingWizard.World
 
         [Tooltip("Only fires above this speed, in boxes per second. Check the wizard in the " +
                  "scene before picking a number - the class defaults are a run of 6 and a walk " +
-                 "of 2, but the Level 1 wizard overrides them to 4 and 2, so 3 is what sets a " +
+                 "of 2, but the 1-1 wizard overrides them to 4 and 2, so 3 is what sets a " +
                  "run off there and never a walk. Never set this TO the run speed: the wizard " +
                  "is hardly ever at exactly top speed once a ramp or a slow spell has touched " +
                  "them, so the hazard would fire or not on the fourth decimal place. This " +
