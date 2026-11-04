@@ -369,20 +369,30 @@ move it: its root sits on the floor, at the middle of the pair.
 ```
 Timed Reward    TimedReward: Seconds Allowed
 ├── Basura Mágica, Heart Upgrade    the real pickups
-└── Faded Scrap, Faded Heart, Time Limit    switched off until time is up
+├── Faded Scrap, Faded Heart    switched off until time is up
+└── Timer    the red clock above them
+    ├── Minutes    a child for each number, 0 to 9
+    ├── Colon
+    ├── Tens       0 to 5
+    └── Ones       0 to 9
 ```
+
+**There is no clock on the HUD.** The timer lives on the prefab, always on, counting down from the
+limit, so the player reads it when they reach the rewards. When time is up, each pickup still there
+is switched off and its faded copy switched on, and the timer goes back to showing the limit they
+missed: `1:30`. A reward already taken leaves no faded copy, and once none are left the timer goes
+away too.
 
 `TimedReward` reads `Time.timeSinceLevelLoad`, so the clock starts over every time a level loads and
 stops while the game is paused or a menu is open. Haste does not slow it, because Haste does not
-touch `Time.timeScale`, so the spell really does help you beat it. When time is up, each pickup still
-there is switched off and its faded copy switched on, and `Time Limit` shows the red `1:30`. A
-reward already taken leaves no faded copy, and with none left the timer does not show either.
+touch `Time.timeScale`, so the spell really does help you beat it.
 
-The fading is not done by the script: `Faded Scrap` and `Faded Heart` are ordinary sprites with the
-alpha turned down on their Sprite Renderers, so restyle them there. `Time Limit` is a sprite too,
-`Art/Sprites/Time Limit 1-30.png`, because the project has no pixel font. **It does not read Seconds
-Allowed**, so if you change the time, redraw it. To change what a reward gives, select its pickup in
-the prefab, or in one level to change only that level.
+**Nothing here is drawn by the script.** It only switches objects on and off. `Faded Scrap` and
+`Faded Heart` are ordinary sprites with the alpha turned down on their Sprite Renderers, so restyle
+them there. The digits are slices of `Art/Sprites/Timer Digits.png`, drawn by hand because the
+project has no pixel font: redraw that sheet and every timer follows. Changing Seconds Allowed needs
+no new art, up to 9:59. To change what a reward gives, select its pickup in the prefab, or in one
+level to change only that level.
 
 ### Shop stops
 
@@ -763,7 +773,7 @@ flat colour, so each one is visible the moment it lands and is waiting for a spr
 | --- | --- | --- |
 | `Basura Mágica` | Magical Scrap, the currency. Goes straight into the purse. Taken until the wizard dies. | Default |
 | `Heart Upgrade` | +1 max HP. Taken until the wizard dies, like everything else. | Default |
-| `Timed Reward` | A Magical Scrap and a Heart Upgrade to grab within 90 seconds of the level starting. After that they fade under a red `1:30`. | Default |
+| `Timed Reward` | A Magical Scrap and a Heart Upgrade to grab within 90 seconds of the level starting, under a red countdown. After that they fade under a red `1:30`. | Default |
 | `Wet Floor Sign` | `TripHazard`: trips a runner. `minimumSpeed` 3, so a walk is safe. | Hazard |
 | `Rake`, `Rake 1` | `TripHazard` aimed Left or Right: trips you BACKWARDS, the way you came. | Hazard |
 | `Ice` | Ground that does not hold you. Nothing else changes. | Hazard |
