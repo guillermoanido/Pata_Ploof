@@ -1199,6 +1199,12 @@ like hazards not working. Until `Health 2`, `Health 1` and the clip are filled i
 Glass took 1 heart(s) from the wizard - 2 left."* `PlayerLogic.Hurt` takes that cause as its second
 argument: a hazard passes its own name, a fall passes how far it was.
 
+**The `Any State → Take Damage` and `Any State → Hat Change` transitions are muted until their clips
+have frames.** An empty clip still lasts a second, and nothing changes the sprite during it, so the
+wizard would freeze on whatever frame was showing. A fall that costs a heart would hold the Falling
+pose for a full second after landing. Once a clip has frames, open `Player.controller`, select its
+transition from Any State and untick **Mute**.
+
 Every look's Animator uses `Player.controller` - or an Animator Override Controller made from it,
 holding that look's own clips. The clips animate the sprite of the object the Animator is on, so
 one set of clips works for any look.

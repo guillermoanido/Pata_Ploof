@@ -1,6 +1,6 @@
 {
     "version": 2,
-    "scrap": 0,
+    "scrap": 2,
     "bonusHearts": 0,
     "loadout": [
         "staff",
@@ -14,6 +14,9 @@
             "rank": 1
         }
     ],
-    "taken": [],
+    "taken": [
+        "scrap1-1:-40,-4",
+        "scrap1-1:-84,-26"
+    ],
     "completedLevels": []
 }
