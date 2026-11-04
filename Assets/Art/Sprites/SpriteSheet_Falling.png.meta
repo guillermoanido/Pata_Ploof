@@ -1,10 +1,16 @@
 fileFormatVersion: 2
-guid: cc0347e4fdcc6d44c8d26c23e5bfcd86
+guid: 4e883b3bf84b90b4ba983eb0b3613b97
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -6200073034590244522
-    second: Personaje 32x32 1_0
+      213: -6073670392937445461
+    second: SpriteSheet_Falling_0
+  - first:
+      213: -7756775419873091343
+    second: SpriteSheet_Falling_1
+  - first:
+      213: 2172125700921563879
+    second: SpriteSheet_Falling_2
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -46,7 +52,7 @@ TextureImporter:
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 1
+  spriteMode: 2
   spriteExtrude: 1
   spriteMeshType: 0
   alignment: 0
@@ -100,25 +106,69 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Personaje 32x32 1_0
+      name: SpriteSheet_Falling_0
       rect:
         serializedVersion: 2
-        x: 1
+        x: 0
         y: 0
         width: 32
-        height: 32
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.25}
       border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
+      customData:
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 65135c7ac6ae4f9a0800000000000000
-      internalID: -6200073034590244522
+      spriteID: ba7082215fcf5bba0800000000000000
+      internalID: -6073670392937445461
       vertices: []
-      indices: 
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SpriteSheet_Falling_1
+      rect:
+        serializedVersion: 2
+        x: 32
+        y: 0
+        width: 32
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.25}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1f0abff4ad56a5490800000000000000
+      internalID: -7756775419873091343
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: SpriteSheet_Falling_2
+      rect:
+        serializedVersion: 2
+        x: 64
+        y: 0
+        width: 32
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0.25}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7ea1dea01d0f42e10800000000000000
+      internalID: 2172125700921563879
+      vertices: []
+      indices:
       edges: []
       weights: []
     outline: []
@@ -135,7 +185,9 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Personaje 32x32 1_0: -6200073034590244522
+      SpriteSheet_Falling_0: -6073670392937445461
+      SpriteSheet_Falling_1: -7756775419873091343
+      SpriteSheet_Falling_2: 2172125700921563879
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -24,7 +24,7 @@ namespace FallingWizard.Menus
 
         [Tooltip("The distance from one dot to the next, in canvas pixels. Move a level or a " +
                  "world's name on the map and the line follows it by itself.")]
-        [Min(1f)] public float dotSpacing = 24f;
+        [Min(1f)] public float dotSpacing = 15f;
 
         void Start()
         {

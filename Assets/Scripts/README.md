@@ -797,8 +797,9 @@ number:
 | 3, the bottom | `levels.bottom` | `3-1`, `3-2`, `3-3` |
 
 `Assets/Scenes/Level Select.unity` is set up by hand. It is a black screen and a `Tower Map` image
-for the map art. On the map, each world's name is a plain label, and each level is a button named
-after its scene, whose label carries a `LocalizedText` (`levels.level1` to `levels.level3`).
+for the map art. The map is one column reading down the tower, with twelve stops 90 px apart. Each
+world's name is a plain label, and each level is a button named after its scene, whose label
+carries a `LocalizedText` (`levels.level1` to `levels.level3`).
 
 `LevelSelectMenu` sits on the canvas with a list of **Worlds**, top of the tower first. A world holds
 its name label and its levels, and a level holds the scene it loads and its button. `1-1` is always
@@ -812,7 +813,8 @@ level.
 world's name. It is made of copies of `Dot`, a switched-off child of `Tower Map`, placed when the
 screen opens. Restyle `Dot` (sprite, size, colour) and every dot follows. Move a level or a name on
 the map and the line follows it. `Dot Spacing` sets the gap, and no dot lands on top of a label or
-a button. The line only shows in Play mode, because the copies do not exist before then.
+a button, so a spacing that is large for the room between stops can leave very few dots. At 15 each
+gap gets three. The line only shows in Play mode, because the copies do not exist before then.
 
 `2-1` and `3-1` started as empty levels: the wizard, the camera, the light, the HUD, the menus and
 the tile grid, a strip of floor and one Level Exit. The other new levels are copies of that same

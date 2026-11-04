@@ -1,37 +1,37 @@
 fileFormatVersion: 2
-guid: b964379940a45a3478882cf1e5cb7112
+guid: 4c750b18c1aa9ea42a59c786b1641b98
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 4753734043426544580
-    second: PJ_Idel_32x32-Sheet_0
+      213: -154332282993555660
+    second: PJ_walk_32x32-Sheet_0
   - first:
-      213: -4660973756076781104
-    second: PJ_Idel_32x32-Sheet_1
+      213: 1933045329785335172
+    second: PJ_walk_32x32-Sheet_1
   - first:
-      213: 2994752692899381663
-    second: PJ_Idel_32x32-Sheet_2
+      213: 5193617416029586065
+    second: PJ_walk_32x32-Sheet_2
   - first:
-      213: 4849472831798654399
-    second: PJ_Idel_32x32-Sheet_3
+      213: -7541929566836578082
+    second: PJ_walk_32x32-Sheet_3
   - first:
-      213: 9026718036446789587
-    second: PJ_Idel_32x32-Sheet_4
+      213: 5348319363520825637
+    second: PJ_walk_32x32-Sheet_4
   - first:
-      213: -184220025378043114
-    second: PJ_Idel_32x32-Sheet_5
+      213: 1904959297456310161
+    second: PJ_walk_32x32-Sheet_5
   - first:
-      213: -2312839052275004062
-    second: PJ_Idel_32x32-Sheet_6
+      213: -857980138643556199
+    second: PJ_walk_32x32-Sheet_6
   - first:
-      213: -5007856748914386600
-    second: PJ_Idel_32x32-Sheet_7
+      213: -7465815094427979337
+    second: PJ_walk_32x32-Sheet_7
   - first:
-      213: -2230388857365938637
-    second: PJ_Idel_32x32-Sheet_8
+      213: -7803500093279450145
+    second: PJ_walk_32x32-Sheet_8
   - first:
-      213: 5119516546143392898
-    second: PJ_Idel_32x32-Sheet_9
+      213: 4355740554875335043
+    second: PJ_walk_32x32-Sheet_9
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -102,7 +102,7 @@ TextureImporter:
     maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 1
+    textureCompression: 0
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -127,7 +127,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: PJ_Idel_32x32-Sheet_0
+      name: PJ_walk_32x32-Sheet_0
       rect:
         serializedVersion: 2
         x: 0
@@ -135,21 +135,21 @@ TextureImporter:
         width: 32
         height: 32
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 4cbde171de7a8f140800000000000000
-      internalID: 4753734043426544580
+      spriteID: 4374bc63b93bbddf0800000000000000
+      internalID: -154332282993555660
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: PJ_Idel_32x32-Sheet_1
+      name: PJ_walk_32x32-Sheet_1
       rect:
         serializedVersion: 2
         x: 32
@@ -157,21 +157,21 @@ TextureImporter:
         width: 32
         height: 32
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 0d110a15015e05fb0800000000000000
-      internalID: -4660973756076781104
+      spriteID: 48d25985c7e83da10800000000000000
+      internalID: 1933045329785335172
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: PJ_Idel_32x32-Sheet_2
+      name: PJ_walk_32x32-Sheet_2
       rect:
         serializedVersion: 2
         x: 64
@@ -179,21 +179,21 @@ TextureImporter:
         width: 32
         height: 32
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: f91896215bf7f8920800000000000000
-      internalID: 2994752692899381663
+      spriteID: 192c9bdd58f631840800000000000000
+      internalID: 5193617416029586065
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: PJ_Idel_32x32-Sheet_3
+      name: PJ_walk_32x32-Sheet_3
       rect:
         serializedVersion: 2
         x: 96
@@ -201,21 +201,21 @@ TextureImporter:
         width: 32
         height: 32
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: fb5344fc8d9cc4340800000000000000
-      internalID: 4849472831798654399
+      spriteID: ed8a0bf840fa55790800000000000000
+      internalID: -7541929566836578082
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: PJ_Idel_32x32-Sheet_4
+      name: PJ_walk_32x32-Sheet_4
       rect:
         serializedVersion: 2
         x: 128
@@ -223,21 +223,21 @@ TextureImporter:
         width: 32
         height: 32
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 3dfb5028a38554d70800000000000000
-      internalID: 9026718036446789587
+      spriteID: 5298000ef1c093a40800000000000000
+      internalID: 5348319363520825637
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: PJ_Idel_32x32-Sheet_5
+      name: PJ_walk_32x32-Sheet_5
       rect:
         serializedVersion: 2
         x: 160
@@ -245,21 +245,21 @@ TextureImporter:
         width: 32
         height: 32
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 61b04daecd4817df0800000000000000
-      internalID: -184220025378043114
+      spriteID: 197067c5366cf6a10800000000000000
+      internalID: 1904959297456310161
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: PJ_Idel_32x32-Sheet_6
+      name: PJ_walk_32x32-Sheet_6
       rect:
         serializedVersion: 2
         x: 192
@@ -267,21 +267,21 @@ TextureImporter:
         width: 32
         height: 32
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 26d4f7ac22527efd0800000000000000
-      internalID: -2312839052275004062
+      spriteID: 9987fc31c97d714f0800000000000000
+      internalID: -857980138643556199
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: PJ_Idel_32x32-Sheet_7
+      name: PJ_walk_32x32-Sheet_7
       rect:
         serializedVersion: 2
         x: 224
@@ -289,21 +289,21 @@ TextureImporter:
         width: 32
         height: 32
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 8595ae2d1d4808ab0800000000000000
-      internalID: -5007856748914386600
+      spriteID: 7b1fed92ab8146890800000000000000
+      internalID: -7465815094427979337
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: PJ_Idel_32x32-Sheet_8
+      name: PJ_walk_32x32-Sheet_8
       rect:
         serializedVersion: 2
         x: 256
@@ -311,21 +311,21 @@ TextureImporter:
         width: 32
         height: 32
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 33eb6bdb6211c01e0800000000000000
-      internalID: -2230388857365938637
+      spriteID: fdbc957820664b390800000000000000
+      internalID: -7803500093279450145
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: PJ_Idel_32x32-Sheet_9
+      name: PJ_walk_32x32-Sheet_9
       rect:
         serializedVersion: 2
         x: 288
@@ -333,15 +333,15 @@ TextureImporter:
         width: 32
         height: 32
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 2849c92ac2d2c0740800000000000000
-      internalID: 5119516546143392898
+      spriteID: 3817b1bf4f2b27c30800000000000000
+      internalID: 4355740554875335043
       vertices: []
       indices: 
       edges: []
@@ -350,7 +350,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: 5e97eb03825dee720800000000000000
     internalID: 0
     vertices: []
     indices: 
@@ -358,18 +358,20 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     spriteCustomMetadata:
-      entries: []
+      entries:
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":32.0,"y":32.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":1,"keepEmptyRects":false,"isAlternate":false}'
     nameFileIdTable:
-      PJ_Idel_32x32-Sheet_0: 4753734043426544580
-      PJ_Idel_32x32-Sheet_1: -4660973756076781104
-      PJ_Idel_32x32-Sheet_2: 2994752692899381663
-      PJ_Idel_32x32-Sheet_3: 4849472831798654399
-      PJ_Idel_32x32-Sheet_4: 9026718036446789587
-      PJ_Idel_32x32-Sheet_5: -184220025378043114
-      PJ_Idel_32x32-Sheet_6: -2312839052275004062
-      PJ_Idel_32x32-Sheet_7: -5007856748914386600
-      PJ_Idel_32x32-Sheet_8: -2230388857365938637
-      PJ_Idel_32x32-Sheet_9: 5119516546143392898
+      PJ_walk_32x32-Sheet_0: -154332282993555660
+      PJ_walk_32x32-Sheet_1: 1933045329785335172
+      PJ_walk_32x32-Sheet_2: 5193617416029586065
+      PJ_walk_32x32-Sheet_3: -7541929566836578082
+      PJ_walk_32x32-Sheet_4: 5348319363520825637
+      PJ_walk_32x32-Sheet_5: 1904959297456310161
+      PJ_walk_32x32-Sheet_6: -857980138643556199
+      PJ_walk_32x32-Sheet_7: -7465815094427979337
+      PJ_walk_32x32-Sheet_8: -7803500093279450145
+      PJ_walk_32x32-Sheet_9: 4355740554875335043
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
