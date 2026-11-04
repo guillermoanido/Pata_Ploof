@@ -1,7 +1,7 @@
 {
     "version": 2,
-    "scrap": 2,
-    "bonusHearts": 0,
+    "scrap": 1,
+    "bonusHearts": 1,
     "loadout": [
         "staff",
         "",
@@ -15,8 +15,8 @@
         }
     ],
     "taken": [
-        "scrap1-1:-40,-4",
-        "scrap1-1:-84,-26"
+        "heart1-1:25,-186",
+        "scrap1-1:21,-186"
     ],
     "completedLevels": []
 }
