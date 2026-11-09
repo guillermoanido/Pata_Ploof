@@ -13,6 +13,9 @@ namespace FallingWizard.World
         const float ArrowHeadWidth = 0.25f;
         const int ArrowRows = 1;
 
+        const float StreakTravel = 1.5f;
+        const float StreaksPerSquareBox = 0.15f;
+
         static readonly Color ZoneColour = new Color(0.55f, 0.85f, 1f, 0.35f);
         static readonly Color ArrowColour = new Color(0.55f, 0.85f, 1f, 0.9f);
 
@@ -36,6 +39,14 @@ namespace FallingWizard.World
                  "felt in full, so an updraft lifts a wizard who is standing in it.")]
         [Range(0f, 1f)] public float groundScale = 0.35f;
 
+        [Header("Streaks")]
+        [Tooltip("The white streaks that show the wind: a particle system on a child of this " +
+                 "zone. Its look is yours - sprite, colour, fade - but when the level starts this " +
+                 "zone aims it along Push, sets its speed to Push's strength, and fills the " +
+                 "trigger collider with it, so the streaks always tell the truth about the wind. " +
+                 "Leave it empty for no streaks.")]
+        public ParticleSystem streaks;
+
         [Header("Editor")]
         [Tooltip("Draw the arrows in the scene view without having to select the zone first, " +
                  "which is what you want while laying a level out.")]
@@ -49,6 +60,8 @@ namespace FallingWizard.World
             affectsRagdolled = true;
         }
 
+        protected virtual void Awake() => AimTheStreaks();
+
         protected override void OnPlayerEntered(PlayerCharacter wizard) { }
 
         protected override void OnPlayerInside(PlayerCharacter wizard, float fixedDeltaTime)
@@ -61,6 +74,38 @@ namespace FallingWizard.World
 
         protected Vector2 TurnWithThisObject(Vector2 direction) =>
             transform.rotation * direction;
+
+        void AimTheStreaks()
+        {
+            var area = GetComponent<BoxCollider2D>();
+
+            if (streaks == null || area == null || push.sqrMagnitude < Epsilon)
+                return;
+
+            Vector2 way = WorldPush;
+
+            ParticleSystem.MainModule main = streaks.main;
+            main.startLifetime = StreakTravel / way.magnitude;
+            main.startRotation = -Mathf.Atan2(way.y, way.x);
+
+            ParticleSystem.VelocityOverLifetimeModule velocity = streaks.velocityOverLifetime;
+            velocity.x = way.x;
+            velocity.y = way.y;
+            velocity.z = 0f;
+
+            FillTheZone(area);
+            streaks.Play();
+        }
+
+        void FillTheZone(BoxCollider2D area)
+        {
+            ParticleSystem.ShapeModule shape = streaks.shape;
+            shape.position = area.offset;
+            shape.scale = new Vector3(area.size.x, area.size.y, 0f);
+
+            ParticleSystem.EmissionModule emission = streaks.emission;
+            emission.rateOverTime = area.size.x * area.size.y * StreaksPerSquareBox;
+        }
 
         void OnDrawGizmos()
         {

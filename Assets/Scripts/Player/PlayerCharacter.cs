@@ -1,3 +1,4 @@
+using System.Collections;
 using FallingWizard.Core;
 using FallingWizard.Localization;
 using FallingWizard.UI;
@@ -33,7 +34,15 @@ namespace FallingWizard.Player
                  "go back to the main menu. Dying wipes everything: Magical Scrap, spells, " +
                  "upgrades, the loadout, bonus hearts, finished levels and taken pickups. " +
                  "Settings are kept.")]
-        [Min(0f)] public float secondsBeforeDeathMessage = 1.25f;
+        [Min(0f)] public float secondsBeforeDeathMessage = 2.5f;
+
+        [Tooltip("Seconds the wizard hangs frozen in the air the moment they die, before the hop. " +
+                 "The Death clip shows its first frame for this long, so change both together.")]
+        [Min(0f)] public float deathPauseSeconds = 0.5f;
+
+        [Tooltip("How fast the wizard hops up after the pause, in boxes per second. They then fall " +
+                 "through everything and off the bottom of the screen, while the camera stays put.")]
+        [Min(0f)] public float deathHopSpeed = 12f;
 
         [Header("Staves")]
         [Tooltip("One staff per rank, weakest first. Only the staff for the current rank is left " +
@@ -139,7 +148,23 @@ namespace FallingWizard.Player
         void OnDied()
         {
             Progress.StartOver();
+            StartCoroutine(HopOffTheScreen());
             Invoke(nameof(ShowDeathMessage), secondsBeforeDeathMessage);
+        }
+
+        IEnumerator HopOffTheScreen()
+        {
+            var body = GetComponent<Rigidbody2D>();
+
+            Hitbox.enabled = false;
+            Hurtbox.enabled = false;
+            body.linearVelocity = Vector2.zero;
+            body.gravityScale = 0f;
+
+            yield return new WaitForSeconds(deathPauseSeconds);
+
+            body.gravityScale = gravityScale;
+            body.linearVelocity = Vector2.up * deathHopSpeed;
         }
 
         void ShowDeathMessage()

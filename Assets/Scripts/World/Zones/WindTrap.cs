@@ -199,8 +199,9 @@ namespace FallingWizard.World
 
         void OnValidate() => Validate();
 
-        void Awake()
+        protected override void Awake()
         {
+            base.Awake();
             Validate();
             SwitchLooks(IsWindingUp, IsOpen);
         }
