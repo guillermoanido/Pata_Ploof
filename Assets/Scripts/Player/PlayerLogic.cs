@@ -60,6 +60,8 @@ namespace FallingWizard.Player
 
         public event Action Died;
 
+        public event Action Tripped;
+
         public Staff.Pole Pole => pole;
         public bool HasPole => pole != null && pole.HasPole;
 
@@ -161,6 +163,7 @@ namespace FallingWizard.Player
             ragdoll.Begin(way, way == movement.TravelDirection);
 
             State = PlayerState.Ragdoll;
+            Tripped?.Invoke();
             return true;
         }
 

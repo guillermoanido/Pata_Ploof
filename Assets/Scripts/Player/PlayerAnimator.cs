@@ -35,6 +35,12 @@ namespace FallingWizard.Player
         [Tooltip("Min and max cycle-rate multiplier for Walk and Run.")]
         public Vector2 cycleRateRange = new Vector2(0.5f, 1.5f);
 
+        [Header("Effects")]
+        [Tooltip("Played once each time a hazard trips the wizard into a tumble: the stars flung " +
+                 "off on impact. A particle system on a child of the wizard, set up entirely in " +
+                 "its own Inspector. Leave it empty for no effect.")]
+        public ParticleSystem impactStars;
+
         PlayerCharacter character;
         HealthLook[] looks = new HealthLook[0];
         HealthLook shownLook;
@@ -67,6 +73,8 @@ namespace FallingWizard.Player
 
             lastHealth = health.Current;
             ShowLook(ChooseLook(health.Current));
+
+            character.Logic.Tripped += PlayImpactStars;
         }
 
         void Update()
@@ -83,6 +91,12 @@ namespace FallingWizard.Player
             SetAnimatorParameters(wizard, mode);
             WatchForAClimbStarting(wizard, mode);
             WatchForATumble(mode, wizard.movement);
+        }
+
+        void OnDestroy()
+        {
+            if (character != null)
+                character.Logic.Tripped -= PlayImpactStars;
         }
 
         void ShowHealth(PlayerLogic.Health health)
@@ -218,6 +232,12 @@ namespace FallingWizard.Player
 
             wasRagdolling = ragdolling;
             wasDownOnTheFloor = downOnTheFloor;
+        }
+
+        void PlayImpactStars()
+        {
+            if (impactStars != null)
+                impactStars.Play();
         }
     }
 }
