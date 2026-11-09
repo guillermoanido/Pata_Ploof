@@ -330,7 +330,10 @@ namespace FallingWizard.World
         void Blast(PlayerLogic wizard)
         {
             if (tumbles)
+            {
                 wizard.TryTrip();
+                wizard.Impact();
+            }
 
             wizard.Shove(TurnWithThisObject(kick), kickLockout);
         }

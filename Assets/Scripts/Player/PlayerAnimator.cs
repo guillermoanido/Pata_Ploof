@@ -74,7 +74,7 @@ namespace FallingWizard.Player
             lastHealth = health.Current;
             ShowLook(ChooseLook(health.Current));
 
-            character.Logic.Tripped += PlayImpactStars;
+            character.Logic.Impacted += PlayImpactStars;
         }
 
         void Update()
@@ -96,7 +96,7 @@ namespace FallingWizard.Player
         void OnDestroy()
         {
             if (character != null)
-                character.Logic.Tripped -= PlayImpactStars;
+                character.Logic.Impacted -= PlayImpactStars;
         }
 
         void ShowHealth(PlayerLogic.Health health)

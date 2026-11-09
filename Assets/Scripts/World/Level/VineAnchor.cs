@@ -42,6 +42,15 @@ namespace FallingWizard.World
                  "empty and nothing shows.")]
         public GameObject glowLook;
 
+        [Tooltip("The knot as it looks before anyone has called the vine down - usually the first " +
+                 "frame of its animation. A child object, switched off once the vine is called.")]
+        public GameObject knotLook;
+
+        [Tooltip("A child object switched on the moment Mage Hand calls the vine down, and kept " +
+                 "on while it hangs. Its animation starts as it switches on, so a play-once clip " +
+                 "plays the knot lighting up and holds the last frame. Leave it empty for none.")]
+        public GameObject calledLook;
+
         [Header("The Rope")]
         [Tooltip("The vine itself, as a child with your rope art. It is hidden until the wizard " +
                  "calls it down, then stretched from the knot and turned to follow the swing - " +
@@ -58,6 +67,7 @@ namespace FallingWizard.World
         [NonSerialized] float unrolled;
         [NonSerialized] bool isCalledDown;
         [NonSerialized] bool isShowingGlow;
+        [NonSerialized] bool isShowingCalled;
 
         [NonSerialized] float ropeThickness = 1f;
 
@@ -96,6 +106,7 @@ namespace FallingWizard.World
         void Awake()
         {
             ShowGlowLook(false);
+            ShowCalledLook(false);
 
             if (rope == null)
                 return;
@@ -110,6 +121,9 @@ namespace FallingWizard.World
         {
             ShowGlowLookWhenNear();
             Unroll();
+
+            if (isCalledDown != isShowingCalled)
+                ShowCalledLook(isCalledDown);
         }
 
         void OnDisable() => Hanging.Remove(this);
@@ -164,6 +178,17 @@ namespace FallingWizard.World
 
             if (glowLook != null)
                 glowLook.SetActive(near);
+        }
+
+        void ShowCalledLook(bool called)
+        {
+            isShowingCalled = called;
+
+            if (knotLook != null)
+                knotLook.SetActive(!called);
+
+            if (calledLook != null)
+                calledLook.SetActive(called);
         }
 
         bool IsWithinReach(Vector2 point) => DistanceTo(point) <= grabRange;

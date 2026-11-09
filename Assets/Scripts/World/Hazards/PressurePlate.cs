@@ -145,7 +145,10 @@ namespace FallingWizard.World
             ShowTheRightLook(PlateLook.Launched);
 
             if (tumbles)
+            {
                 wizard.TryTrip();
+                wizard.Impact();
+            }
 
             wizard.TryBounce(launchHeight, sidewaysPush, true);
         }
