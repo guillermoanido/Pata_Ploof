@@ -60,6 +60,8 @@ namespace FallingWizard.Player
 
         public event Action Died;
 
+        public event Action Impacted;
+
         public Staff.Pole Pole => pole;
         public bool HasPole => pole != null && pole.HasPole;
 
@@ -150,6 +152,8 @@ namespace FallingWizard.Player
         }
 
         public bool TryTrip() => TryTrip(movement.TravelDirection);
+
+        public void Impact() => Impacted?.Invoke();
 
         public bool TryTrip(int direction)
         {

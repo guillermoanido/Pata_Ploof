@@ -51,6 +51,21 @@ namespace FallingWizard.World
                  "still on it hurts, toggle or not.")]
         public bool ignoresWalking = false;
 
+        [Header("Hit Look")]
+        [Tooltip("The still art shown while the hazard waits - usually the first frame of its " +
+                 "animation. A child object, switched off while the Hit Look plays. Leave it " +
+                 "empty for none.")]
+        public GameObject idleLook;
+
+        [Tooltip("A child object switched on for Hit Seconds every time this catches the wizard, " +
+                 "then off again so the Idle Look comes back. Its animation starts over each " +
+                 "time, so a play-once clip as long as Hit Seconds fits exactly. Leave it empty " +
+                 "and nothing changes on a hit.")]
+        public GameObject hitLook;
+
+        [Tooltip("How long the Hit Look shows after each hit, in seconds.")]
+        [Min(0f)] public float hitSeconds = 0.5f;
+
         [NonSerialized] float readyAt;
 
         protected virtual bool IsDangerousNow => true;
@@ -82,9 +97,30 @@ namespace FallingWizard.World
             readyAt = Time.time + rearmDelay;
 
             Affect(wizard.Logic);
+            wizard.Logic.Impact();
+            PlayTheHitLook();
 
             if (damage > 0)
                 wizard.Logic.Hurt(damage, name);
+        }
+
+        void PlayTheHitLook()
+        {
+            if (hitLook == null)
+                return;
+
+            CancelInvoke(nameof(ShowTheIdleLook));
+            hitLook.SetActive(false);
+            SwitchHitLook(true);
+            Invoke(nameof(ShowTheIdleLook), hitSeconds);
+        }
+
+        void ShowTheIdleLook() => SwitchHitLook(false);
+
+        void SwitchHitLook(bool isHit)
+        {
+            ShowLook(idleLook, !isHit);
+            ShowLook(hitLook, isHit);
         }
 
         bool IsReadyToCatch(PlayerCharacter wizard)

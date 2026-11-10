@@ -24,7 +24,7 @@ namespace FallingWizard.World
         void LateUpdate()
         {
             PlayerCharacter target = PlayerCharacter.Instance;
-            if (target == null)
+            if (target == null || !target.Logic.health.IsAlive)
                 return;
 
             float wantedPeek = target.Logic.IsPeeking ? -peekDistance : 0f;
