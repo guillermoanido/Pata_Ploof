@@ -22,7 +22,6 @@ namespace FallingWizard.Player
         static readonly int ClimbDownId = Animator.StringToHash("ClimbDown");
         static readonly int RagdollVariantId = Animator.StringToHash("RagdollVariant");
         static readonly int HurtId = Animator.StringToHash("Hurt");
-        static readonly int HatChangedId = Animator.StringToHash("HatChanged");
 
         [Header("Ragdoll")]
         [Tooltip("How many ragdoll reactions to build and cycle through. Rebuild after changing.")]
@@ -42,8 +41,6 @@ namespace FallingWizard.Player
         public ParticleSystem impactStars;
 
         PlayerCharacter character;
-        HealthLook[] looks = new HealthLook[0];
-        HealthLook shownLook;
         Animator animator;
 
         int lastHealth;
@@ -64,27 +61,23 @@ namespace FallingWizard.Player
                 return;
             }
 
-            looks = GetComponentsInChildren<HealthLook>(true);
+            animator = GetComponentInChildren<Animator>();
         }
 
         void Start()
         {
-            PlayerLogic.Health health = character.Logic.health;
-
-            lastHealth = health.Current;
-            ShowLook(ChooseLook(health.Current));
-
+            lastHealth = character.Logic.health.Current;
             character.Logic.Impacted += PlayImpactStars;
         }
 
         void Update()
         {
-            PlayerLogic wizard = character.Logic;
-
-            ShowHealth(wizard.health);
-
             if (animator == null)
                 return;
+
+            PlayerLogic wizard = character.Logic;
+
+            WatchForAHit(wizard.health);
 
             int mode = ChooseMode(wizard);
 
@@ -99,49 +92,14 @@ namespace FallingWizard.Player
                 character.Logic.Impacted -= PlayImpactStars;
         }
 
-        void ShowHealth(PlayerLogic.Health health)
+        void WatchForAHit(PlayerLogic.Health health)
         {
             bool tookAHit = health.Current < lastHealth && health.IsInvulnerable && health.IsAlive;
-            HealthLook look = ChooseLook(health.Current);
-            bool lookChanged = look != shownLook;
 
             lastHealth = health.Current;
 
-            if (lookChanged)
-                ShowLook(look);
-
-            if (tookAHit && animator != null)
-                animator.SetTrigger(lookChanged ? HatChangedId : HurtId);
-        }
-
-        HealthLook ChooseLook(int health)
-        {
-            HealthLook highestReached = null;
-            HealthLook lowest = null;
-
-            foreach (HealthLook look in looks)
-            {
-                if (lowest == null || look.health < lowest.health)
-                    lowest = look;
-
-                if (look.health <= health && (highestReached == null || look.health > highestReached.health))
-                    highestReached = look;
-            }
-
-            return highestReached != null ? highestReached : lowest;
-        }
-
-        void ShowLook(HealthLook chosen)
-        {
-            foreach (HealthLook look in looks)
-                look.gameObject.SetActive(look == chosen);
-
-            shownLook = chosen;
-            animator = chosen != null ? chosen.GetComponent<Animator>() : null;
-
-            wasOnStaff = false;
-            wasRagdolling = false;
-            wasDownOnTheFloor = false;
+            if (tookAHit)
+                animator.SetTrigger(HurtId);
         }
 
         static int ChooseMode(PlayerLogic wizard)

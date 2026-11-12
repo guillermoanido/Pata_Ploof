@@ -1,16 +1,32 @@
 {
     "version": 2,
-    "scrap": 1,
+    "scrap": 0,
     "bonusHearts": 1,
     "loadout": [
         "staff",
-        "",
-        "",
-        ""
+        "vine",
+        "glide",
+        "wall"
     ],
     "ranks": [
         {
+            "key": "glide",
+            "rank": 1
+        },
+        {
+            "key": "hand",
+            "rank": 1
+        },
+        {
             "key": "staff",
+            "rank": 1
+        },
+        {
+            "key": "vine",
+            "rank": 1
+        },
+        {
+            "key": "wall",
             "rank": 1
         }
     ],

@@ -443,7 +443,9 @@ namespace FallingWizard.Player
             movement.SenseGround(fixedDeltaTime);
             CheckLanding();
 
-            if (ragdoll.Tick(fixedDeltaTime, movement.IsGrounded, movement.HorizontalSpeed))
+            float steer = Mathf.Abs(input.Move.x) > movement.steerDeadzone ? input.Move.x : 0f;
+
+            if (ragdoll.Tick(fixedDeltaTime, movement.IsGrounded, movement.HorizontalSpeed, steer))
                 State = PlayerState.Normal;
         }
 
@@ -1702,6 +1704,13 @@ namespace FallingWizard.Player
                      "to rest against the wall instead of chattering off it.")]
             [Min(0f)] public float minimumBounceSpeed = 1.5f;
 
+            [Header("Steering")]
+            [Tooltip("How hard the stick can push a tumbling wizard left or right, in boxes per " +
+                     "second squared. A nudge, not control: it never pushes them faster than " +
+                     "Minimum Launch, so it can aim a landing or slow a slide but never run. 0 " +
+                     "takes all control away while tumbling.")]
+            [Min(0f)] public float steering = 3f;
+
             [NonSerialized] Rigidbody2D body;
             [NonSerialized] Transform visual;
             [NonSerialized] float angle;
@@ -1752,12 +1761,13 @@ namespace FallingWizard.Player
                 body.linearVelocity = velocity;
             }
 
-            public bool Tick(float fixedDeltaTime, bool grounded, float horizontalSpeed)
+            public bool Tick(float fixedDeltaTime, bool grounded, float horizontalSpeed, float steer)
             {
                 if (IsStandingUp)
                     return StandUp(fixedDeltaTime);
 
                 Tumble(fixedDeltaTime);
+                Steer(steer, fixedDeltaTime);
                 BounceOffWalls(fixedDeltaTime);
                 SlowTheSkid(grounded, fixedDeltaTime);
 
@@ -1833,6 +1843,17 @@ namespace FallingWizard.Player
                 elapsed += fixedDeltaTime;
             }
 
+            void Steer(float steer, float fixedDeltaTime)
+            {
+                if (steering <= 0f || steer == 0f)
+                    return;
+
+                float speedThatWay = body.linearVelocityX * Mathf.Sign(steer);
+
+                if (speedThatWay < minimumLaunch)
+                    body.linearVelocityX += steer * steering * fixedDeltaTime;
+            }
+
             void BounceOffWalls(float fixedDeltaTime)
             {
                 if (wallBounce <= 0f || body == null || hull == null || Time.time < bounceReadyAt)
@@ -1898,7 +1919,7 @@ namespace FallingWizard.Player
 
             public int RoomForBonusHearts => Mathf.Max(0, maxBonusHearts - bonus);
 
-            int Max => baseHealth + bonus;
+            public int Max => baseHealth + bonus;
 
             public void SetBaseHealth(int hearts)
             {
