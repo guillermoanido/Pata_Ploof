@@ -133,6 +133,9 @@ MonoBehaviour:
   lookThreshold: 0.3
   lookHoldSeconds: 0.4
   secondsBeforeDeathMessage: 2.5
+  deathPauseSeconds: 0.5
+  deathHopSpeed: 12
+  startingHealth: 3
   staves:
   - {fileID: 4439750653072729773}
   - {fileID: 1646938069505509153}
@@ -184,6 +187,7 @@ MonoBehaviour:
       standUpDuration: 0.35
       wallBounce: 0.55
       minimumBounceSpeed: 1.5
+      steering: 6
     health:
       maxBonusHearts: 4
       invulnerabilityTime: 0.6

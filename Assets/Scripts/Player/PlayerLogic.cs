@@ -168,12 +168,14 @@ namespace FallingWizard.Player
             return true;
         }
 
-        public bool TryBounce(float heightInBoxes, float sideways, bool resetsFall)
+        public bool TryBounce(float heightInBoxes, float sideways, bool resetsFall,
+            bool keepsTheFall = false)
         {
             if (!health.IsAlive || State == PlayerState.OnStaff || State == PlayerState.OnVine)
                 return false;
 
-            movement.Launch(heightInBoxes, sideways, resetsFall);
+            float height = keepsTheFall ? Mathf.Max(heightInBoxes, movement.HeightFallenFrom) : heightInBoxes;
+            movement.Launch(height, sideways, resetsFall);
             return true;
         }
 
@@ -192,6 +194,12 @@ namespace FallingWizard.Player
         {
             if (State != PlayerState.OnStaff && State != PlayerState.OnVine)
                 movement.AddImpulse(velocity, controlLockout);
+        }
+
+        public void Lift(float upwardSpeed)
+        {
+            if (upwardSpeed > 0f && State != PlayerState.OnStaff && State != PlayerState.OnVine)
+                movement.RiseAtLeast(Mathf.Max(0f, movement.Velocity.y) + upwardSpeed);
         }
 
         public void Hurt(int hearts, string cause)
@@ -767,6 +775,15 @@ namespace FallingWizard.Player
             public float HorizontalSpeed => body == null ? 0f : Mathf.Abs(body.linearVelocityX);
             public Vector2 Velocity => body == null ? Vector2.zero : body.linearVelocity;
 
+            public float HeightFallenFrom
+            {
+                get
+                {
+                    float fallSpeed = body == null ? 0f : Mathf.Max(0f, -body.linearVelocityY);
+                    return fallSpeed * fallSpeed / (KineticEnergyFactor * BaseGravity);
+                }
+            }
+
             float FeetY => Position.y + groundCheckOffset.y;
 
             Vector2 ArcStart => new Vector2(Position.x, FeetY + ArcClearance);
@@ -860,6 +877,15 @@ namespace FallingWizard.Player
                 lockout = Mathf.Max(lockout, controlLockout);
             }
 
+            public void RiseAtLeast(float upwardSpeed)
+            {
+                if (body == null)
+                    return;
+
+                body.linearVelocityY = Mathf.Max(body.linearVelocityY, upwardSpeed);
+                isClimbingRamp = false;
+            }
+
             public void NudgeVelocity(Vector2 velocity)
             {
                 if (body != null)
@@ -868,7 +894,7 @@ namespace FallingWizard.Player
 
             public void Launch(float heightInBoxes, float sideways, bool resetsFall)
             {
-                body.linearVelocityY = GetSpeedToRise(Mathf.Max(0f, heightInBoxes));
+                RiseAtLeast(GetSpeedToRise(Mathf.Max(0f, heightInBoxes)));
 
                 if (sideways != 0f)
                     body.linearVelocityX += sideways;

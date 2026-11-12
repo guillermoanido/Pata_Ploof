@@ -24,6 +24,11 @@ namespace FallingWizard.World
                  "real landing charges for the whole flight.")]
         public bool resetsFall = true;
 
+        [Tooltip("A wizard falling into this bounces at least as high as they fell from, so " +
+                 "bouncing from one into another never loses height - only Bounce Height is " +
+                 "added when they arrive slowly. Off bounces exactly Bounce Height every time.")]
+        public bool keepsTheFall = true;
+
         protected override void Reset()
         {
             base.Reset();
@@ -39,7 +44,7 @@ namespace FallingWizard.World
             if (ragdolls)
                 wizard.TryTrip();
 
-            wizard.TryBounce(bounceHeight, onward * shove, resetsFall);
+            wizard.TryBounce(bounceHeight, onward * shove, resetsFall, keepsTheFall);
         }
     }
 }

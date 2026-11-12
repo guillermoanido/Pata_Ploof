@@ -1099,6 +1099,12 @@ Item                      finds the wizard in its trigger; shared Look helpers
 └── LevelExit             the way out
 ```
 
+**Lift beats a fall.** A hazard that throws the wizard upward never lets a fall eat the throw.
+`PlayerLogic.Lift` (rakes, through `TripHazard.extraLift`) drops any downward speed before
+adding the lift, and still works on a wizard who is already tumbling. `BouncyTrash` with **Keeps
+The Fall** on bounces the wizard at least as high as they fell from, so going from one bouncy hat
+into another never loses height.
+
 A hazard only gets its own script when it **does** something different. Hazards that only differ in
 numbers share one script, and the prefab holds the numbers: the wet floor sign, the stairs and both
 rakes are all `TripHazard`, and broken glass is a plain `Hazard`.
