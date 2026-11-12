@@ -8,6 +8,12 @@ namespace FallingWizard.Player
 {
     public abstract class Ability : ScriptableObject
     {
+        public const float NotCharging = -1f;
+
+        const int NoFixedSlot = -1;
+
+        const int LastSlot = Progress.SlotCount - 1;
+
         [Header("Identity")]
         [Tooltip("Key this spell is remembered by. Leave empty to use the asset's file name. " +
                  "Once a save exists, changing it forgets the spell.")]
@@ -25,7 +31,7 @@ namespace FallingWizard.Player
         public Sprite icon;
 
         [Header("Learning")]
-        [Tooltip("Wisps spent to learn this at the skill screen.")]
+        [Tooltip("Magical Scrap spent to learn this at the skill screen.")]
         [Min(0)] public int cost = 1;
 
         [Tooltip("Cannot be moved out of its slot at the skill screen. Only the Staff wants this.")]
@@ -33,7 +39,7 @@ namespace FallingWizard.Player
 
         [Tooltip("The slot a locked spell always sits in. 0 is the first button, 1 the second, " +
                  "and so on. -1 for anything the player is free to place.")]
-        [Range(-1, 3)] public int fixedSlot = -1;
+        [Range(NoFixedSlot, LastSlot)] public int fixedSlot = NoFixedSlot;
 
         [Header("Input")]
         [Tooltip("A passive has no button. It still takes up one of the four slots, so bringing " +
@@ -65,10 +71,6 @@ namespace FallingWizard.Player
         [FormerlySerializedAs("usesPerRun")]
         [Min(0)] public int usesPerLevel = 0;
 
-        [Header("Pickup")]
-        [Tooltip("Optional prefab spawned where the shrine was, for a puff of sparkles.")]
-        public GameObject collectedEffect;
-
         [Header("Upgrades")]
         [Tooltip("One entry per rank past the first. Element 0 is what rank 2 costs and what it " +
                  "buys, in the player's words. Leave it empty for a spell that never upgrades. " +
@@ -82,9 +84,6 @@ namespace FallingWizard.Player
 
         public bool HasUpgrades => upgrades != null && upgrades.Length > 0;
 
-        public Upgrade NextUpgrade(int rank) =>
-            upgrades != null && rank >= 1 && rank <= upgrades.Length ? upgrades[rank - 1] : null;
-
         public string Key => string.IsNullOrEmpty(id) ? name : id;
 
         public string LocKey => Loc.AbilityPrefix + Key;
@@ -92,6 +91,20 @@ namespace FallingWizard.Player
         public string Name => Loc.Text(LocKey + ".name", displayName);
 
         public string Description => Loc.Text(LocKey + ".desc", description);
+
+        void OnValidate()
+        {
+            cost = Mathf.Max(0, cost);
+
+            if (upgrades != null)
+                foreach (Upgrade step in upgrades)
+                    step?.Validate();
+
+            Validate();
+        }
+
+        public Upgrade NextUpgrade(int rank) =>
+            upgrades != null && rank >= 1 && rank <= upgrades.Length ? upgrades[rank - 1] : null;
 
         public string UpgradeTitle(int rank)
         {
@@ -113,9 +126,9 @@ namespace FallingWizard.Player
 
         public virtual void OnEquipped(PlayerLogic wizard) { }
 
-        public virtual void OnUnequipped(PlayerLogic wizard) { }
+        public virtual void OnUnequipped(PlayerLogic wizard) => CleanUp(wizard);
 
-        public virtual void OnRunReset(PlayerLogic wizard) { }
+        public virtual void OnRunReset(PlayerLogic wizard) => CleanUp(wizard);
 
         public virtual void ModifyStats(PlayerLogic wizard, PlayerLogic.Modifiers stats) { }
 
@@ -125,7 +138,7 @@ namespace FallingWizard.Player
 
         public virtual Color IconTintFor(PlayerLogic wizard) => Color.white;
 
-        public virtual float ChargeFor(PlayerLogic wizard) => -1f;
+        public virtual float ChargeFor(PlayerLogic wizard) => NotCharging;
 
         public virtual void OnHeld(PlayerLogic wizard, float heldSeconds, float fixedDeltaTime) { }
 
@@ -143,17 +156,39 @@ namespace FallingWizard.Player
 
         public virtual void OnEnded(PlayerLogic wizard) { }
 
-        protected static T TierFor<T>(T[] tiers, int rank) where T : class =>
-            tiers == null || tiers.Length == 0
-                ? null
-                : tiers[Mathf.Clamp(rank - 1, 0, tiers.Length - 1)];
+        protected virtual void Validate() { }
 
-        protected static float TierFor(float[] tiers, int rank) =>
-            tiers == null || tiers.Length == 0
-                ? 1f
-                : tiers[Mathf.Clamp(rank - 1, 0, tiers.Length - 1)];
+        protected virtual void CleanUp(PlayerLogic wizard) { }
 
-        protected void CheckTiers(int count)
+        protected void ValidateTiers(ITier[] tiers)
+        {
+            if (tiers != null)
+                foreach (ITier tier in tiers)
+                    tier?.Validate();
+
+            WarnIfTooFewTiers(tiers != null ? tiers.Length : 0);
+        }
+
+        protected T PickTier<T>(T[] tiers, PlayerLogic wizard) where T : class, new()
+        {
+            int rank = wizard.spellbook.RankOf(this);
+
+            if (tiers == null || tiers.Length == 0)
+                return new T();
+
+            return tiers[Mathf.Clamp(rank - 1, 0, tiers.Length - 1)] ?? new T();
+        }
+
+        protected static GameObject FindChildNamed(Transform rig, string wanted)
+        {
+            foreach (Transform child in rig.GetComponentsInChildren<Transform>(true))
+                if (child.name == wanted)
+                    return child.gameObject;
+
+            return null;
+        }
+
+        void WarnIfTooFewTiers(int count)
         {
             if (count > 0 && count < MaxRank)
                 Debug.LogWarning($"'{name}' reaches rank {MaxRank} but has only {count} block(s) " +
@@ -161,23 +196,10 @@ namespace FallingWizard.Player
                                  this);
         }
 
-        void OnValidate()
-        {
-            cost = Mathf.Max(0, cost);
-
-            if (upgrades != null)
-                foreach (Upgrade step in upgrades)
-                    step?.Validate();
-
-            Validate();
-        }
-
-        protected virtual void Validate() { }
-
         [Serializable]
         public class Upgrade
         {
-            [Tooltip("Wisps to raise the spell to this rank.")]
+            [Tooltip("Magical Scrap to raise the spell to this rank.")]
             [Min(0)] public int cost = 1;
 
             [Tooltip("Short name for the rank: 'Longer staff', 'Up and down', 'Wider stone'.")]
@@ -188,6 +210,44 @@ namespace FallingWizard.Player
             public string description = "";
 
             public void Validate() => cost = Mathf.Max(0, cost);
+        }
+
+        protected interface ITier
+        {
+            void Validate();
+        }
+
+        protected class WizardEffect
+        {
+            readonly string effectName;
+            GameObject found;
+            bool hasSearched;
+
+            public WizardEffect(string name) => effectName = name;
+
+            public GameObject Find(PlayerLogic wizard, Ability spell)
+            {
+                if (hasSearched || wizard.Rig == null)
+                    return found;
+
+                hasSearched = true;
+                found = FindChildNamed(wizard.Rig, effectName);
+
+                if (found == null)
+                    Debug.LogWarning($"'{spell.name}' found nothing called '{effectName}' under " +
+                                     "the wizard, so its effect will not show. Place your effect " +
+                                     "under the wizard with exactly that name.", spell);
+
+                return found;
+            }
+
+            public void Show(PlayerLogic wizard, Ability spell, bool isShown)
+            {
+                GameObject effect = Find(wizard, spell);
+
+                if (effect != null)
+                    effect.SetActive(isShown);
+            }
         }
     }
 }

@@ -1,18 +1,16 @@
-using System;
 using UnityEngine;
 
 namespace FallingWizard.Player
 {
-    [RequireComponent(typeof(Animator))]
-    [DefaultExecutionOrder(50)]
+    [DefaultExecutionOrder(RunAfterTheWizard)]
     public class PlayerAnimator : MonoBehaviour
     {
+        const int RunAfterTheWizard = 50;
+
         public const int ModeGround = 0;
         public const int ModeStaff = 1;
         public const int ModeRagdoll = 2;
         public const int ModeDead = 3;
-
-        const int NoHat = -1;
 
         static readonly int ModeId = Animator.StringToHash("Mode");
         static readonly int GroundedId = Animator.StringToHash("Grounded");
@@ -24,7 +22,6 @@ namespace FallingWizard.Player
         static readonly int ClimbDownId = Animator.StringToHash("ClimbDown");
         static readonly int RagdollVariantId = Animator.StringToHash("RagdollVariant");
         static readonly int HurtId = Animator.StringToHash("Hurt");
-        static readonly int HatChangedId = Animator.StringToHash("HatChanged");
 
         [Header("Ragdoll")]
         [Tooltip("How many ragdoll reactions to build and cycle through. Rebuild after changing.")]
@@ -37,32 +34,23 @@ namespace FallingWizard.Player
         [Tooltip("Min and max cycle-rate multiplier for Walk and Run.")]
         public Vector2 cycleRateRange = new Vector2(0.5f, 1.5f);
 
-        [Header("Staff")]
-        [Tooltip("Hide the separate staff art while carried, for art that draws it into the character.")]
-        public bool staffIsDrawnIntoTheArt = false;
+        [Header("Effects")]
+        [Tooltip("Played once each time a hazard trips the wizard into a tumble: the stars flung " +
+                 "off on impact. A particle system on a child of the wizard, set up entirely in " +
+                 "its own Inspector. Leave it empty for no effect.")]
+        public ParticleSystem impactStars;
 
-        [Header("Hat")]
-        [Tooltip("The hat shows how much health the wizard has left. One entry per look, listed " +
-                 "from the healthiest hat to the most damaged. Leave it empty and the wizard " +
-                 "looks the same at any health.")]
-        public HatState[] hatStates = new HatState[0];
-
-        Animator animator;
-        RuntimeAnimatorController normalAnimations;
         PlayerCharacter character;
-        SpriteRenderer staffArt;
+        Animator animator;
 
         int lastHealth;
-        int wornHat = NoHat;
-        int variant;
+        int chosenRagdollVariant;
         bool wasOnStaff;
         bool wasRagdolling;
-        bool wasRagdollGrounded;
+        bool wasDownOnTheFloor;
 
         void Awake()
         {
-            animator = GetComponent<Animator>();
-            normalAnimations = animator.runtimeAnimatorController;
             character = GetComponent<PlayerCharacter>();
 
             if (character == null)
@@ -73,58 +61,90 @@ namespace FallingWizard.Player
                 return;
             }
 
-            Staff staff = GetComponentInChildren<Staff>(true);
-            staffArt = staff != null ? staff.GetComponentInChildren<SpriteRenderer>(true) : null;
+            animator = GetComponentInChildren<Animator>();
         }
 
         void Start()
         {
-            PlayerLogic.Health health = character.Logic.health;
-
-            lastHealth = health.Current;
-            PutOnHat(ChooseHat(health.Percent));
+            lastHealth = character.Logic.health.Current;
+            character.Logic.Impacted += PlayImpactStars;
         }
 
         void Update()
         {
+            if (animator == null)
+                return;
+
             PlayerLogic wizard = character.Logic;
-            PlayerLogic.Movement walk = wizard.movement;
 
-            ShowHealth(wizard.health);
+            WatchForAHit(wizard.health);
 
-            int mode = !wizard.health.IsAlive ? ModeDead
-                     : wizard.State == PlayerState.Ragdoll ? ModeRagdoll
-                     : wizard.State == PlayerState.OnStaff ? ModeStaff
-                     : ModeGround;
+            int mode = ChooseMode(wizard);
 
-            bool grounded = wizard.State != PlayerState.OnVine && walk.IsGrounded;
-            bool moving = mode == ModeGround && grounded && walk.HorizontalSpeed > standStillSpeed;
+            SetAnimatorParameters(wizard, mode);
+            WatchForAClimbStarting(wizard, mode);
+            WatchForATumble(mode, wizard.movement);
+        }
 
-            bool walking = wizard.Steering.Walk;
+        void OnDestroy()
+        {
+            if (character != null)
+                character.Logic.Impacted -= PlayImpactStars;
+        }
+
+        void WatchForAHit(PlayerLogic.Health health)
+        {
+            bool tookAHit = health.Current < lastHealth && health.IsInvulnerable && health.IsAlive;
+
+            lastHealth = health.Current;
+
+            if (tookAHit)
+                animator.SetTrigger(HurtId);
+        }
+
+        static int ChooseMode(PlayerLogic wizard)
+        {
+            if (!wizard.health.IsAlive)
+                return ModeDead;
+
+            if (wizard.State == PlayerState.Ragdoll)
+                return ModeRagdoll;
+
+            if (wizard.State == PlayerState.OnStaff)
+                return ModeStaff;
+
+            return ModeGround;
+        }
+
+        void SetAnimatorParameters(PlayerLogic wizard, int mode)
+        {
+            PlayerLogic.Movement movement = wizard.movement;
+
+            bool grounded = wizard.State != PlayerState.OnVine && movement.IsGrounded;
+            bool moving = mode == ModeGround && grounded && movement.HorizontalSpeed > standStillSpeed;
+
+            bool walking = wizard.Steering.IsWalking;
 
             animator.SetInteger(ModeId, mode);
             animator.SetBool(GroundedId, grounded);
             animator.SetBool(MovingId, moving);
             animator.SetBool(WalkingId, walking);
-            animator.SetFloat(SpeedId, CycleRate(wizard, walk, walking));
-            animator.SetFloat(ClimbRateId, ClimbRate(wizard, mode));
-
-            WatchForAClimbStarting(wizard, mode);
-            WatchForATumble(mode, walk);
-            ShowTheStaffWhenThePoleOwnsIt(wizard);
+            animator.SetFloat(SpeedId, CalculateCycleRate(wizard, movement, walking));
+            animator.SetFloat(ClimbRateId, CalculateClimbRate(wizard, mode));
         }
 
-        float CycleRate(PlayerLogic wizard, PlayerLogic.Movement walk, bool walking)
+        float CalculateCycleRate(PlayerLogic wizard, PlayerLogic.Movement movement, bool walking)
         {
-            float top = (walking ? walk.walkSpeed : walk.runSpeed) * wizard.Stats.MoveSpeedMultiplier;
+            float topSpeed = (walking ? movement.walkSpeed : movement.runSpeed) *
+                             wizard.Stats.MoveSpeedMultiplier;
 
-            if (top <= Mathf.Epsilon)
+            if (topSpeed <= Mathf.Epsilon)
                 return 1f;
 
-            return Mathf.Clamp(walk.HorizontalSpeed / top, cycleRateRange.x, cycleRateRange.y);
+            return Mathf.Clamp(movement.HorizontalSpeed / topSpeed, cycleRateRange.x, cycleRateRange.y);
         }
 
-        float ClimbRate(PlayerLogic wizard, int mode)
+        float CalculateClimbRate(PlayerLogic wizard, int mode)
         {
             if (mode != ModeStaff || !wizard.HasPole)
                 return 0f;
@@ -135,7 +155,7 @@ namespace FallingWizard.Player
             if (Mathf.Abs(lean) <= pole.leanThreshold)
                 return 0f;
 
-            if ((lean > 0f && pole.AtTop) || (lean < 0f && pole.AtBottom))
+            if ((lean > 0f && pole.IsAtTop) || (lean < 0f && pole.IsAtBottom))
                 return 0f;
 
             return Mathf.Sign(lean);
@@ -153,88 +173,29 @@ namespace FallingWizard.Player
             wasOnStaff = onStaff;
         }
 
-        void WatchForATumble(int mode, PlayerLogic.Movement walk)
+        void WatchForATumble(int mode, PlayerLogic.Movement movement)
         {
             bool ragdolling = mode == ModeRagdoll;
 
-            bool downOnTheFloor = ragdolling && walk.IsGrounded;
+            bool downOnTheFloor = ragdolling && movement.IsGrounded;
 
-            if ((ragdolling && !wasRagdolling) || (downOnTheFloor && !wasRagdollGrounded))
+            if ((ragdolling && !wasRagdolling) || (downOnTheFloor && !wasDownOnTheFloor))
             {
-                variant = ragdollVariants <= 1 ? 0 : (variant + 1) % ragdollVariants;
-                animator.SetInteger(RagdollVariantId, variant);
+                chosenRagdollVariant = ragdollVariants <= 1
+                    ? 0
+                    : (chosenRagdollVariant + 1) % ragdollVariants;
+
+                animator.SetInteger(RagdollVariantId, chosenRagdollVariant);
             }
 
             wasRagdolling = ragdolling;
-            wasRagdollGrounded = downOnTheFloor;
+            wasDownOnTheFloor = downOnTheFloor;
         }
 
-        void ShowHealth(PlayerLogic.Health health)
+        void PlayImpactStars()
         {
-            bool tookAHit = health.Current < lastHealth && health.IsInvulnerable && health.IsAlive;
-            int hat = ChooseHat(health.Percent);
-            bool hatChanged = hat != wornHat;
-
-            lastHealth = health.Current;
-
-            if (hatChanged)
-                PutOnHat(hat);
-
-            if (tookAHit)
-                animator.SetTrigger(hatChanged ? HatChangedId : HurtId);
-        }
-
-        int ChooseHat(int healthPercent)
-        {
-            for (int i = 0; i < hatStates.Length; i++)
-            {
-                if (healthPercent >= hatStates[i].fromHealthPercent)
-                    return i;
-            }
-
-            return hatStates.Length > 0 ? hatStates.Length - 1 : NoHat;
-        }
-
-        void PutOnHat(int hat)
-        {
-            wornHat = hat;
-
-            RuntimeAnimatorController animations = AnimationsFor(hat);
-
-            if (animator.runtimeAnimatorController != animations)
-                animator.runtimeAnimatorController = animations;
-        }
-
-        RuntimeAnimatorController AnimationsFor(int hat)
-        {
-            if (hat == NoHat || hatStates[hat].animations == null)
-                return normalAnimations;
-
-            return hatStates[hat].animations;
-        }
-
-        void ShowTheStaffWhenThePoleOwnsIt(PlayerLogic wizard)
-        {
-            if (!staffIsDrawnIntoTheArt || staffArt == null)
-                return;
-
-            staffArt.enabled = wizard.HasPole && wizard.Pole.IsPlanted;
-        }
-
-        [Serializable]
-        public class HatState
-        {
-            [Tooltip("A name for you, so the list is easy to read.")]
-            public string name = "Full Hat";
-
-            [Tooltip("This hat is worn while health is at or above this percent of full health.")]
-            [Range(0, PlayerLogic.Health.FullHealthPercent)]
-            public int fromHealthPercent = PlayerLogic.Health.FullHealthPercent;
-
-            [Tooltip("The wizard's animations drawn with this hat: an Animator Override " +
-                     "Controller made from Player.controller. Its Hat Change clip plays when a " +
-                     "hit puts this hat on. Leave it empty to use the normal animations.")]
-            public AnimatorOverrideController animations;
+            if (impactStars != null)
+                impactStars.Play();
         }
     }
 }

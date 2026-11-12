@@ -1,7 +1,7 @@
 {
-    "version": 1,
-    "wisps": 0,
-    "bonusHearts": 1,
+    "version": 2,
+    "scrap": 0,
+    "bonusHearts": 0,
     "loadout": [
         "staff",
         "",
@@ -14,7 +14,6 @@
             "rank": 1
         }
     ],
-    "spent": [
-        "heartLevel 1:-4,-105"
-    ]
+    "taken": [],
+    "completedLevels": []
 }

@@ -17,7 +17,11 @@ namespace FallingWizard.Cutscenes
         [Tooltip("Optional 'press any button to skip' label.")]
         [SerializeField] GameObject skipPrompt;
 
-        bool finished;
+        bool hasFinished;
+
+        bool ShouldSkip => canSkip && Controls.WasSkipPressed;
+
+        bool HasTimelineEnded => director != null && director.state != PlayState.Playing;
 
         void Start()
         {
@@ -36,21 +40,19 @@ namespace FallingWizard.Cutscenes
 
         void Update()
         {
-            if (finished)
+            if (hasFinished)
                 return;
 
-            if (canSkip && Controls.SkipPressed)
-                Finish();
-            else if (director != null && director.state != PlayState.Playing)
+            if (ShouldSkip || HasTimelineEnded)
                 Finish();
         }
 
         void Finish()
         {
-            if (finished)
+            if (hasFinished)
                 return;
 
-            finished = true;
+            hasFinished = true;
             Game.LoadFirstLevel();
         }
     }

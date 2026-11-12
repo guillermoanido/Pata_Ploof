@@ -1,0 +1,148 @@
+using System;
+using FallingWizard.Player;
+using UnityEngine;
+
+namespace FallingWizard.World
+{
+    public class Hazard : Zone
+    {
+        protected const float RunningOnly = 3f;
+
+        const float StandingStill = 0.1f;
+
+        [Header("Hazard")]
+        [Tooltip("Hazards are things you pass straight through that do something to you on the " +
+                 "way, rather than things you bump into. Applied on Awake, so ticking this fixes " +
+                 "a hazard already placed in a scene without touching its collider by hand. " +
+                 "Untick only for something meant to be solid - and if you do, keep it OFF the " +
+                 "Hazard layer, because the ground check ignores that layer and a solid hazard " +
+                 "there is something the wizard comes to rest on while the game still believes " +
+                 "they are falling.")]
+        public bool passThrough = true;
+
+        [Tooltip("Only fires above this speed, in boxes per second. Check the wizard in the " +
+                 "scene before picking a number - the class defaults are a run of 6 and a walk " +
+                 "of 2, but the 1-1 wizard overrides them to 4 and 2, so 3 is what sets a " +
+                 "run off there and never a walk. Never set this TO the run speed: the wizard " +
+                 "is hardly ever at exactly top speed once a ramp or a slow spell has touched " +
+                 "them, so the hazard would fire or not on the fourth decimal place. This " +
+                 "measures SIDEWAYS speed only, so a wizard dropping straight down onto it " +
+                 "never counts. 0 always fires.")]
+        [Min(0f)] public float minimumSpeed = 0f;
+
+        [Tooltip("Seconds before it can catch the wizard again.")]
+        [Min(0f)] public float rearmDelay = 0.5f;
+
+        [Tooltip("Fire on every step the wizard is inside it, rather than only on the way in. " +
+                 "Off is right for something you HIT - a Bouncy Trash, a rake, a sign - which happens " +
+                 "once and is over. On is right for a PLACE, like a staircase, where breaking " +
+                 "into a run half way along should count for as much as arriving at a run. The " +
+                 "re-arm delay above is what stops it firing every physics step.")]
+        public bool everyStep = false;
+
+        [Tooltip("Hearts taken on contact. 0 for hazards that only shove you around.")]
+        [Min(0)] public int damage = 0;
+
+        [Tooltip("Let a wizard WALKING ACROSS it pass untouched. This reads the walk toggle rather " +
+                 "than a speed, so it still fires on a wizard who is falling onto it or shoved " +
+                 "into it, and it cannot be fooled by Haste - which lifts a walk to the same 3 " +
+                 "boxes a second that Minimum Speed would have to sit at to tell a walk from a " +
+                 "run. Walk mode only protects while the wizard is actually moving: standing " +
+                 "still on it hurts, toggle or not.")]
+        public bool ignoresWalking = false;
+
+        [Header("Hit Look")]
+        [Tooltip("The still art shown while the hazard waits - usually the first frame of its " +
+                 "animation. A child object, switched off while the Hit Look plays. Leave it " +
+                 "empty for none.")]
+        public GameObject idleLook;
+
+        [Tooltip("A child object switched on for Hit Seconds every time this catches the wizard, " +
+                 "then off again so the Idle Look comes back. Its animation starts over each " +
+                 "time, so a play-once clip as long as Hit Seconds fits exactly. Leave it empty " +
+                 "and nothing changes on a hit.")]
+        public GameObject hitLook;
+
+        [Tooltip("How long the Hit Look shows after each hit, in seconds.")]
+        [Min(0f)] public float hitSeconds = 0.5f;
+
+        [NonSerialized] float readyAt;
+
+        protected virtual bool IsDangerousNow => true;
+
+        protected override bool IsContinuous => everyStep;
+
+        protected virtual void Awake()
+        {
+            var hitbox = GetComponent<Collider2D>();
+
+            if (hitbox != null)
+                hitbox.isTrigger = passThrough;
+        }
+
+        public void Disarm(float seconds) => readyAt = Time.time + Mathf.Max(0f, seconds);
+
+        protected virtual void Affect(PlayerLogic wizard) { }
+
+        protected sealed override void OnPlayerEntered(PlayerCharacter wizard) => Catch(wizard);
+
+        protected override void OnPlayerInside(PlayerCharacter wizard, float fixedDeltaTime) =>
+            Catch(wizard);
+
+        void Catch(PlayerCharacter wizard)
+        {
+            if (!IsReadyToCatch(wizard))
+                return;
+
+            readyAt = Time.time + rearmDelay;
+
+            Affect(wizard.Logic);
+            wizard.Logic.Impact();
+            PlayTheHitLook();
+
+            if (damage > 0)
+                wizard.Logic.Hurt(damage, name);
+        }
+
+        void PlayTheHitLook()
+        {
+            if (hitLook == null)
+                return;
+
+            CancelInvoke(nameof(ShowTheIdleLook));
+            hitLook.SetActive(false);
+            SwitchHitLook(true);
+            Invoke(nameof(ShowTheIdleLook), hitSeconds);
+        }
+
+        void ShowTheIdleLook() => SwitchHitLook(false);
+
+        void SwitchHitLook(bool isHit)
+        {
+            ShowLook(idleLook, !isHit);
+            ShowLook(hitLook, isHit);
+        }
+
+        bool IsReadyToCatch(PlayerCharacter wizard)
+        {
+            if (Time.time < readyAt || !IsDangerousNow || !CanAffect(wizard))
+                return false;
+
+            if (damage > 0 && !wizard.Logic.CanBeHurt)
+                return false;
+
+            if (wizard.Logic.movement.ApproachSpeed < minimumSpeed)
+                return false;
+
+            return !ignoresWalking || !IsWalkingAcross(wizard);
+        }
+
+        static bool IsWalkingAcross(PlayerCharacter wizard)
+        {
+            PlayerLogic logic = wizard.Logic;
+
+            return logic.Steering.IsWalking && logic.movement.IsGrounded &&
+                   logic.movement.ApproachSpeed > StandingStill;
+        }
+    }
+}

@@ -24,12 +24,12 @@ namespace FallingWizard.Core
             OnAwake();
         }
 
-        protected virtual void OnAwake() { }
-
         protected virtual void OnDestroy()
         {
             if (instance == this)
                 instance = null;
         }
+
+        protected virtual void OnAwake() { }
     }
 }

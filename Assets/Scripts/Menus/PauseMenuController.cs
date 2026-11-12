@@ -14,6 +14,8 @@ namespace FallingWizard.Menus
 
         protected override Selectable DefaultSelection => resumeButton;
 
+        void Start() => HidePanel();
+
         protected override void WireButtons()
         {
             resumeButton.onClick.AddListener(Resume);
@@ -24,26 +26,22 @@ namespace FallingWizard.Menus
 
         protected override void OnBackPressed()
         {
-            if (IsSettingsOpen)
-                CloseSettings();
-            else if (Game.IsPaused)
+            if (Game.IsPaused)
                 Resume();
             else
                 Pause();
         }
 
-        void Start() => HidePanel();
-
-        public void Pause()
-        {
-            Game.SetPaused(true);
-            ShowPanel();
-        }
-
-        public void Resume()
+        void Resume()
         {
             HidePanel();
             Game.SetPaused(false);
+        }
+
+        void Pause()
+        {
+            Game.SetPaused(true);
+            ShowPanel();
         }
     }
 }

@@ -4,35 +4,43 @@ using FallingWizard.Localization;
 using FallingWizard.Player;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace FallingWizard.UI
 {
     public class PlayerHud : MonoBehaviour
     {
+        const float ScrapFontSize = 26f;
+
+        const int NotBuilt = -1;
+
+        static readonly Vector2 ScrapCorner = new Vector2(-24f, -20f);
+        static readonly Vector2 ScrapSize = new Vector2(360f, 40f);
+
         [Header("Rig")]
         [Tooltip("Spell slots are laid out under here, in spellbook order.")]
         public RectTransform spellBar;
 
-        [Tooltip("One spell slot, copied once per button. Restyle this and they all follow.")]
+        [Tooltip("One spell slot, copied once per button. Restyle this and they all follow. Each " +
+                 "copy goes where the template sits in the spell bar, so anything placed after " +
+                 "the template - like the bar's right end - stays at the end as the bar grows.")]
         public HudSlot slotTemplate;
 
-        [Tooltip("Reads out what is being risked and what is safe. Leave it empty and one is " +
+        [Tooltip("Reads out how much Magical Scrap is in the purse. Leave it empty and one is " +
                  "built in the top right corner on its own, so a scene needs no wiring to show " +
                  "the number that matters most.")]
-        public TextMeshProUGUI wispLabel;
+        public TextMeshProUGUI scrapLabel;
 
         [Tooltip("Do not build that corner label. For a scene that shows the count some other " +
                  "way, or one that would rather not show it at all.")]
-        public bool hideWispCount = false;
+        public bool hideScrapCount = false;
 
-        [Header("Wisps")]
-        [Tooltip("How the counter reads, for a scene that wants its own wording. {0} is what you " +
-                 "are carrying and would lose, {1} is what is already safely banked. " +
-                 "LEAVE IT " +
-                 "EMPTY, which is what you want almost always: the counter then uses the " +
-                 "translated line and follows the player's language. Anything typed here is used " +
-                 "exactly as typed, in every language.")]
-        public string wispFormat = "";
+        [Header("Magical Scrap")]
+        [Tooltip("How the counter reads, for a scene that wants its own wording. {0} is the " +
+                 "Magical Scrap in the purse. LEAVE IT EMPTY, which is what you want almost " +
+                 "always: the counter then uses the translated line and follows the player's " +
+                 "language. Anything typed here is used exactly as typed, in every language.")]
+        public string scrapFormat = "";
 
         [Header("Spells")]
         [Tooltip("Draw a dimmed slot for an empty button, so the bar never shifts around and the " +
@@ -42,9 +50,6 @@ namespace FallingWizard.UI
         [Tooltip("Print the button under each spell. It follows whichever device is in use, so it " +
                  "reads E on a keyboard and X on a pad without anyone touching a setting.")]
         public bool showButtons = true;
-
-        [Tooltip("Optional art for a button with nothing in it. Empty draws a plain box.")]
-        public Sprite emptySlotIcon;
 
         public Color emptyTint = new Color(1f, 1f, 1f, 0.18f);
         public Color readyTint = Color.white;
@@ -58,23 +63,32 @@ namespace FallingWizard.UI
                  "something you choose to release, the other is draining back to ready.")]
         public Color windupTint = new Color(1f, 0.85f, 0.35f, 0.7f);
 
-        static readonly Vector2 WispCorner = new Vector2(-24f, -20f);
-        static readonly Vector2 WispSize = new Vector2(360f, 40f);
-        const float WispFontSize = 26f;
-        static readonly Color WispColour = new Color(0.55f, 0.85f, 1f);
+        [Header("Health")]
+        [Tooltip("One health blip, copied once per heart the wizard can have, and placed where " +
+                 "this template sits - so the hat before it stays in front. The template itself " +
+                 "stays switched off. Leave it empty for no health bar.")]
+        public Image blipTemplate;
+
+        [Tooltip("Colour of a blip for a heart already lost. Hearts still held show the sprite " +
+                 "exactly as drawn.")]
+        public Color lostTint = new Color(0.35f, 0.18f, 0.28f, 1f);
 
         readonly List<HudSlot> slots = new List<HudSlot>();
+        readonly List<Image> blips = new List<Image>();
 
-        PlayerCharacter bound;
-        int builtVersion = -1;
+        PlayerCharacter boundWizard;
+        int builtVersion = NotBuilt;
 
         void Awake()
         {
             if (slotTemplate != null)
                 slotTemplate.gameObject.SetActive(false);
 
-            if (wispLabel == null && !hideWispCount)
-                wispLabel = BuildWispLabel();
+            if (blipTemplate != null)
+                blipTemplate.gameObject.SetActive(false);
+
+            if (scrapLabel == null && !hideScrapCount)
+                scrapLabel = BuildScrapLabel();
 
             if (spellBar == null || slotTemplate == null)
                 Debug.LogError("The HUD is missing part of its rig. It wants a spell bar with one " +
@@ -83,68 +97,90 @@ namespace FallingWizard.UI
 
         void OnEnable() => Core.Controls.SchemeChanged += RefreshButtons;
 
-        void OnDisable() => Core.Controls.SchemeChanged -= RefreshButtons;
-
         void LateUpdate()
         {
-            PlayerCharacter wizard = PlayerCharacter.Instance;
+            BindToCurrentWizard();
 
-            if (wizard != bound)
-            {
-                bound = wizard;
-                builtVersion = -1;
-            }
-
-            bool showing = bound != null;
+            bool showing = boundWizard != null;
 
             if (spellBar != null)
                 spellBar.gameObject.SetActive(showing);
 
-            if (wispLabel != null)
-            {
-                wispLabel.enabled = showing;
-
-                if (showing)
-                    wispLabel.text = string.IsNullOrEmpty(wispFormat)
-                        ? Loc.Format(Loc.Keys.HudWisps, Progress.CarriedWisps, Progress.Wisps)
-                        : string.Format(wispFormat, Progress.CarriedWisps, Progress.Wisps);
-            }
+            ShowScrapCount(showing);
+            ShowHealthBar(showing);
 
             if (!showing)
                 return;
 
-            if (builtVersion != bound.Logic.spellbook.Version)
-            {
-                builtVersion = bound.Logic.spellbook.Version;
-                BuildSpellBar();
-                RefreshButtons();
-            }
-
+            RebuildSpellBarIfChanged();
             RefreshSpells();
+            ShowHealth(boundWizard.Logic.health);
         }
 
-        TextMeshProUGUI BuildWispLabel()
+        void OnDisable() => Core.Controls.SchemeChanged -= RefreshButtons;
+
+        TextMeshProUGUI BuildScrapLabel()
         {
             var canvas = GetComponentInParent<Canvas>();
 
             if (canvas == null)
                 return null;
 
-            var go = new GameObject("Wisp Count", typeof(RectTransform));
-            go.transform.SetParent(canvas.transform, false);
+            var labelObject = new GameObject("Scrap Count", typeof(RectTransform));
+            labelObject.transform.SetParent(canvas.transform, false);
 
-            var rect = (RectTransform)go.transform;
-            rect.anchorMin = rect.anchorMax = rect.pivot = Vector2.one;
-            rect.anchoredPosition = WispCorner;
-            rect.sizeDelta = WispSize;
+            var rectTransform = (RectTransform)labelObject.transform;
+            rectTransform.anchorMin = rectTransform.anchorMax = rectTransform.pivot = Vector2.one;
+            rectTransform.anchoredPosition = ScrapCorner;
+            rectTransform.sizeDelta = ScrapSize;
 
-            var label = go.AddComponent<TextMeshProUGUI>();
-            label.fontSize = WispFontSize;
-            label.color = WispColour;
-            label.alignment = TMPro.TextAlignmentOptions.Right;
+            var label = labelObject.AddComponent<TextMeshProUGUI>();
+            label.fontSize = ScrapFontSize;
+            label.color = Ui.Accent;
+            label.alignment = TextAlignmentOptions.Right;
             label.raycastTarget = false;
 
             return label;
+        }
+
+        void BindToCurrentWizard()
+        {
+            PlayerCharacter wizard = PlayerCharacter.Instance;
+
+            if (wizard == boundWizard)
+                return;
+
+            boundWizard = wizard;
+            builtVersion = NotBuilt;
+        }
+
+        void ShowScrapCount(bool showing)
+        {
+            if (scrapLabel == null)
+                return;
+
+            scrapLabel.enabled = showing;
+
+            if (showing)
+                scrapLabel.text = string.IsNullOrEmpty(scrapFormat)
+                    ? Loc.Format(Loc.Keys.HudScrap, Progress.Scrap)
+                    : string.Format(scrapFormat, Progress.Scrap);
+        }
+
+        void ShowHealthBar(bool showing)
+        {
+            if (blipTemplate != null)
+                blipTemplate.transform.parent.gameObject.SetActive(showing);
+        }
+
+        void RebuildSpellBarIfChanged()
+        {
+            if (builtVersion == boundWizard.Logic.spellbook.Version)
+                return;
+
+            builtVersion = boundWizard.Logic.spellbook.Version;
+            BuildSpellBar();
+            RefreshButtons();
         }
 
         void BuildSpellBar()
@@ -152,17 +188,16 @@ namespace FallingWizard.UI
             if (spellBar == null || slotTemplate == null)
                 return;
 
-            foreach (HudSlot slot in slots)
-                Destroy(slot.gameObject);
+            ClearSpellBar();
 
-            slots.Clear();
+            IReadOnlyList<PlayerLogic.Spellbook.Slot> spellbookSlots =
+                boundWizard.Logic.spellbook.Slots;
 
-            IReadOnlyList<PlayerLogic.Spellbook.Slot> book = bound.Logic.spellbook.Slots;
-
-            for (int i = 0; i < book.Count; i++)
+            for (int i = 0; i < spellbookSlots.Count; i++)
             {
                 HudSlot slot = Instantiate(slotTemplate, spellBar);
-                Ability spell = book[i].Ability;
+                slot.transform.SetSiblingIndex(slotTemplate.transform.GetSiblingIndex());
+                Ability spell = spellbookSlots[i].Ability;
 
                 slot.gameObject.name = spell != null ? spell.displayName : $"Spell {i + 1}";
                 slot.gameObject.SetActive(true);
@@ -170,23 +205,61 @@ namespace FallingWizard.UI
             }
         }
 
+        void ClearSpellBar()
+        {
+            foreach (HudSlot slot in slots)
+                Destroy(slot.gameObject);
+
+            slots.Clear();
+        }
+
         void RefreshSpells()
         {
-            IReadOnlyList<PlayerLogic.Spellbook.Slot> book = bound.Logic.spellbook.Slots;
+            IReadOnlyList<PlayerLogic.Spellbook.Slot> spellbookSlots =
+                boundWizard.Logic.spellbook.Slots;
 
-            for (int i = 0; i < slots.Count && i < book.Count; i++)
-                slots[i].Show(book[i], this, bound.Logic);
+            for (int i = 0; i < slots.Count && i < spellbookSlots.Count; i++)
+                slots[i].Show(spellbookSlots[i], this, boundWizard.Logic);
+        }
+
+        void ShowHealth(PlayerLogic.Health health)
+        {
+            if (blipTemplate == null)
+                return;
+
+            if (blips.Count != health.Max)
+                BuildBlips(health.Max);
+
+            for (int i = 0; i < blips.Count; i++)
+                blips[i].color = i < health.Current ? Color.white : lostTint;
+        }
+
+        void BuildBlips(int count)
+        {
+            foreach (Image blip in blips)
+                Destroy(blip.gameObject);
+
+            blips.Clear();
+
+            for (int i = 0; i < count; i++)
+            {
+                Image blip = Instantiate(blipTemplate, blipTemplate.transform.parent);
+                blip.transform.SetSiblingIndex(blipTemplate.transform.GetSiblingIndex());
+                blip.gameObject.SetActive(true);
+                blips.Add(blip);
+            }
         }
 
         void RefreshButtons()
         {
-            if (bound == null)
+            if (boundWizard == null)
                 return;
 
-            IReadOnlyList<PlayerLogic.Spellbook.Slot> book = bound.Logic.spellbook.Slots;
+            IReadOnlyList<PlayerLogic.Spellbook.Slot> spellbookSlots =
+                boundWizard.Logic.spellbook.Slots;
 
-            for (int i = 0; i < slots.Count && i < book.Count; i++)
-                slots[i].ShowButton(book[i], showButtons);
+            for (int i = 0; i < slots.Count && i < spellbookSlots.Count; i++)
+                slots[i].ShowButton(spellbookSlots[i], showButtons);
         }
     }
 }

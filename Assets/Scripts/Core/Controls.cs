@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 namespace FallingWizard.Core
 {
@@ -15,46 +17,52 @@ namespace FallingWizard.Core
         const string CancelPath = "UI/Cancel";
 
         const string LoadoutPath = "UI/Loadout";
+        const string NavigatePath = "UI/Navigate";
+        const string SubmitPath = "UI/Submit";
 
-        static readonly HashSet<InputAction> Watched = new HashSet<InputAction>();
+        static readonly HashSet<InputAction> WatchedActions = new HashSet<InputAction>();
 
         static InputAction pause;
         static InputAction skip;
         static InputAction cancel;
         static InputAction loadout;
-
-        public static string Scheme { get; private set; } = KeyboardScheme;
+        static InputAction navigate;
+        static InputAction submit;
 
         public static event Action SchemeChanged;
 
-        public static bool PausePressed => pause != null && pause.WasPressedThisFrame();
+        public static string Scheme { get; private set; } = KeyboardScheme;
 
-        public static bool SkipPressed => skip != null && skip.WasPressedThisFrame();
+        public static bool WasPausePressed => pause != null && pause.WasPressedThisFrame();
 
-        public static bool CancelPressed => cancel != null && cancel.WasPressedThisFrame();
+        public static bool WasSkipPressed => skip != null && skip.WasPressedThisFrame();
 
-        public static bool LoadoutPressed => loadout != null && loadout.WasPressedThisFrame();
+        public static bool WasCancelPressed => cancel != null && cancel.WasPressedThisFrame();
 
-        public static InputAction Player(string action) => Find($"Player/{action}");
+        public static bool WasLoadoutPressed => loadout != null && loadout.WasPressedThisFrame();
 
-        public static InputAction Find(string path)
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        static void Boot()
         {
-            if (string.IsNullOrEmpty(path))
-                return null;
+            WatchedActions.Clear();
+            Scheme = Gamepad.current != null && Keyboard.current == null ? GamepadScheme : KeyboardScheme;
 
-            InputActionAsset actions = InputSystem.actions;
-            InputAction action = actions != null ? actions.FindAction(path) : null;
+            pause = FindAndWatch(PausePath);
+            skip = FindAndWatch(SkipPath);
+            cancel = FindAndWatch(CancelPath);
+            loadout = FindAndWatch(LoadoutPath);
+            navigate = FindAndWatch(NavigatePath);
+            submit = FindAndWatch(SubmitPath);
 
-            if (action == null)
-            {
-                Debug.LogError($"Input action '{path}' is missing from the project-wide actions asset.");
-                return null;
-            }
-
-            action.Enable();
-            Watched.Add(action);
-            return action;
+            InputSystem.onActionChange -= OnActionChange;
+            InputSystem.onActionChange += OnActionChange;
+            InputSystem.onDeviceChange -= OnDeviceChange;
+            InputSystem.onDeviceChange += OnDeviceChange;
+            InputSystem.onAfterUpdate -= KeepAMenuButtonSelected;
+            InputSystem.onAfterUpdate += KeepAMenuButtonSelected;
         }
+
+        public static InputAction Player(string action) => FindAndWatch($"Player/{action}");
 
         public static string Glyph(InputAction action) => GlyphFor(action, Scheme);
 
@@ -74,21 +82,22 @@ namespace FallingWizard.Core
             return actions != null ? actions.FindAction(path) : null;
         }
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        static void Boot()
+        static InputAction FindAndWatch(string path)
         {
-            Watched.Clear();
-            Scheme = Gamepad.current != null && Keyboard.current == null ? GamepadScheme : KeyboardScheme;
+            if (string.IsNullOrEmpty(path))
+                return null;
 
-            pause = Find(PausePath);
-            skip = Find(SkipPath);
-            cancel = Find(CancelPath);
-            loadout = Find(LoadoutPath);
+            InputAction action = Lookup(path);
 
-            InputSystem.onActionChange -= OnActionChange;
-            InputSystem.onActionChange += OnActionChange;
-            InputSystem.onDeviceChange -= OnDeviceChange;
-            InputSystem.onDeviceChange += OnDeviceChange;
+            if (action == null)
+            {
+                Debug.LogError($"Input action '{path}' is missing from the project-wide actions asset.");
+                return null;
+            }
+
+            action.Enable();
+            WatchedActions.Add(action);
+            return action;
         }
 
         static void OnActionChange(object subject, InputActionChange change)
@@ -96,27 +105,99 @@ namespace FallingWizard.Core
             if (change != InputActionChange.ActionPerformed)
                 return;
 
-            if (!(subject is InputAction action) || !Watched.Contains(action))
+            var action = subject as InputAction;
+
+            if (action == null || !WatchedActions.Contains(action))
                 return;
 
             InputDevice device = action.activeControl != null ? action.activeControl.device : null;
+            string nextScheme = PickSchemeFor(device);
 
-            string next = device is Gamepad ? GamepadScheme
-                        : device is Keyboard || device is Mouse ? KeyboardScheme
-                        : Scheme;
-
-            if (next == Scheme)
+            if (nextScheme == Scheme)
                 return;
 
-            Scheme = next;
+            Scheme = nextScheme;
             SchemeChanged?.Invoke();
+        }
+
+        static string PickSchemeFor(InputDevice device)
+        {
+            if (device is Gamepad)
+                return GamepadScheme;
+
+            if (device is Keyboard || device is Mouse)
+                return KeyboardScheme;
+
+            return Scheme;
+        }
+
+        static void KeepAMenuButtonSelected()
+        {
+            EventSystem events = EventSystem.current;
+
+            if (!Application.isPlaying || events == null || IsUsable(events.currentSelectedGameObject))
+                return;
+
+            bool wantsAMenu = (navigate != null && navigate.WasPressedThisFrame()) ||
+                              (submit != null && submit.WasPressedThisFrame());
+
+            if (!wantsAMenu)
+                return;
+
+            Selectable top = FindTopButtonOfTheFrontMenu();
+
+            if (top != null)
+                events.SetSelectedGameObject(top.gameObject);
+        }
+
+        static bool IsUsable(GameObject selected)
+        {
+            if (selected == null || !selected.activeInHierarchy)
+                return false;
+
+            var button = selected.GetComponent<Selectable>();
+            return button == null || button.IsInteractable();
+        }
+
+        static Selectable FindTopButtonOfTheFrontMenu()
+        {
+            Selectable best = null;
+
+            foreach (Selectable candidate in Selectable.allSelectablesArray)
+            {
+                if (candidate.IsInteractable() && candidate.navigation.mode != Navigation.Mode.None &&
+                    (best == null || IsBefore(candidate, best)))
+                    best = candidate;
+            }
+
+            return best;
+        }
+
+        static bool IsBefore(Selectable candidate, Selectable best)
+        {
+            int candidateLayer = MenuLayerOf(candidate);
+            int bestLayer = MenuLayerOf(best);
+
+            if (candidateLayer != bestLayer)
+                return candidateLayer > bestLayer;
+
+            Vector3 a = candidate.transform.position;
+            Vector3 b = best.transform.position;
+
+            return !Mathf.Approximately(a.y, b.y) ? a.y > b.y : a.x < b.x;
+        }
+
+        static int MenuLayerOf(Selectable button)
+        {
+            Canvas canvas = button.GetComponentInParent<Canvas>();
+            return canvas != null ? canvas.rootCanvas.sortingOrder : 0;
         }
 
         static void OnDeviceChange(InputDevice device, InputDeviceChange change)
         {
-            bool lost = change == InputDeviceChange.Removed || change == InputDeviceChange.Disconnected;
+            bool isLost = change == InputDeviceChange.Removed || change == InputDeviceChange.Disconnected;
 
-            if (device is Gamepad && lost && Scheme == GamepadScheme)
+            if (device is Gamepad && isLost && Scheme == GamepadScheme)
                 Scheme = KeyboardScheme;
 
             SchemeChanged?.Invoke();

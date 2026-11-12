@@ -11,13 +11,9 @@ namespace FallingWizard.Menus
         [SerializeField] GameObject panel;
         [SerializeField] SettingsPanel settingsPanel;
 
-        protected bool IsSettingsOpen => settingsPanel.gameObject.activeSelf;
-
         protected abstract Selectable DefaultSelection { get; }
 
-        protected abstract void WireButtons();
-
-        protected abstract void OnBackPressed();
+        bool IsSettingsOpen => settingsPanel.gameObject.activeSelf;
 
         void Awake()
         {
@@ -25,22 +21,28 @@ namespace FallingWizard.Menus
             WireButtons();
         }
 
-        void OnDestroy() => settingsPanel.Closed -= CloseSettings;
-
         void Update()
         {
-            if (UI.Screens.ModalOpen)
+            if (UI.Screens.IsModalOpen)
                 return;
 
-            if (Controls.PausePressed)
-                OnBackPressed();
+            if (Controls.WasPausePressed)
+                GoBack();
+        }
+
+        void OnDestroy() => settingsPanel.Closed -= CloseSettings;
+
+        protected abstract void WireButtons();
+
+        protected virtual void OnBackPressed()
+        {
         }
 
         protected void ShowPanel()
         {
             settingsPanel.gameObject.SetActive(false);
             panel.SetActive(true);
-            Focus();
+            FocusDefaultSelection();
         }
 
         protected void HidePanel()
@@ -55,9 +57,17 @@ namespace FallingWizard.Menus
             settingsPanel.gameObject.SetActive(true);
         }
 
-        protected void CloseSettings() => ShowPanel();
+        void CloseSettings() => ShowPanel();
 
-        void Focus()
+        void GoBack()
+        {
+            if (IsSettingsOpen)
+                CloseSettings();
+            else
+                OnBackPressed();
+        }
+
+        void FocusDefaultSelection()
         {
             if (DefaultSelection == null || EventSystem.current == null)
                 return;

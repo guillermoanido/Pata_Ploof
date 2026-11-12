@@ -13,26 +13,42 @@ namespace FallingWizard.Core
 
     public static class SaveFile
     {
-        public const string FolderName = "Saves";
+        const string FolderName = "Saves";
 
-        const string TempExtension = ".tmp";
+        const string TemporaryExtension = ".tmp";
         const string BackupExtension = ".bak";
         const string CorruptExtension = ".corrupt";
         const string ProbeName = "write.probe";
 
         static string folder;
-        static bool announced;
+        static bool hasAnnounced;
 
-        public static string Folder => folder ??= Resolve();
+        static string Folder
+        {
+            get
+            {
+                if (folder == null)
+                    folder = ChooseFolder();
+
+                return folder;
+            }
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetOnPlay()
+        {
+            folder = null;
+            hasAnnounced = false;
+        }
 
         public static string PathFor(string fileName) => Path.Combine(Folder, fileName);
 
         public static void Announce()
         {
-            if (announced)
+            if (hasAnnounced)
                 return;
 
-            announced = true;
+            hasAnnounced = true;
             Debug.Log($"Falling Wizard saves live in {Folder}");
         }
 
@@ -55,36 +71,15 @@ namespace FallingWizard.Core
             data = null;
 
             string path = PathFor(fileName);
-            string text;
+            SaveRead fileRead = ReadText(path, out string text);
 
-            try
-            {
-                if (!File.Exists(path))
-                    return SaveRead.Missing;
-
-                text = File.ReadAllText(path);
-            }
-            catch (Exception error)
-            {
-                Debug.LogWarning($"The save file at {path} exists but could not be opened, so " +
-                                 $"nothing will be written over it this session and the game has " +
-                                 $"started from a blank save. Close whatever is holding the file " +
-                                 $"and relaunch. {error.Message}");
-                return SaveRead.Unreadable;
-            }
+            if (fileRead != SaveRead.Loaded)
+                return fileRead;
 
             if (string.IsNullOrWhiteSpace(text))
                 return SaveRead.Missing;
 
-            try
-            {
-                data = JsonUtility.FromJson<T>(text);
-            }
-            catch (Exception error)
-            {
-                Debug.LogWarning($"The save file at {path} is not readable JSON. {error.Message}");
-                data = null;
-            }
+            data = ParseJson<T>(path, text);
 
             if (data != null)
                 return SaveRead.Loaded;
@@ -103,25 +98,18 @@ namespace FallingWizard.Core
             }
 
             string path = PathFor(fileName);
-            string temp = path + TempExtension;
+            string temporaryPath = path + TemporaryExtension;
 
             try
             {
-                Directory.CreateDirectory(Folder);
-                File.WriteAllText(temp, JsonUtility.ToJson(data, true));
-
-                if (File.Exists(path))
-                    ReplaceOrMove(temp, path);
-                else
-                    File.Move(temp, path);
-
+                WriteThroughTemporaryFile(data, temporaryPath, path);
                 return true;
             }
             catch (Exception error)
             {
                 Debug.LogWarning($"Could not save to {path}, so anything earned this session will " +
                                  $"be gone when the game closes. {error.Message}");
-                TryDelete(temp);
+                TryDelete(temporaryPath);
                 return false;
             }
         }
@@ -143,33 +131,39 @@ namespace FallingWizard.Core
             }
         }
 
-        static void ReplaceOrMove(string temp, string path)
+        static SaveRead ReadText(string path, out string text)
+        {
+            text = null;
+
+            try
+            {
+                if (!File.Exists(path))
+                    return SaveRead.Missing;
+
+                text = File.ReadAllText(path);
+                return SaveRead.Loaded;
+            }
+            catch (Exception error)
+            {
+                Debug.LogWarning($"The save file at {path} exists but could not be opened, so " +
+                                 $"nothing will be written over it this session and the game has " +
+                                 $"started from a blank save. Close whatever is holding the file " +
+                                 $"and relaunch. {error.Message}");
+                return SaveRead.Unreadable;
+            }
+        }
+
+        static T ParseJson<T>(string path, string text) where T : class
         {
             try
             {
-                File.Replace(temp, path, null);
-                return;
+                return JsonUtility.FromJson<T>(text);
             }
-            catch (Exception)
+            catch (Exception error)
             {
+                Debug.LogWarning($"The save file at {path} is not readable JSON. {error.Message}");
+                return null;
             }
-
-            string backup = path + BackupExtension;
-
-            TryDelete(backup);
-            File.Move(path, backup);
-
-            try
-            {
-                File.Move(temp, path);
-            }
-            catch (Exception)
-            {
-                File.Move(backup, path);
-                throw;
-            }
-
-            TryDelete(backup);
         }
 
         static void Quarantine(string path)
@@ -192,6 +186,58 @@ namespace FallingWizard.Core
             }
         }
 
+        static void WriteThroughTemporaryFile(object data, string temporaryPath, string path)
+        {
+            Directory.CreateDirectory(Folder);
+            File.WriteAllText(temporaryPath, JsonUtility.ToJson(data, true));
+
+            if (File.Exists(path))
+                ReplaceOrMove(temporaryPath, path);
+            else
+                File.Move(temporaryPath, path);
+        }
+
+        static void ReplaceOrMove(string temporaryPath, string path)
+        {
+            if (TryReplace(temporaryPath, path))
+                return;
+
+            MoveWithBackup(temporaryPath, path);
+        }
+
+        static bool TryReplace(string temporaryPath, string path)
+        {
+            try
+            {
+                File.Replace(temporaryPath, path, null);
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        static void MoveWithBackup(string temporaryPath, string path)
+        {
+            string backup = path + BackupExtension;
+
+            TryDelete(backup);
+            File.Move(path, backup);
+
+            try
+            {
+                File.Move(temporaryPath, path);
+            }
+            catch (Exception)
+            {
+                File.Move(backup, path);
+                throw;
+            }
+
+            TryDelete(backup);
+        }
+
         static void TryDelete(string path)
         {
             try
@@ -203,14 +249,14 @@ namespace FallingWizard.Core
             }
         }
 
-        static string Resolve()
+        static string ChooseFolder()
         {
 #if UNITY_EDITOR
-            return Path.GetFullPath(Path.Combine(Application.dataPath, "..", FolderName));
+            return GetFolderBesideTheGame();
 #else
             if (Application.platform != RuntimePlatform.OSXPlayer)
             {
-                string beside = Path.GetFullPath(Path.Combine(Application.dataPath, "..", FolderName));
+                string beside = GetFolderBesideTheGame();
 
                 if (IsWritable(beside))
                     return beside;
@@ -223,6 +269,9 @@ namespace FallingWizard.Core
             return Path.GetFullPath(Path.Combine(Application.persistentDataPath, FolderName));
 #endif
         }
+
+        static string GetFolderBesideTheGame() =>
+            Path.GetFullPath(Path.Combine(Application.dataPath, "..", FolderName));
 
         static bool IsWritable(string directory)
         {
@@ -239,13 +288,6 @@ namespace FallingWizard.Core
             {
                 return false;
             }
-        }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetOnPlay()
-        {
-            folder = null;
-            announced = false;
         }
     }
 }

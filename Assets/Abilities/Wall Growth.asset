@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: wall
   displayName: Wall Growth
-  description: Grow a block of stone under the lip of a drop, and step down onto
-    it.
+  description: Grow a block of stone off the edge of the floor you stand on, and
+    walk out onto it.
   icon: {fileID: 0}
   cost: 2
   locked: 0
@@ -29,15 +29,13 @@ MonoBehaviour:
   collectedEffect: {fileID: 0}
   upgrades:
   - cost: 2
-    title: Longer reach
-    description: Places a block a tile further out, and it stands for longer.
+    title: Second block
+    description: Grow two blocks before the spell rests, so the floor reaches
+      twice as far.
   wallPrefab: {fileID: 1264234565, guid: 08a96630615c538c93ca6eb3a5c011a5, type: 3}
-  wallArt: {fileID: 0}
-  tint: {r: 1, g: 1, b: 1, a: 1}
   size: {x: 1, y: 1}
   reachInTiles: 3
-  outFromEdge: 0
-  liftInTiles: -1
   growTime: 0.5
-  groundLayer: Ground
-  sortingOrder: 1
+  tiers:
+  - blocks: 1
+  - blocks: 2
