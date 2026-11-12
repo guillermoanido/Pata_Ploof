@@ -1222,39 +1222,33 @@ Two things worth knowing:
 
 ## Health and the hat
 
-There is no health bar. **The hat is the health display**, and it lives in the PLAYER prefab, the
-same way the staves do:
+**Health is shown on the HUD, not on the wizard.** The top-left `Hearts` row holds the hat
+(`UI Health.png`) and then one blip (`Health Icon.png`) per heart the wizard can have:
 
 ```
-PLAYER
-└── Visual           flipped to face left/right, spun when tumbling
-    ├── Health 3     SpriteRenderer + Animator + Health Look (health 3)
-    ├── Health 2     SpriteRenderer + Animator + Health Look (health 2)
-    └── Health 1     SpriteRenderer + Animator + Health Look (health 1)
+HUD
+└── Hearts      Horizontal Layout Group, top left
+    ├── Hat     the hat, 32 px art drawn at 4x
+    └── Blip    TEMPLATE, switched off - copied once per heart
 ```
 
-Each health level is its own child with its own art and its own Animator, and its `Health Look`
-says which health it stands for. The wizard starts with as much health as the highest look, and
-`PlayerAnimator` switches on only the look matching their health right now (the highest one, if a
-heart pickup has given them more). A hit that changes the look plays the new look's `Hat Change`
-clip; a hit that does not plays `Take Damage`.
+`PlayerHud.ShowHealth` builds as many blips as the wizard's maximum health, and rebuilds them when
+a Heart Upgrade raises it. Blips for hearts still held show the sprite as drawn, and blips for hearts
+already lost take the HUD's **Lost Tint**. Restyle the `Blip` template and every blip follows.
 
-**Right now the PLAYER has only `Health 3`, and `TakeDamage.anim` is empty**, so a hit changes
-nothing you can see: the hearts go, the hat stays, and the third hit kills. That reads exactly
-like hazards not working. Until `Health 2`, `Health 1` and the clip are filled in,
+The wizard starts every run with **Starting Health** (3), set on PLAYER. Heart Upgrades add to it,
+up to **Max Bonus Hearts** under Logic > Health. The wizard's own sprite never changes with health:
+the old Health Look system, one look per health level, is gone.
+
 `PlayerLogic.reportHits` (on by default, editor only) prints every hit to the console - *"Broken
 Glass took 1 heart(s) from the wizard - 2 left."* `PlayerLogic.Hurt` takes that cause as its second
 argument: a hazard passes its own name, a fall passes how far it was.
 
-**The `Any State → Take Damage` and `Any State → Hat Change` transitions are muted until their clips
-have frames.** An empty clip still lasts a second, and nothing changes the sprite during it, so the
-wizard would freeze on whatever frame was showing. A fall that costs a heart would hold the Falling
-pose for a full second after landing. Once a clip has frames, open `Player.controller`, select its
-transition from Any State and untick **Mute**.
-
-Every look's Animator uses `Player.controller` - or an Animator Override Controller made from it,
-holding that look's own clips. The clips animate the sprite of the object the Animator is on, so
-one set of clips works for any look.
+**The `Any State → Take Damage` transition is muted until its clip has frames.** An empty clip still
+lasts a second, and nothing changes the sprite during it, so the wizard would freeze on whatever
+frame was showing. Once `TakeDamage.anim` has frames, open `Player.controller`, select its
+transition from Any State and untick **Mute**. The `Hat Change` state is left over from the old
+system and nothing triggers it any more, so it can be deleted.
 
 ## Animations
 
@@ -1294,7 +1288,10 @@ frame, open the Look's clip in the Animation window and drag the frame onto the 
 
 ## HUD
 
-An ordinary screen-space `Canvas` you can open up and restyle:
+**The HUD is a prefab, `Assets/Prefabs/HUD.prefab`, and every level holds one instance of it.**
+Open the prefab to change the spell bar, the health row or the scrap count, and all nine levels
+follow. A new level only needs the prefab dragged in. It is an ordinary screen-space `Canvas` you
+can open up and restyle:
 
 ```
 HUD              Canvas (Overlay, order 10) + CanvasScaler + PlayerHud
