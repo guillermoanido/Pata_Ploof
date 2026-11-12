@@ -8,7 +8,7 @@ namespace FallingWizard.World
     {
         protected override void OnPlayerEntered(PlayerCharacter wizard)
         {
-            if (Screens.IsModalOpen || !wizard.Logic.health.IsAlive)
+            if (Ui.IsModalOpen || !wizard.Logic.health.IsAlive)
                 return;
 
             SkillScreen.OpenInLevel(() => CarryOn(wizard));

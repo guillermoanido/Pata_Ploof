@@ -27,14 +27,14 @@ coming back down it can never hurt you.
 
 | Folder | What lives there |
 | --- | --- |
-| `Core/` | `Game` (pause, scene flow, quit), `GameSettings`, `Controls` (every input lookup, plus which device is in use), `Progress` (the save: Magical Scrap, spells, loadout, hearts, finished levels, taken pickups), `SaveFile`, `SingletonBehaviour` |
-| `Player/` | `PlayerCharacter` (the Unity side), `PlayerLogic` (everything the wizard does), `Staff`, `PlayerAnimator`, `HealthLook`, `RagdollBumps` |
+| `Core/` | `Game` (pause, scene flow, quit), `GameSettings`, `Controls` (every input lookup, plus which device is in use), `Progress` (the save: Magical Scrap, spells, loadout, hearts, finished levels, taken pickups), `SaveFile` |
+| `Player/` | `PlayerCharacter` (the Unity side), `PlayerLogic` (everything the wizard does), `Staff`, `PlayerAnimator`, `RagdollBumps` |
 | `Player/Abilities/` | `Ability` and the spells, `AbilityBook` |
 | `Localization/` | `Loc`, `TextBook`, `LocalizedText` |
 | `World/` | `Item` (the base of everything the wizard touches) and `TileGrid`, with subfolders: `Hazards/` (`Hazard`, `TripHazard`, `BouncyTrash`, `SteamVent`, `WaxDrop`, `WaxCandle`, `PressurePlate`), `Zones/` (`Zone`, `WindZone2D`, `WindTrap`, `SlipperyFloor`), `Pickups/` (`Pickup`, `TimedReward`), `Level/` (`ShopStop`, `LevelExit`, `MovingPlatform`, `VineAnchor`, `Carryable`), `Camera/` (`FollowCamera`) |
-| `UI/` | `PlayerHud`, `HudSlot`, `FlingArrow`, `Ui` and the runtime screens |
-| `Menus/`, `Cutscenes/` | `MenuScreen` and the three menus; `CutsceneRunner` |
-| `Editor/` | `PixelArtImporter` (import settings for everything in `Assets/Art/Sprites`; editor only, never in the build) |
+| `UI/` | `PlayerHud`, `HudSlot`, `FlingArrow`, `SelectedLook`, `Ui` and the screens (`ChoiceScreen`, `SkillScreen`, `ControlsScreen`) |
+| `Menus/` | `MenuScreen` and the three menus |
+| `Editor/` | `PixelArtImporter` (import settings for everything in `Assets/Art/Sprites`; editor only, never in the build), `MenuPrefabBuilder` (makes the screen prefabs once) |
 
 ### The wizard is two scripts
 
@@ -317,13 +317,11 @@ There is one purse and one save, and dying empties both:
 skill screen. There is no carrying and no banking: what you picked up is yours, and it is saved
 straight away, so quitting halfway down and coming back carries on with everything you had.
 
-**Dying starts the game again from nothing.** `PlayerCharacter.OnDied` calls `Progress.StartOver()`
+**Dying starts the game again from nothing.** `PlayerCharacter.OnDied` calls `Progress.ResetSave()`
 the moment the last heart goes, waits `secondsBeforeDeathMessage` so the death can be seen, then
 `ShowDeathMessage` opens a `ChoiceScreen` saying so (`death.title`, `death.blurb`) with two buttons:
 **Start again** opens the skill screen and then level `1-1`, exactly like Play on the Main Menu, and
-**Main menu** goes back there. `StartOver` is `ResetSave` — the save file is deleted and every list
-above is emptied — except in a `Playtest` sandbox, where it empties the sandbox and leaves the real
-save alone. The wipe happens at the moment of death rather than when a button is pressed, so
+**Main menu** goes back there. The save file is deleted and every list above is emptied. The wipe happens at the moment of death rather than when a button is pressed, so
 pausing, quitting or walking away from the message cannot dodge it.
 
 ### Pickups
@@ -412,21 +410,24 @@ out and back in to open it again.
 Drag in `Assets/Prefabs/Shop Stop.prefab`: a trigger box one box wide and one and a half tall,
 with a `ShopStop` on it and a placeholder block on its `Art` child for you to swap for real art.
 
-`ChoiceScreen` and `SkillScreen` build their own canvas at runtime out of `Ui`, which is the old
-editor `UiFactory` with the editor-only parts taken out — including
-`AssetDatabase.GetBuiltinExtraResource`, which does not exist in a player and silently produced
-untinted white boxes when it was tried. They sit at sorting order 200 and 220, above the Pause
-Menu's 100. Both set `Screens.IsModalOpen`, and `MenuScreen.Update` checks it, so the pause menu
-underneath does not eat Escape.
+### Screens are prefabs
 
-**A panel that sizes itself must be built with `Ui.CreateSheet`, never `Ui.CreatePlate` plus a
-`ContentSizeFitter`.** `Ui.SetSize` attaches a `LayoutElement`, and a `LayoutElement` outranks a
-`VerticalLayoutGroup` when a `ContentSizeFitter` asks how tall the thing wants to be — so a panel
-built that way with height 0 fits itself to **zero**. The group then has less room than its
-children need and shrinks every one of them toward its minimum. The result is a screen you can read
-and cannot use: the text still draws, but each button is 0 pixels tall and has no area to click.
-`SetSize` now writes `minWidth`/`minHeight` as well as the preferred pair, so nothing built through
-it can ever be squeezed to nothing again.
+`ChoiceScreen` (the death message and the reset-save question), `SkillScreen` and `ControlsScreen`
+are prefabs in `Assets/Resources`: `Choice Screen`, `Skill Screen` and `Controls Screen`. Each
+`Open` loads its prefab, makes a copy and fills in the words, so to restyle a screen, open its
+prefab and change it like any other UI. They sit at sorting order 200, 220 and 260, above the Pause
+Menu's 100. All of them set `Ui.IsModalOpen`, and `MenuScreen.Update` checks it, so the pause
+menu underneath does not eat Escape.
+
+The parts that repeat - an answer button, a spell slot, a spell card, an upgrade pip - are
+**templates**: one switched-off copy in the prefab, copied once per answer, slot, spell or rank and
+placed where the template sits. Restyle the template and every copy follows. The Skill Screen
+lists each template's parts (icon, name, button...) under **Slot Template** and **Card
+Template**; keep those filled in if you rearrange a card.
+
+The prefabs were made once by **Pata Ploof > Build Menu Prefabs** (`Editor/MenuPrefabBuilder.cs`).
+It only builds what is missing, so it never overwrites your edits; delete a prefab and run it again
+to get a fresh one. Once the prefabs exist the builder is no longer needed and can be deleted.
 
 ## Haste, and why it is not `Time.timeScale`
 
@@ -707,7 +708,7 @@ block is scaled as it grows, and the fling arrow is pointed along the aim.
 Three separate faults made "I cannot swap abilities" true, and all three had to go.
 
 **The screen could not target a slot.** Every equip path went through `Progress.FirstEmptySlot()`,
-and the rail along the top was `Ui.CreatePlate` images with no `Button` on them — a read-out, not a
+and the rail along the top was plain images with no `Button` on them — a read-out, not a
 control. Swapping Q and R was not expressible. The verb now is **pick a spell, then press the
 button you want it on** (or click the rail cell). Those four actions already exist and are already
 enabled, and the glyph on the rail is the same one the HUD prints under that slot in play — so the
@@ -717,13 +718,6 @@ binding teaches the binding.
 overwrote the target, so dropping one spell onto another lost the second one silently.
 `Progress.Place` trades them instead. `Equip` keeps its meaning for the paths that want it.
 
-**`Playtest` re-dealt the loadout on every scene load.** `BeginSandbox()` → `Clear()` blanks
-`ranks` and `equipped`, and it ran at execution order −100 — a frame ahead of the spellbook reading
-them. Sandbox is now a property of the play **session** and seeding it is a one-time act:
-`Progress.IsSandboxSeeded` gates it, `redealOnEveryLoad` forces it back for when you are tuning the
-ticks. `SceneManager.LoadScene` does not re-run `RuntimeInitializeOnLoadMethod`, so `Progress`'s
-statics would have survived the reload on their own — Playtest was the entire failure.
-
 **And you could barely reach the screen.** It used to open only from a rest site or the death
 screen, both of which ended the run first. Now **Play** opens it from the main menu, **Start
 again** on the death message opens it the same way, and walking into a **shop stop** opens it
@@ -731,41 +725,6 @@ mid-level. The **Spellbook** button (`UI/Loadout`, Tab) also opens it mid-level 
 that one is a **debug tool** for testing loadouts, not part of the game. The button's door is the
 nested `SkillScreen.Door`, installed once when the game starts; the shop stop and the button both
 go through `SkillScreen.OpenInLevel`.
-
-## Testing a spell without earning it
-
-Drop a `Playtest` component on anything in the scene. It lists every spell in the book with a box
-each — tick the ones you want, press Play, and they are already learned and in a slot. The list
-fills itself in from `Assets/Resources/Spellbook.asset` and keeps itself in step, so a spell added
-later turns up on its own. `scrap` and `bonusHearts` start you with a purse and a longer bar for
-trying the skill screen.
-
-**Nothing it does is written to the save.** `Progress.BeginSandbox()` wipes what is in memory and
-puts `Save()` to sleep for the session, so a playtest cannot spend, unlock or consume anything in
-the real one. Dying in a playtest wipes the sandbox, not the real save, and the ticks are dealt
-again when the next level loads. It runs early (`[DefaultExecutionOrder(RunBeforeTheWizardWakes)]`, which is −100), ahead of `PlayerCharacter.OnAwake`, which
-is the frame the spellbook reads `Progress` and builds its slots.
-
-Spells welded to a slot are placed **first**, before any tick is honoured. Otherwise a ticked spell
-lands in the Staff's own slot and the spellbook evicts it a moment later when it puts the Staff
-where it belongs. That leaves three: four buttons, one of them the Staff's. Tick more and it says
-which ones it could not fit rather than quietly dropping them.
-
-### Why the book is a field
-
-`Playtest` keeps a reference to the `AbilityBook` rather than looking one up when it needs it, and
-that is not an optimisation. The list of tick boxes is built from the book, and it has to be built
-somewhere Unity will actually **save** the result.
-
-The first version deferred that work to `EditorApplication.delayCall`, to keep `Resources.Load` out
-of `OnValidate` — where it can be refused mid-deserialisation. But a serialized field written from
-`delayCall` is changed on the live C# object only. Nothing marks the component dirty, so the list
-sitting in the inspector never reached the scene file, and entering Play Mode deserialised an empty
-one straight back over it: no ticks, nothing granted, every slot empty.
-
-With the book in a field, `SyncWithTheBook()` runs directly in `OnValidate`, where Unity re-serialises what it
-changes. The deferred path survives only to fill in a component that predates the field — and it
-calls `EditorUtility.SetDirty` afterwards, which was the piece missing all along.
 
 ## Prefabs
 
@@ -890,7 +849,7 @@ empty.
 **Where it is written.** The save is pretty-printed JSON in `<project>/Saves/progress.json`
 — beside `Assets`, so it is in the working copy where you can open it, read it and diff it. It used
 to be PlayerPrefs, which on Windows is a handful of registry values nobody can track, and which hid a
-stale save so well that turning the playtest sandbox off made a long-forgotten Glide reappear.
+stale save so well that a long-forgotten Glide once reappeared.
 `Assets/Scripts/Core/SaveFile.cs` does the reading and writing: it writes to a scratch file and swaps
 it in, so a crash mid-write cannot truncate the save; it sorts the ranks and the taken list so a diff
 means something; and it answers **three** ways, not two — `Missing`, `Loaded` and `Unreadable`. That
@@ -1308,8 +1267,8 @@ sprite, size, colour, add a border — and every slot follows. `PlayerHud` only 
 it never builds layout. The icon each slot shows is the spell's own `icon`.
 
 The **Scrap Count** shows the one purse: how much Magical Scrap the wizard has, from the `hud.scrap`
-line (`{0} Magical Scrap`, `{0} Basura Mágica`). Drag your own label into `scrapLabel` to place it
-yourself, tick `hideScrapCount` to show none, or type a `scrapFormat` for a one-off wording.
+line (`{0} Magical Scrap`, `{0} Basura Mágica`). It is the `Scrap Count` label in the HUD prefab: move or
+restyle it there, clear `scrapLabel` to show none, or type a `scrapFormat` for a one-off wording.
 
 Set `CanvasScaler.referencePixelsPerUnit` to **32**, not the default 100, or every icon comes out
 at a third of its size.
@@ -1350,6 +1309,16 @@ The four spell actions are bound to the four slots **by index**, once, in `Spell
 action never changes, only what is sitting in front of it. That is why adding a spell needs no
 input work at all, and why the HUD's per-slot glyph cache is safe: a slot's button is fixed for the
 life of the scene even as its contents change.
+
+### Menus on a controller
+
+Each button in the Pause Menu prefab and the three screen prefabs has a `Highlight` child: a frame that is part of the prefab,
+so it is moved, resized or redrawn there like any other UI element. A `SelectedLook` on the
+button switches it on while that button is selected and a controller is in use (tick **Show With
+Keyboard** to show it always). The stand-in art is `Art/Placeholders/Menu Highlight.png`; keep
+the Image **Sliced** so its corners stay crisp. To give another menu's button the same frame,
+copy a `Highlight` child into it, add `SelectedLook` to the button, and drag the child into
+**Look**.
 
 ## Setting a scene up by hand
 

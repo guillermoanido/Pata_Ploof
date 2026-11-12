@@ -9,40 +9,37 @@ namespace FallingWizard.UI
 {
     public class ChoiceScreen : MonoBehaviour
     {
-        const int DefaultSortingOrder = 200;
+        const string PrefabName = "Choice Screen";
 
-        const float BothSides = 2f;
+        [Header("Rig")]
+        public TextMeshProUGUI title;
 
-        const float PanelWidth = 760f;
-        const float PanelPadding = 40f;
-        const float PanelSpacing = 16f;
-        const float InnerWidth = PanelWidth - PanelPadding * BothSides;
+        [Tooltip("Hidden when a question has no blurb.")]
+        public TextMeshProUGUI blurb;
 
-        const float ButtonWidth = 640f;
-        const float ButtonHeight = 68f;
-        const float ButtonFontSize = 28f;
+        [Tooltip("An extra line under the blurb, for example how much Magical Scrap would be lost.")]
+        public TextMeshProUGUI status;
 
-        const float TitleFontSize = 56f;
-        const float TitleHeight = 70f;
+        [Tooltip("One answer button, copied once per answer and placed where this one sits. It " +
+                 "stays switched off itself, so restyle it and every answer follows.")]
+        public Button choiceTemplate;
 
-        const float BlurbFontSize = 26f;
-        const float BlurbHeight = 72f;
-
-        const float StatusFontSize = 28f;
-        const float StatusHeight = 40f;
-
-        RectTransform column;
-        TextMeshProUGUI status;
-
-        public static ChoiceScreen Open(string title, string blurb,
-            int sortingOrder = DefaultSortingOrder)
+        void Awake()
         {
-            Game.SetPaused(true);
-            Screens.Claim();
+            if (choiceTemplate != null)
+                choiceTemplate.gameObject.SetActive(false);
+        }
 
-            Canvas canvas = Ui.CreateCanvas(title, sortingOrder);
-            var screen = canvas.gameObject.AddComponent<ChoiceScreen>();
-            screen.Build(title, blurb);
+        public static ChoiceScreen Open(string titleText, string blurbText)
+        {
+            var screen = Ui.OpenScreen<ChoiceScreen>(PrefabName);
+
+            if (screen == null)
+                return null;
+
+            Game.SetPaused(true);
+            Ui.ClaimScreen();
+            screen.Show(titleText, blurbText);
 
             return screen;
         }
@@ -57,8 +54,8 @@ namespace FallingWizard.UI
 
         public ChoiceScreen Choice(string text, Action onChosen, bool isEnabled = true)
         {
-            Button button = Ui.CreateButton(text, column, ButtonWidth, ButtonHeight,
-                ButtonFontSize);
+            var button = Ui.CopyOf(choiceTemplate.gameObject).GetComponent<Button>();
+            Ui.Retext(button, text);
             button.interactable = isEnabled;
 
             if (isEnabled && onChosen != null)
@@ -73,33 +70,30 @@ namespace FallingWizard.UI
 
         public void Close()
         {
-            Screens.Release();
+            Ui.ReleaseScreen();
             Game.SetPaused(false);
             Destroy(gameObject);
         }
 
         public void CloseThen(Action next)
         {
-            Screens.Release();
+            Ui.ReleaseScreen();
             Destroy(gameObject);
             next?.Invoke();
         }
 
-        void Build(string title, string blurb)
+        void Show(string titleText, string blurbText)
         {
-            Ui.CreateShroud(transform);
+            if (title != null)
+                title.text = titleText;
 
-            column = Ui.CreateSheet("Panel", transform, Ui.Panel, PanelWidth,
-                PanelPadding, PanelSpacing);
+            if (blurb != null)
+            {
+                blurb.text = blurbText;
+                blurb.gameObject.SetActive(!string.IsNullOrEmpty(blurbText));
+            }
 
-            Ui.CreateLabel(title, column, TitleFontSize, InnerWidth, TitleHeight);
-
-            if (!string.IsNullOrEmpty(blurb))
-                Ui.CreateLabel(blurb, column, BlurbFontSize, InnerWidth, BlurbHeight).color =
-                    Ui.FadedInk;
-
-            status = Ui.CreateLabel(string.Empty, column, StatusFontSize, InnerWidth, StatusHeight);
-            status.color = Ui.Accent;
+            Status(string.Empty);
         }
     }
 }

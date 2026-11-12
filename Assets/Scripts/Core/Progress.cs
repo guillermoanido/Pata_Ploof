@@ -28,12 +28,8 @@ namespace FallingWizard.Core
         static readonly HashSet<string> taken = new HashSet<string>();
         static readonly HashSet<string> completedLevels = new HashSet<string>();
 
-        static bool isSandbox;
-
         static bool isSaveFileUnreadable;
         static bool hasWarnedAboutUnreadable;
-
-        public static bool IsSandboxSeeded { get; private set; }
 
         public static int Scrap { get; private set; }
 
@@ -156,19 +152,6 @@ namespace FallingWizard.Core
             return true;
         }
 
-        public static void SetRank(string key, int rank)
-        {
-            if (string.IsNullOrEmpty(key))
-                return;
-
-            if (rank <= 0)
-                ranks.Remove(key);
-            else
-                ranks[key] = rank;
-
-            Save();
-        }
-
         public static bool IsTaken(string id) => !string.IsNullOrEmpty(id) && taken.Contains(id);
 
         public static void MarkTaken(string id)
@@ -197,8 +180,6 @@ namespace FallingWizard.Core
             Save();
         }
 
-        public static void SetHearts(int amount) => BonusHearts = Mathf.Max(0, amount);
-
         public static bool HasCompletedLevel(string sceneName) => completedLevels.Contains(sceneName);
 
         public static void CompleteLevel(string sceneName)
@@ -209,18 +190,6 @@ namespace FallingWizard.Core
             Save();
         }
 
-        public static void StartOver()
-        {
-            if (!isSandbox)
-            {
-                ResetSave();
-                return;
-            }
-
-            Clear();
-            isSandbox = true;
-        }
-
         public static void ResetSave()
         {
             Clear();
@@ -229,16 +198,6 @@ namespace FallingWizard.Core
                 UnblockSaving();
 
             DeleteLegacyPlayerPrefs();
-        }
-
-        public static void BeginSandbox(bool reseed = false)
-        {
-            if (isSandbox && IsSandboxSeeded && !reseed)
-                return;
-
-            Clear();
-            isSandbox = true;
-            IsSandboxSeeded = true;
         }
 
         static void PayScrap(int cost)
@@ -265,9 +224,6 @@ namespace FallingWizard.Core
 
         static void Save()
         {
-            if (isSandbox)
-                return;
-
             if (isSaveFileUnreadable)
             {
                 WarnOnceAboutNotSaving();
@@ -484,8 +440,6 @@ namespace FallingWizard.Core
 
             Scrap = 0;
             BonusHearts = 0;
-            isSandbox = false;
-            IsSandboxSeeded = false;
         }
 
         [Serializable]

@@ -10,12 +10,7 @@ namespace FallingWizard.UI
 {
     public class PlayerHud : MonoBehaviour
     {
-        const float ScrapFontSize = 26f;
-
         const int NotBuilt = -1;
-
-        static readonly Vector2 ScrapCorner = new Vector2(-24f, -20f);
-        static readonly Vector2 ScrapSize = new Vector2(360f, 40f);
 
         [Header("Rig")]
         [Tooltip("Spell slots are laid out under here, in spellbook order.")]
@@ -26,14 +21,8 @@ namespace FallingWizard.UI
                  "the template - like the bar's right end - stays at the end as the bar grows.")]
         public HudSlot slotTemplate;
 
-        [Tooltip("Reads out how much Magical Scrap is in the purse. Leave it empty and one is " +
-                 "built in the top right corner on its own, so a scene needs no wiring to show " +
-                 "the number that matters most.")]
+        [Tooltip("Reads out how much Magical Scrap is in the purse. Leave it empty for no counter.")]
         public TextMeshProUGUI scrapLabel;
-
-        [Tooltip("Do not build that corner label. For a scene that shows the count some other " +
-                 "way, or one that would rather not show it at all.")]
-        public bool hideScrapCount = false;
 
         [Header("Magical Scrap")]
         [Tooltip("How the counter reads, for a scene that wants its own wording. {0} is the " +
@@ -87,9 +76,6 @@ namespace FallingWizard.UI
             if (blipTemplate != null)
                 blipTemplate.gameObject.SetActive(false);
 
-            if (scrapLabel == null && !hideScrapCount)
-                scrapLabel = BuildScrapLabel();
-
             if (spellBar == null || slotTemplate == null)
                 Debug.LogError("The HUD is missing part of its rig. It wants a spell bar with one " +
                                "HudSlot to copy, which stays switched off.", this);
@@ -118,30 +104,6 @@ namespace FallingWizard.UI
         }
 
         void OnDisable() => Core.Controls.SchemeChanged -= RefreshButtons;
-
-        TextMeshProUGUI BuildScrapLabel()
-        {
-            var canvas = GetComponentInParent<Canvas>();
-
-            if (canvas == null)
-                return null;
-
-            var labelObject = new GameObject("Scrap Count", typeof(RectTransform));
-            labelObject.transform.SetParent(canvas.transform, false);
-
-            var rectTransform = (RectTransform)labelObject.transform;
-            rectTransform.anchorMin = rectTransform.anchorMax = rectTransform.pivot = Vector2.one;
-            rectTransform.anchoredPosition = ScrapCorner;
-            rectTransform.sizeDelta = ScrapSize;
-
-            var label = labelObject.AddComponent<TextMeshProUGUI>();
-            label.fontSize = ScrapFontSize;
-            label.color = Ui.Accent;
-            label.alignment = TextAlignmentOptions.Right;
-            label.raycastTarget = false;
-
-            return label;
-        }
 
         void BindToCurrentWizard()
         {

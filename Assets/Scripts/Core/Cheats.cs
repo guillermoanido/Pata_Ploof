@@ -49,7 +49,7 @@ namespace FallingWizard.Core
 
             SetWizardInvulnerable(true);
 
-            if (keyboard != null && keyboard.lKey.wasPressedThisFrame && !Screens.IsModalOpen)
+            if (keyboard != null && keyboard.lKey.wasPressedThisFrame && !Ui.IsModalOpen)
                 Game.LoadLevelSelect();
         }
 

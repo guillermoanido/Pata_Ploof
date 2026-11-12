@@ -1,5 +1,5 @@
+using System;
 using FallingWizard.Localization;
-using FallingWizard.Player;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -9,36 +9,28 @@ namespace FallingWizard.UI
 {
     public class ControlsScreen : MonoBehaviour
     {
-        const int DefaultSortingOrder = 260;
+        const string PrefabName = "Controls Screen";
 
-        const float BothSides = 2f;
+        [Header("Rig")]
+        public Button closeButton;
 
-        const float PanelWidth = 900f;
-        const float PanelPadding = 36f;
-        const float PanelSpacing = 8f;
-        const float InnerWidth = PanelWidth - PanelPadding * BothSides;
-
-        const float TitleFontSize = 52f;
-        const float TitleHeight = 68f;
-
-        const float HeadingFontSize = 24f;
-        const float HeadingHeight = 38f;
-
-        const float SectionFontSize = 26f;
-        const float SectionHeight = 46f;
-
-        const float RowFontSize = 26f;
-        const float RowHeight = 42f;
-
-        const float NameColumnWidth = 356f;
-        const float GlyphColumnWidth = 226f;
-
-        const float ButtonWidth = 260f;
-        const float ButtonHeight = 62f;
+        [Tooltip("One entry per line of the sheet. Each names the input action it explains and " +
+                 "the three labels that show it. Add a row in the prefab, then add it here.")]
+        public Row[] rows = new Row[0];
 
         static ControlsScreen openScreen;
 
-        RectTransform column;
+        void Awake()
+        {
+            if (closeButton != null)
+                closeButton.onClick.AddListener(Close);
+        }
+
+        void OnEnable()
+        {
+            Loc.Changed += ShowRows;
+            ShowRows();
+        }
 
         void Update()
         {
@@ -46,24 +38,36 @@ namespace FallingWizard.UI
                 Close();
         }
 
+        void OnDisable() => Loc.Changed -= ShowRows;
+
         void OnDestroy()
         {
             if (openScreen == this)
                 MarkClosed();
         }
 
-        public static ControlsScreen Open(int sortingOrder = DefaultSortingOrder)
+        public static ControlsScreen Open()
         {
             if (openScreen != null)
                 return openScreen;
 
-            Screens.Claim();
+            openScreen = Ui.OpenScreen<ControlsScreen>(PrefabName);
 
-            Canvas canvas = Ui.CreateCanvas("Controls", sortingOrder);
-            openScreen = canvas.gameObject.AddComponent<ControlsScreen>();
-            openScreen.Build();
+            if (openScreen == null)
+                return null;
+
+            Ui.ClaimScreen();
+
+            if (openScreen.closeButton != null)
+                Ui.Focus(openScreen.closeButton.gameObject);
 
             return openScreen;
+        }
+
+        void ShowRows()
+        {
+            foreach (Row row in rows)
+                row.Show();
         }
 
         void Close()
@@ -72,100 +76,49 @@ namespace FallingWizard.UI
             Destroy(gameObject);
         }
 
-        void Build()
-        {
-            Ui.CreateShroud(transform);
-
-            column = Ui.CreateSheet("Panel", transform, Ui.Panel, PanelWidth, PanelPadding,
-                PanelSpacing);
-
-            Ui.CreateLabel(Loc.Get("controls.title"), column, TitleFontSize, InnerWidth,
-                TitleHeight);
-
-            DrawHeadingRow();
-            DrawPlayingSection();
-            DrawMenusSection();
-            DrawCloseButton();
-        }
-
-        void DrawHeadingRow()
-        {
-            RectTransform row = Ui.CreateRow("Heading", column, InnerWidth, HeadingHeight);
-
-            Ui.CreateLabel(string.Empty, row, HeadingFontSize, NameColumnWidth, HeadingHeight,
-                TextAlignmentOptions.Left);
-
-            DrawCell(row, Loc.Get("controls.keyboard"), HeadingFontSize).color = Ui.Accent;
-            DrawCell(row, Loc.Get("controls.controller"), HeadingFontSize).color = Ui.Accent;
-        }
-
-        void DrawPlayingSection()
-        {
-            DrawSectionTitle("controls.playing");
-            DrawBindingRow(Loc.Get("controls.move"), "Player/Move");
-            DrawBindingRow(Loc.Get("controls.walk"), "Player/Walk");
-
-            for (int i = 0; i < PlayerLogic.Spellbook.SlotCount; i++)
-                DrawBindingRow(Loc.Format("controls.spell", i + 1),
-                    "Player/" + PlayerLogic.Spellbook.SlotActions[i]);
-
-            DrawBindingRow(Loc.Get("controls.loadout"), "UI/Loadout");
-            DrawBindingRow(Loc.Get("controls.pause"), "UI/Pause");
-            DrawBindingRow(Loc.Get("controls.skip"), "UI/Skip");
-        }
-
-        void DrawMenusSection()
-        {
-            DrawSectionTitle("controls.menus");
-            DrawBindingRow(Loc.Get("controls.menuMove"), "UI/Navigate");
-            DrawBindingRow(Loc.Get("controls.menuPick"), "UI/Submit");
-            DrawBindingRow(Loc.Get("controls.menuBack"), "UI/Cancel");
-        }
-
-        void DrawCloseButton()
-        {
-            Button closeButton = Ui.CreateButton(Loc.Get("controls.close"), column,
-                ButtonWidth, ButtonHeight);
-
-            closeButton.onClick.AddListener(Close);
-            Ui.Focus(closeButton.gameObject);
-        }
-
-        void DrawSectionTitle(string key)
-        {
-            TextMeshProUGUI label = Ui.CreateLabel(Loc.Get(key), column, SectionFontSize,
-                InnerWidth, SectionHeight, TextAlignmentOptions.Left);
-
-            label.color = Ui.Warning;
-        }
-
-        void DrawBindingRow(string actionName, string path)
-        {
-            InputAction action = Core.Controls.Lookup(path);
-
-            RectTransform row = Ui.CreateRow("Row", column, InnerWidth, RowHeight);
-
-            Ui.CreateLabel(actionName, row, RowFontSize, NameColumnWidth, RowHeight,
-                TextAlignmentOptions.Left);
-
-            DrawCell(row, DescribeBinding(action, Core.Controls.KeyboardScheme), RowFontSize);
-            DrawCell(row, DescribeBinding(action, Core.Controls.GamepadScheme), RowFontSize);
-        }
-
-        TextMeshProUGUI DrawCell(RectTransform row, string text, float fontSize) =>
-            Ui.CreateLabel(text, row, fontSize, GlyphColumnWidth, RowHeight);
-
-        static string DescribeBinding(InputAction action, string scheme)
-        {
-            string glyph = Core.Controls.GlyphFor(action, scheme);
-
-            return string.IsNullOrEmpty(glyph) ? Loc.Get("controls.none") : glyph;
-        }
-
         void MarkClosed()
         {
             openScreen = null;
-            Screens.Release();
+            Ui.ReleaseScreen();
+        }
+
+        [Serializable]
+        public class Row
+        {
+            [Tooltip("Translation key of the row's name, for example 'controls.move'.")]
+            public string nameKey;
+
+            [Tooltip("For a name with {0} in it, like 'controls.spell': the number put there. " +
+                     "0 for a name without one.")]
+            [Min(0)] public int number;
+
+            [Tooltip("The input action this row explains, for example 'Player/Move'.")]
+            public string action;
+
+            public TextMeshProUGUI nameLabel;
+            public TextMeshProUGUI keyboardLabel;
+            public TextMeshProUGUI controllerLabel;
+
+            public void Show()
+            {
+                InputAction input = Core.Controls.Lookup(action);
+
+                if (nameLabel != null)
+                    nameLabel.text = number > 0 ? Loc.Format(nameKey, number) : Loc.Get(nameKey);
+
+                if (keyboardLabel != null)
+                    keyboardLabel.text = DescribeBinding(input, Core.Controls.KeyboardScheme);
+
+                if (controllerLabel != null)
+                    controllerLabel.text = DescribeBinding(input, Core.Controls.GamepadScheme);
+            }
+
+            static string DescribeBinding(InputAction input, string scheme)
+            {
+                string glyph = Core.Controls.GlyphFor(input, scheme);
+
+                return string.IsNullOrEmpty(glyph) ? Loc.Get("controls.none") : glyph;
+            }
         }
     }
 }

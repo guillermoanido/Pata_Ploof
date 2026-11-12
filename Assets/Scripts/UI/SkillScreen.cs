@@ -13,83 +13,52 @@ namespace FallingWizard.UI
 {
     public class SkillScreen : MonoBehaviour
     {
-        const int SortingOrder = 220;
-
-        const float BothSides = 2f;
-        const float GapsInACard = 2f;
-
-        const float PanelWidth = 1180f;
-        const float PanelPadding = 24f;
-        const float PanelSpacing = 8f;
-
-        const float RowHeight = 84f;
-        const float IconSize = 52f;
-        const float ActionWidth = 250f;
-        const float ActionHeight = 46f;
-        const float ActionFontSize = 22f;
-        const float SlotSize = 92f;
-
-        const float SlotCaptionHeight = 30f;
-
-        const float TitleFontSize = 44f;
-        const float TitleHeight = 52f;
-        const float PurseFontSize = 28f;
-        const float PurseHeight = 36f;
-        const float HintFontSize = 20f;
-        const float HintHeight = 28f;
-        const float NoticeFontSize = 26f;
-        const float NoticeHeight = 44f;
-
-        const float NameFontSize = 24f;
-        const float NameHeight = 28f;
-        const float BlurbFontSize = 19f;
-        const float BlurbHeight = 30f;
-
-        const float GlyphFontSize = 34f;
-        const float CaptionFontSize = 17f;
-        const float CaptionHeight = 26f;
-
-        const float PipSize = 12f;
-        const float RoomForPips = 90f;
-
-        const float DiveWidth = 420f;
-        const float DiveHeight = 58f;
-        const float DiveFontSize = 28f;
-
-        const float CardHorizontalPadding = 18f;
-        const float CardVerticalPadding = 8f;
-        const float CardSpacing = 20f;
-        const float SlotSpacing = 16f;
-        const float CellSpacing = 4f;
-        const float WordSpacing = 2f;
-        const float HeadingSpacing = 10f;
-
-        const float CardWidthBesideWords = IconSize + ActionWidth +
-                                           CardHorizontalPadding * BothSides +
-                                           CardSpacing * GapsInACard;
-
-        const float InnerWidth = PanelWidth - PanelPadding * BothSides;
-
-        const float WordsWidth = InnerWidth - CardWidthBesideWords;
-        const float WordsHeight = RowHeight - CardVerticalPadding * BothSides;
+        const string PrefabName = "Skill Screen";
 
         static readonly Color UnownedIconTint = new Color(1f, 1f, 1f, 0.3f);
 
-        readonly Dictionary<GameObject, Ability> spellsByCard =
-            new Dictionary<GameObject, Ability>();
+        [Header("Rig")]
+        public TextMeshProUGUI purse;
+        public TextMeshProUGUI hint;
+
+        [Tooltip("Shown only when the spell catalogue cannot be found.")]
+        public GameObject noBookNotice;
+
+        public Button diveButton;
+
+        [Tooltip("One spell button slot, copied once per button and placed where it sits. It " +
+                 "stays switched off itself, so restyle it and every slot follows.")]
+        public SlotParts slotTemplate = new SlotParts();
+
+        [Tooltip("One spell card, copied once per spell in the catalogue and placed where it " +
+                 "sits. It stays switched off itself, so restyle it and every card follows.")]
+        public CardParts cardTemplate = new CardParts();
+
+        readonly List<SlotParts> slots = new List<SlotParts>();
+        readonly List<CardParts> cards = new List<CardParts>();
 
         AbilityBook book;
         Action onDive;
         Action onClose;
 
         string diveKey = Loc.Keys.SkillDive;
-
-        RectTransform body;
-        InputAction[] slotInputs;
-
         string focusKey = string.Empty;
 
+        InputAction[] slotInputs;
+
         [NonSerialized] int openedOnFrame;
+
+        void Awake()
+        {
+            if (slotTemplate.root != null)
+                slotTemplate.root.SetActive(false);
+
+            if (cardTemplate.root != null)
+                cardTemplate.root.SetActive(false);
+
+            if (diveButton != null)
+                diveButton.onClick.AddListener(Leave);
+        }
 
         void Update()
         {
@@ -104,8 +73,8 @@ namespace FallingWizard.UI
 
         void OnDestroy()
         {
-            Core.Controls.SchemeChanged -= Redraw;
-            Loc.Changed -= Redraw;
+            Core.Controls.SchemeChanged -= Refresh;
+            Loc.Changed -= Refresh;
         }
 
         public static SkillScreen Open(Action onDive, string labelKey = null) =>
@@ -116,11 +85,13 @@ namespace FallingWizard.UI
 
         static SkillScreen CreateScreen(Action onDive, string labelKey, Action onClose)
         {
-            Game.SetPaused(true);
-            Screens.Claim();
+            var screen = Ui.OpenScreen<SkillScreen>(PrefabName);
 
-            Canvas canvas = Ui.CreateCanvas("Skill Screen", SortingOrder);
-            var screen = canvas.gameObject.AddComponent<SkillScreen>();
+            if (screen == null)
+                return null;
+
+            Game.SetPaused(true);
+            Ui.ClaimScreen();
 
             screen.onDive = onDive;
             screen.diveKey = string.IsNullOrEmpty(labelKey) ? Loc.Keys.SkillDive : labelKey;
@@ -134,11 +105,6 @@ namespace FallingWizard.UI
 
         void Build()
         {
-            Ui.CreateShroud(transform);
-
-            body = Ui.CreateSheet("Panel", transform, Ui.Panel, PanelWidth, PanelPadding,
-                PanelSpacing);
-
             slotInputs = new InputAction[PlayerLogic.Spellbook.SlotCount];
 
             for (int i = 0; i < slotInputs.Length; i++)
@@ -147,10 +113,45 @@ namespace FallingWizard.UI
             if (book != null)
                 PlayerLogic.Spellbook.Seed(book);
 
-            Core.Controls.SchemeChanged += Redraw;
-            Loc.Changed += Redraw;
+            BuildSlots();
+            BuildCards();
 
-            Redraw();
+            Core.Controls.SchemeChanged += Refresh;
+            Loc.Changed += Refresh;
+
+            Refresh();
+            FocusCard();
+        }
+
+        void BuildSlots()
+        {
+            for (int i = 0; i < PlayerLogic.Spellbook.SlotCount; i++)
+            {
+                SlotParts slot = slotTemplate.Copy();
+                int index = i;
+                slot.plate.onClick.AddListener(() => Assign(FindFocusedSpell(), index));
+                slots.Add(slot);
+            }
+        }
+
+        void BuildCards()
+        {
+            if (book == null)
+                return;
+
+            foreach (Ability spell in book.spells)
+            {
+                if (spell == null)
+                    continue;
+
+                CardParts card = cardTemplate.Copy();
+                card.spell = spell;
+                card.root.name = spell.displayName;
+                card.button.onClick.AddListener(() => Focus(spell));
+                card.action.onClick.AddListener(() => Act(spell));
+                card.BuildPips(spell.HasUpgrades ? spell.MaxRank : 0);
+                cards.Add(card);
+            }
         }
 
         bool ShouldLeave() =>
@@ -160,7 +161,7 @@ namespace FallingWizard.UI
 
         void Leave()
         {
-            Screens.Release();
+            Ui.ReleaseScreen();
 
             Destroy(gameObject);
 
@@ -183,97 +184,83 @@ namespace FallingWizard.UI
                 }
         }
 
-        void Redraw()
+        void Refresh()
         {
-            ClearScreen();
+            purse.text = Loc.Format(Loc.Keys.SkillPurse, Progress.Scrap);
+            hint.text = WriteHint();
+            Ui.Retext(diveButton, Loc.Get(diveKey));
 
-            Ui.CreateLabel(Loc.Get(Loc.Keys.SkillTitle), body, TitleFontSize, InnerWidth,
-                TitleHeight);
+            if (noBookNotice != null)
+                noBookNotice.SetActive(book == null);
 
-            TextMeshProUGUI purse = Ui.CreateLabel(
-                Loc.Format(Loc.Keys.SkillPurse, Progress.Scrap), body, PurseFontSize, InnerWidth,
-                PurseHeight);
-            purse.color = Ui.Accent;
+            for (int i = 0; i < slots.Count; i++)
+                ShowSlot(slots[i], i);
 
-            DrawSlots();
-            DrawHint();
-
-            GameObject cardToFocus = DrawSpells();
-
-            Ui.CreateButton(Loc.Get(diveKey), body, DiveWidth, DiveHeight, DiveFontSize)
-                .onClick.AddListener(Leave);
-
-            Ui.Focus(cardToFocus);
+            foreach (CardParts card in cards)
+                ShowCard(card);
         }
 
-        void ClearScreen()
+        void ShowSlot(SlotParts slot, int index)
         {
-            spellsByCard.Clear();
-
-            for (int i = body.childCount - 1; i >= 0; i--)
-            {
-                GameObject child = body.GetChild(i).gameObject;
-                child.transform.SetParent(null, false);
-                Destroy(child);
-            }
-        }
-
-        void DrawSlots()
-        {
-            RectTransform strip = Ui.CreateRow("Slots", body, InnerWidth,
-                SlotSize + SlotCaptionHeight, SlotSpacing, TextAnchor.MiddleCenter);
-
-            for (int i = 0; i < PlayerLogic.Spellbook.SlotCount; i++)
-                DrawSlot(strip, i);
-        }
-
-        void DrawSlot(RectTransform strip, int slot)
-        {
-            Ability held = FindSpellInSlot(slot);
+            Ability held = FindSpellInSlot(index);
             bool locked = held != null && held.locked;
+            bool hasIcon = held != null && held.icon != null;
 
-            RectTransform cell = Ui.CreateColumn($"Slot {slot + 1}", strip, SlotSize, CellSpacing,
-                TextAnchor.UpperCenter);
-            Ui.SetSize(cell.gameObject, SlotSize, SlotSize + SlotCaptionHeight);
+            slot.plate.interactable = !locked;
+            slot.plate.image.color = held != null ? Ui.CardLit : Ui.Card;
 
-            DrawSlotPlate(cell, slot, held, locked);
-            DrawSlotCaption(cell, slot, held, locked);
+            slot.icon.gameObject.SetActive(hasIcon);
+            slot.icon.sprite = hasIcon ? held.icon : null;
+
+            slot.glyph.gameObject.SetActive(!hasIcon);
+            slot.glyph.text = GetSlotGlyph(index);
+
+            slot.caption.text = held != null ? $"{GetSlotGlyph(index)}  {held.Name}" : GetSlotGlyph(index);
+            slot.caption.color = locked ? Ui.Warning : held != null ? Ui.Ink : Ui.FadedInk;
         }
 
-        void DrawSlotPlate(RectTransform cell, int slot, Ability held, bool locked)
+        void ShowCard(CardParts card)
         {
-            Image plate = Ui.CreatePlate("Plate", cell, held != null ? Ui.CardLit : Ui.Card,
-                SlotSize, SlotSize);
+            Ability spell = card.spell;
+            bool owned = Progress.Owns(spell.Key);
+            int rank = Progress.Rank(spell.Key);
+            int slot = Progress.SlotHolding(spell.Key);
 
-            Button button = Ui.MakePressable(plate);
-            button.interactable = !locked;
-            button.onClick.AddListener(() => Assign(FindFocusedSpell(), slot));
+            card.button.interactable = owned;
+            card.button.image.color = slot >= 0 ? Ui.CardLit : Ui.Card;
 
-            if (held != null && held.icon != null)
-                Ui.CreateIcon(plate.transform, held.icon, IconSize, Color.white);
-            else
-                Ui.CreateLabel(GetSlotGlyph(slot), plate.transform, GlyphFontSize, SlotSize, SlotSize)
-                    .color = Ui.FadedInk;
+            card.icon.sprite = spell.icon;
+            card.icon.color = owned ? Color.white : UnownedIconTint;
+
+            card.nameLabel.text = spell.Name;
+            card.nameLabel.color = owned ? Ui.Ink : Ui.FadedInk;
+            card.ShowPips(rank, owned ? Ui.Accent : Ui.FadedInk);
+
+            card.blurb.text = WriteBlurb(spell, owned, rank, slot);
+
+            ShowAction(card, spell, owned, rank);
         }
 
-        void DrawSlotCaption(RectTransform cell, int slot, Ability held, bool locked)
+        void ShowAction(CardParts card, Ability spell, bool owned, int rank)
         {
-            TextMeshProUGUI caption = Ui.CreateLabel(
-                held != null ? $"{GetSlotGlyph(slot)}  {held.Name}" : GetSlotGlyph(slot), cell,
-                CaptionFontSize, SlotSize, CaptionHeight);
+            Ability.Upgrade nextUpgrade = owned ? spell.NextUpgrade(rank) : null;
+            bool isFinished = owned && nextUpgrade == null;
 
-            if (locked)
-                caption.color = Ui.Warning;
-            else if (held != null)
-                caption.color = Ui.Ink;
-            else
-                caption.color = Ui.FadedInk;
-        }
+            card.action.gameObject.SetActive(!isFinished);
+            card.status.gameObject.SetActive(isFinished);
 
-        void DrawHint()
-        {
-            Ui.CreateLabel(WriteHint(), body, HintFontSize, InnerWidth, HintHeight).color =
-                Ui.FadedInk;
+            if (isFinished)
+            {
+                card.status.text = Loc.Get(spell.HasUpgrades ? Loc.Keys.SkillMastered : Loc.Keys.SkillLearned);
+                return;
+            }
+
+            int cost = owned ? nextUpgrade.cost : spell.cost;
+            bool canAfford = Progress.CanAfford(cost);
+            string offer = owned ? $"{spell.UpgradeTitle(rank)} - {cost}" : Loc.Format(Loc.Keys.SkillLearn, cost);
+
+            card.action.interactable = canAfford;
+            Ui.Retext(card.action, canAfford ? offer : Loc.Format(Loc.Keys.SkillPrice, cost));
         }
 
         string WriteHint()
@@ -304,101 +291,6 @@ namespace FallingWizard.UI
             return string.Join(" ", freeGlyphs);
         }
 
-        GameObject DrawSpells()
-        {
-            if (book == null)
-            {
-                Ui.CreateLabel(Loc.Get(Loc.Keys.SkillNoBook), body,
-                    NoticeFontSize, InnerWidth, NoticeHeight).color = Ui.Warning;
-                return null;
-            }
-
-            GameObject cardToFocus = null;
-
-            foreach (Ability spell in book.spells)
-            {
-                if (spell == null)
-                    continue;
-
-                GameObject card = DrawSpell(spell);
-
-                if (cardToFocus == null || spell.Key == focusKey)
-                    cardToFocus = card;
-            }
-
-            return cardToFocus;
-        }
-
-        GameObject DrawSpell(Ability spell)
-        {
-            bool owned = Progress.Owns(spell.Key);
-            int rank = Progress.Rank(spell.Key);
-            int slot = Progress.SlotHolding(spell.Key);
-            bool equipped = slot >= 0;
-
-            Image card = DrawCard(spell, owned, equipped);
-
-            Ui.CreateIcon(card.transform, spell.icon, IconSize,
-                owned ? Color.white : UnownedIconTint);
-
-            DrawWords(spell, card.transform, owned, rank, slot);
-            DrawAction(spell, card.transform, owned, rank);
-
-            return card.gameObject;
-        }
-
-        Image DrawCard(Ability spell, bool owned, bool equipped)
-        {
-            RectTransform row = Ui.CreateRow(spell.displayName, body, InnerWidth, RowHeight,
-                CardSpacing);
-
-            Image card = Ui.CreatePlate("Card", row, equipped ? Ui.CardLit : Ui.Card,
-                InnerWidth, RowHeight);
-
-            Button button = Ui.MakePressable(card);
-            button.interactable = owned;
-            button.onClick.AddListener(() => { focusKey = spell.Key; Redraw(); });
-
-            spellsByCard[card.gameObject] = spell;
-
-            ArrangeCard(card);
-
-            return card;
-        }
-
-        void ArrangeCard(Image card)
-        {
-            var cardLayout = card.gameObject.AddComponent<HorizontalLayoutGroup>();
-            cardLayout.childAlignment = TextAnchor.MiddleLeft;
-            cardLayout.spacing = CardSpacing;
-            cardLayout.padding = new RectOffset(
-                (int)CardHorizontalPadding, (int)CardHorizontalPadding,
-                (int)CardVerticalPadding, (int)CardVerticalPadding);
-            Ui.SizeChildrenWithoutStretching(cardLayout);
-        }
-
-        void DrawWords(Ability spell, Transform parent, bool owned, int rank, int slot)
-        {
-            RectTransform words = Ui.CreateColumn("Words", parent, WordsWidth, WordSpacing,
-                TextAnchor.MiddleLeft);
-            Ui.SetSize(words.gameObject, WordsWidth, WordsHeight);
-
-            RectTransform heading = Ui.CreateRow("Heading", words, WordsWidth, NameHeight,
-                HeadingSpacing);
-
-            TextMeshProUGUI nameLabel = Ui.CreateLabel(spell.Name, heading, NameFontSize,
-                WordsWidth - (spell.HasUpgrades ? RoomForPips : 0f), NameHeight,
-                TextAlignmentOptions.Left);
-            nameLabel.color = owned ? Ui.Ink : Ui.FadedInk;
-
-            if (spell.HasUpgrades)
-                Ui.CreatePips(heading, rank, spell.MaxRank, PipSize,
-                    owned ? Ui.Accent : Ui.FadedInk);
-
-            Ui.CreateLabel(WriteBlurb(spell, owned, rank, slot), words, BlurbFontSize, WordsWidth,
-                BlurbHeight, TextAlignmentOptions.TopLeft).color = Ui.FadedInk;
-        }
-
         string WriteBlurb(Ability spell, bool owned, int rank, int slot)
         {
             if (!owned)
@@ -416,40 +308,24 @@ namespace FallingWizard.UI
                 : $"{placement}  {spell.Description}";
         }
 
-        void DrawAction(Ability spell, Transform parent, bool owned, int rank)
+        void Focus(Ability spell)
         {
-            if (!owned)
-            {
-                DrawBuyButton(spell, parent);
-                return;
-            }
-
-            Ability.Upgrade nextUpgrade = spell.NextUpgrade(rank);
-
-            if (nextUpgrade == null)
-            {
-                Ui.CreateLabel(
-                    Loc.Get(spell.HasUpgrades ? Loc.Keys.SkillMastered : Loc.Keys.SkillLearned),
-                    parent, ActionFontSize, ActionWidth, ActionHeight).color = Ui.FadedInk;
-                return;
-            }
-
-            DrawUpgradeButton(spell, parent, rank, nextUpgrade);
+            focusKey = spell.Key;
+            Refresh();
         }
 
-        void DrawBuyButton(Ability spell, Transform parent)
+        void Act(Ability spell)
         {
-            bool canAfford = Progress.CanAfford(spell.cost);
+            if (!Progress.Owns(spell.Key))
+            {
+                LearnSpell(spell);
+                return;
+            }
 
-            Button buyButton = Ui.CreateButton(
-                canAfford ? Loc.Format(Loc.Keys.SkillLearn, spell.cost)
-                          : Loc.Format(Loc.Keys.SkillPrice, spell.cost),
-                parent, ActionWidth, ActionHeight, ActionFontSize);
+            Ability.Upgrade nextUpgrade = spell.NextUpgrade(Progress.Rank(spell.Key));
 
-            buyButton.interactable = canAfford;
-
-            if (canAfford)
-                buyButton.onClick.AddListener(() => LearnSpell(spell));
+            if (nextUpgrade != null && Progress.TryUpgrade(spell.Key, nextUpgrade.cost, spell.MaxRank))
+                ApplyChanges(spell);
         }
 
         void LearnSpell(Ability spell)
@@ -461,30 +337,6 @@ namespace FallingWizard.UI
 
             if (freeSlot >= 0 && !spell.locked)
                 Progress.Equip(freeSlot, spell.Key);
-
-            ApplyChanges(spell);
-        }
-
-        void DrawUpgradeButton(Ability spell, Transform parent, int rank,
-            Ability.Upgrade nextUpgrade)
-        {
-            bool canAfford = Progress.CanAfford(nextUpgrade.cost);
-
-            Button upgradeButton = Ui.CreateButton(
-                canAfford ? $"{spell.UpgradeTitle(rank)} - {nextUpgrade.cost}"
-                          : Loc.Format(Loc.Keys.SkillPrice, nextUpgrade.cost),
-                parent, ActionWidth, ActionHeight, ActionFontSize);
-
-            upgradeButton.interactable = canAfford;
-
-            if (canAfford)
-                upgradeButton.onClick.AddListener(() => BuyUpgrade(spell, nextUpgrade));
-        }
-
-        void BuyUpgrade(Ability spell, Ability.Upgrade nextUpgrade)
-        {
-            if (!Progress.TryUpgrade(spell.Key, nextUpgrade.cost, spell.MaxRank))
-                return;
 
             ApplyChanges(spell);
         }
@@ -515,10 +367,13 @@ namespace FallingWizard.UI
                 ? EventSystem.current.currentSelectedGameObject
                 : null;
 
-            if (selected != null && spellsByCard.TryGetValue(selected, out Ability spell))
+            foreach (CardParts card in cards)
             {
-                focusKey = spell.Key;
-                return spell;
+                if (card.button.gameObject == selected)
+                {
+                    focusKey = card.spell.Key;
+                    return card.spell;
+                }
             }
 
             return FindSpell(focusKey);
@@ -533,7 +388,22 @@ namespace FallingWizard.UI
             if (wizard != null)
                 wizard.Logic.spellbook.Reload();
 
-            Redraw();
+            Refresh();
+            FocusCard();
+        }
+
+        void FocusCard()
+        {
+            CardParts toFocus = null;
+
+            foreach (CardParts card in cards)
+            {
+                if (toFocus == null || card.spell.Key == focusKey)
+                    toFocus = card;
+            }
+
+            if (toFocus != null)
+                Ui.Focus(toFocus.button.gameObject);
         }
 
         Ability FindSpell(string key) => book != null ? book.Find(key) : null;
@@ -548,6 +418,95 @@ namespace FallingWizard.UI
 
             return Core.Controls.Glyph(
                 Core.Controls.Player(PlayerLogic.Spellbook.SlotActions[slot]));
+        }
+
+        [Serializable]
+        public class SlotParts
+        {
+            public GameObject root;
+            public Button plate;
+            public Image icon;
+
+            [Tooltip("Shows the button's name when the slot holds no spell.")]
+            public TextMeshProUGUI glyph;
+
+            public TextMeshProUGUI caption;
+
+            public SlotParts Copy()
+            {
+                GameObject copy = Ui.CopyOf(root);
+
+                return new SlotParts
+                {
+                    root = copy,
+                    plate = Ui.SameChildIn(copy, root, plate),
+                    icon = Ui.SameChildIn(copy, root, icon),
+                    glyph = Ui.SameChildIn(copy, root, glyph),
+                    caption = Ui.SameChildIn(copy, root, caption),
+                };
+            }
+        }
+
+        [Serializable]
+        public class CardParts
+        {
+            public GameObject root;
+
+            [Tooltip("The card itself. Selecting it picks the spell to move between slots.")]
+            public Button button;
+
+            public Image icon;
+            public TextMeshProUGUI nameLabel;
+
+            [Tooltip("One upgrade pip, copied once per rank the spell can reach. It stays " +
+                     "switched off itself.")]
+            public Image pipTemplate;
+
+            public TextMeshProUGUI blurb;
+
+            [Tooltip("Learn or upgrade button.")]
+            public Button action;
+
+            [Tooltip("Shown instead of the button once there is nothing left to buy.")]
+            public TextMeshProUGUI status;
+
+            [NonSerialized] public Ability spell;
+
+            readonly List<Image> pips = new List<Image>();
+
+            public CardParts Copy()
+            {
+                GameObject copy = Ui.CopyOf(root);
+
+                return new CardParts
+                {
+                    root = copy,
+                    button = Ui.SameChildIn(copy, root, button),
+                    icon = Ui.SameChildIn(copy, root, icon),
+                    nameLabel = Ui.SameChildIn(copy, root, nameLabel),
+                    pipTemplate = Ui.SameChildIn(copy, root, pipTemplate),
+                    blurb = Ui.SameChildIn(copy, root, blurb),
+                    action = Ui.SameChildIn(copy, root, action),
+                    status = Ui.SameChildIn(copy, root, status),
+                };
+            }
+
+            public void BuildPips(int count)
+            {
+                if (pipTemplate == null)
+                    return;
+
+                pipTemplate.gameObject.SetActive(false);
+
+                for (int i = 0; i < count; i++)
+                    pips.Add(Ui.CopyOf(pipTemplate.gameObject).GetComponent<Image>());
+            }
+
+            public void ShowPips(int filled, Color lit)
+            {
+                for (int i = 0; i < pips.Count; i++)
+                    pips[i].color = i < filled ? lit : Ui.PipEmpty;
+            }
         }
 
         class Door : MonoBehaviour
@@ -571,7 +530,7 @@ namespace FallingWizard.UI
 
             void Update()
             {
-                if (openScreen != null || Screens.IsModalOpen || !Core.Controls.WasLoadoutPressed)
+                if (openScreen != null || Ui.IsModalOpen || !Core.Controls.WasLoadoutPressed)
                     return;
 
                 wasPaused = Game.IsPaused;
