@@ -1351,6 +1351,19 @@ action never changes, only what is sitting in front of it. That is why adding a 
 input work at all, and why the HUD's per-slot glyph cache is safe: a slot's button is fixed for the
 life of the scene even as its contents change.
 
+### Menus on a controller
+
+A controller can only move between buttons when one is selected, so `Controls` gives the front
+menu its top button back whenever the selection is lost and a direction or confirm is pressed.
+
+The selected button is framed by `MenuHighlight`, which lives in
+`Resources/Menu Highlight.prefab` and is created once when the game starts, like the Music
+Player. It shows only while a controller is in use (tick **Show With Keyboard** to show it
+always). The frame is the prefab's `Frame` child: redraw `Art/Placeholders/Menu Highlight.png`, or
+swap its sprite. Keep it a **Sliced** image so the corners stay crisp as it stretches to fit each
+button. **Padding** is the gap around the button, and **Glide Speed** is how quickly it slides
+between buttons (0 jumps).
+
 ## Setting a scene up by hand
 
 There are no editor tools: every prefab and scene, including the tilemap collision, is set up by
