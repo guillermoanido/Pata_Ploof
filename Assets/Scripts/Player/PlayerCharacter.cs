@@ -44,6 +44,11 @@ namespace FallingWizard.Player
                  "through everything and off the bottom of the screen, while the camera stays put.")]
         [Min(0f)] public float deathHopSpeed = 12f;
 
+        [Header("Health")]
+        [Tooltip("Hearts the wizard starts every run with. Heart Upgrades add to this, up to the " +
+                 "Max Bonus Hearts under Logic > Health. The HUD draws one blip per heart.")]
+        [Min(1)] public int startingHealth = 3;
+
         [Header("Staves")]
         [Tooltip("One staff per rank, weakest first. Only the staff for the current rank is left " +
                  "switched on - the others are switched off, and nothing else about any of them " +
@@ -88,7 +93,7 @@ namespace FallingWizard.Player
 
             controls = new Controls();
 
-            logic.health.SetBaseHealth(FindHighestLookHealth());
+            logic.health.SetBaseHealth(startingHealth);
             logic.Attach(GetComponent<Rigidbody2D>(), FindArt(), Hitbox, staves);
             logic.Died += OnDied;
         }
@@ -116,21 +121,6 @@ namespace FallingWizard.Player
                              "collider, so hazards and pickups only notice the collider the " +
                              "wizard walks with.", this);
             return Hitbox;
-        }
-
-        int FindHighestLookHealth()
-        {
-            int highest = 0;
-
-            foreach (HealthLook look in GetComponentsInChildren<HealthLook>(true))
-                highest = Mathf.Max(highest, look.health);
-
-            if (highest == 0)
-                Debug.LogError($"'{name}' has no Health Look under it, so the wizard has the " +
-                               "least health possible. Give every health level its own child " +
-                               "under Visual with a Health Look on it.", this);
-
-            return highest;
         }
 
         Transform FindArt()

@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 namespace FallingWizard.Core
 {
@@ -15,6 +17,8 @@ namespace FallingWizard.Core
         const string CancelPath = "UI/Cancel";
 
         const string LoadoutPath = "UI/Loadout";
+        const string NavigatePath = "UI/Navigate";
+        const string SubmitPath = "UI/Submit";
 
         static readonly HashSet<InputAction> WatchedActions = new HashSet<InputAction>();
 
@@ -22,6 +26,8 @@ namespace FallingWizard.Core
         static InputAction skip;
         static InputAction cancel;
         static InputAction loadout;
+        static InputAction navigate;
+        static InputAction submit;
 
         public static event Action SchemeChanged;
 
@@ -45,11 +51,15 @@ namespace FallingWizard.Core
             skip = FindAndWatch(SkipPath);
             cancel = FindAndWatch(CancelPath);
             loadout = FindAndWatch(LoadoutPath);
+            navigate = FindAndWatch(NavigatePath);
+            submit = FindAndWatch(SubmitPath);
 
             InputSystem.onActionChange -= OnActionChange;
             InputSystem.onActionChange += OnActionChange;
             InputSystem.onDeviceChange -= OnDeviceChange;
             InputSystem.onDeviceChange += OnDeviceChange;
+            InputSystem.onAfterUpdate -= KeepAMenuButtonSelected;
+            InputSystem.onAfterUpdate += KeepAMenuButtonSelected;
         }
 
         public static InputAction Player(string action) => FindAndWatch($"Player/{action}");
@@ -119,6 +129,68 @@ namespace FallingWizard.Core
                 return KeyboardScheme;
 
             return Scheme;
+        }
+
+        static void KeepAMenuButtonSelected()
+        {
+            EventSystem events = EventSystem.current;
+
+            if (!Application.isPlaying || events == null || IsUsable(events.currentSelectedGameObject))
+                return;
+
+            bool wantsAMenu = (navigate != null && navigate.WasPressedThisFrame()) ||
+                              (submit != null && submit.WasPressedThisFrame());
+
+            if (!wantsAMenu)
+                return;
+
+            Selectable top = FindTopButtonOfTheFrontMenu();
+
+            if (top != null)
+                events.SetSelectedGameObject(top.gameObject);
+        }
+
+        static bool IsUsable(GameObject selected)
+        {
+            if (selected == null || !selected.activeInHierarchy)
+                return false;
+
+            var button = selected.GetComponent<Selectable>();
+            return button == null || button.IsInteractable();
+        }
+
+        static Selectable FindTopButtonOfTheFrontMenu()
+        {
+            Selectable best = null;
+
+            foreach (Selectable candidate in Selectable.allSelectablesArray)
+            {
+                if (candidate.IsInteractable() && candidate.navigation.mode != Navigation.Mode.None &&
+                    (best == null || IsBefore(candidate, best)))
+                    best = candidate;
+            }
+
+            return best;
+        }
+
+        static bool IsBefore(Selectable candidate, Selectable best)
+        {
+            int candidateLayer = MenuLayerOf(candidate);
+            int bestLayer = MenuLayerOf(best);
+
+            if (candidateLayer != bestLayer)
+                return candidateLayer > bestLayer;
+
+            Vector3 a = candidate.transform.position;
+            Vector3 b = best.transform.position;
+
+            return !Mathf.Approximately(a.y, b.y) ? a.y > b.y : a.x < b.x;
+        }
+
+        static int MenuLayerOf(Selectable button)
+        {
+            Canvas canvas = button.GetComponentInParent<Canvas>();
+            return canvas != null ? canvas.rootCanvas.sortingOrder : 0;
         }
 
         static void OnDeviceChange(InputDevice device, InputDeviceChange change)

@@ -4,6 +4,7 @@ using FallingWizard.Localization;
 using FallingWizard.Player;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace FallingWizard.UI
 {
@@ -20,7 +21,9 @@ namespace FallingWizard.UI
         [Tooltip("Spell slots are laid out under here, in spellbook order.")]
         public RectTransform spellBar;
 
-        [Tooltip("One spell slot, copied once per button. Restyle this and they all follow.")]
+        [Tooltip("One spell slot, copied once per button. Restyle this and they all follow. Each " +
+                 "copy goes where the template sits in the spell bar, so anything placed after " +
+                 "the template - like the bar's right end - stays at the end as the bar grows.")]
         public HudSlot slotTemplate;
 
         [Tooltip("Reads out how much Magical Scrap is in the purse. Leave it empty and one is " +
@@ -60,7 +63,18 @@ namespace FallingWizard.UI
                  "something you choose to release, the other is draining back to ready.")]
         public Color windupTint = new Color(1f, 0.85f, 0.35f, 0.7f);
 
+        [Header("Health")]
+        [Tooltip("One health blip, copied once per heart the wizard can have, and placed where " +
+                 "this template sits - so the hat before it stays in front. The template itself " +
+                 "stays switched off. Leave it empty for no health bar.")]
+        public Image blipTemplate;
+
+        [Tooltip("Colour of a blip for a heart already lost. Hearts still held show the sprite " +
+                 "exactly as drawn.")]
+        public Color lostTint = new Color(0.35f, 0.18f, 0.28f, 1f);
+
         readonly List<HudSlot> slots = new List<HudSlot>();
+        readonly List<Image> blips = new List<Image>();
 
         PlayerCharacter boundWizard;
         int builtVersion = NotBuilt;
@@ -69,6 +83,9 @@ namespace FallingWizard.UI
         {
             if (slotTemplate != null)
                 slotTemplate.gameObject.SetActive(false);
+
+            if (blipTemplate != null)
+                blipTemplate.gameObject.SetActive(false);
 
             if (scrapLabel == null && !hideScrapCount)
                 scrapLabel = BuildScrapLabel();
@@ -90,12 +107,14 @@ namespace FallingWizard.UI
                 spellBar.gameObject.SetActive(showing);
 
             ShowScrapCount(showing);
+            ShowHealthBar(showing);
 
             if (!showing)
                 return;
 
             RebuildSpellBarIfChanged();
             RefreshSpells();
+            ShowHealth(boundWizard.Logic.health);
         }
 
         void OnDisable() => Core.Controls.SchemeChanged -= RefreshButtons;
@@ -148,6 +167,12 @@ namespace FallingWizard.UI
                     : string.Format(scrapFormat, Progress.Scrap);
         }
 
+        void ShowHealthBar(bool showing)
+        {
+            if (blipTemplate != null)
+                blipTemplate.transform.parent.gameObject.SetActive(showing);
+        }
+
         void RebuildSpellBarIfChanged()
         {
             if (builtVersion == boundWizard.Logic.spellbook.Version)
@@ -171,6 +196,7 @@ namespace FallingWizard.UI
             for (int i = 0; i < spellbookSlots.Count; i++)
             {
                 HudSlot slot = Instantiate(slotTemplate, spellBar);
+                slot.transform.SetSiblingIndex(slotTemplate.transform.GetSiblingIndex());
                 Ability spell = spellbookSlots[i].Ability;
 
                 slot.gameObject.name = spell != null ? spell.displayName : $"Spell {i + 1}";
@@ -194,6 +220,34 @@ namespace FallingWizard.UI
 
             for (int i = 0; i < slots.Count && i < spellbookSlots.Count; i++)
                 slots[i].Show(spellbookSlots[i], this, boundWizard.Logic);
+        }
+
+        void ShowHealth(PlayerLogic.Health health)
+        {
+            if (blipTemplate == null)
+                return;
+
+            if (blips.Count != health.Max)
+                BuildBlips(health.Max);
+
+            for (int i = 0; i < blips.Count; i++)
+                blips[i].color = i < health.Current ? Color.white : lostTint;
+        }
+
+        void BuildBlips(int count)
+        {
+            foreach (Image blip in blips)
+                Destroy(blip.gameObject);
+
+            blips.Clear();
+
+            for (int i = 0; i < count; i++)
+            {
+                Image blip = Instantiate(blipTemplate, blipTemplate.transform.parent);
+                blip.transform.SetSiblingIndex(blipTemplate.transform.GetSiblingIndex());
+                blip.gameObject.SetActive(true);
+                blips.Add(blip);
+            }
         }
 
         void RefreshButtons()
