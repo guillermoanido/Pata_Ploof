@@ -938,6 +938,12 @@ teeth along a ramp's edge, **not** for real steps — anything taller is what th
 
 ## Ground, friction and getting stuck
 
+**The feet probe stays inside the body.** `SenseGround` never lets the probe be wider than
+`groundCheckWidthFactor` of the wizard's collider, and centres it under the collider, whatever
+`groundCheckSize` says. The saved probe had been sized for an older, wider collider, so it stuck
+out past the body; a wizard dropping off the staff slid down the wall touching it, counted as
+standing the whole way, and landed with a fall of nearly zero — no fall damage at all.
+
 **Contact friction is 0** (`Movement.surfaceFriction`), applied as a material in `Attach`.
 Horizontal speed is written outright every physics step, so contact friction never helps the wizard
 move — it only fights them, catching on corners and seams. The only thing that slows them is

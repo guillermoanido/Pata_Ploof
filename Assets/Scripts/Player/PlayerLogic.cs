@@ -611,7 +611,11 @@ namespace FallingWizard.Player
             [Tooltip("Where the feet probe sits, relative to the wizard's middle.")]
             public Vector2 groundCheckOffset = new Vector2(0f, -0.596875f);
 
-            [Tooltip("Size of the feet probe. Wider is more forgiving on ledges.")]
+            [Tooltip("Size of the feet probe. Wider is more forgiving on ledges, but it is never " +
+                     "allowed wider than Ground Check Width Factor of the wizard's own collider, and " +
+                     "it always sits centred under it - a probe poking out past the body touches " +
+                     "walls, and a wizard sliding down a wall would count as standing all the way " +
+                     "down and never take fall damage.")]
             public Vector2 groundCheckSize = new Vector2(0.703125f, 0.1f);
 
             [Header("Ground Check - Auto Fit")]
@@ -790,6 +794,15 @@ namespace FallingWizard.Player
 
             Vector2 ProbeOrigin => body.position + groundCheckOffset;
 
+            Vector2 FeetProbeCentre => hull != null
+                ? new Vector2(hull.bounds.center.x, ProbeOrigin.y)
+                : ProbeOrigin;
+
+            Vector2 FeetProbeSize => hull != null
+                ? new Vector2(Mathf.Min(groundCheckSize.x, hull.bounds.size.x * groundCheckWidthFactor),
+                              groundCheckSize.y)
+                : groundCheckSize;
+
             ContactFilter2D GroundFilter => Layers.MakeSolidOnlyFilter(groundLayers);
 
             float BaseGravity => Mathf.Abs(Physics2D.gravity.y) * baseGravityScale;
@@ -956,7 +969,7 @@ namespace FallingWizard.Player
                 bool wasGrounded = IsGrounded;
 
                 int count = Physics2D.OverlapBox(
-                    ProbeOrigin, groundCheckSize, 0f, GroundFilter, Overlaps);
+                    FeetProbeCentre, FeetProbeSize, 0f, GroundFilter, Overlaps);
 
                 IsGrounded = count > 0;
                 StandingOn = IsGrounded ? Overlaps[0] : null;
@@ -1579,7 +1592,8 @@ namespace FallingWizard.Player
             void DrawGroundProbe(Vector2 origin)
             {
                 Gizmos.color = Color.cyan;
-                Gizmos.DrawWireCube(origin + groundCheckOffset, groundCheckSize);
+                Gizmos.DrawWireCube(body != null ? FeetProbeCentre : origin + groundCheckOffset,
+                    FeetProbeSize);
             }
 
             void DrawLedgeProbe(Vector2 origin)
