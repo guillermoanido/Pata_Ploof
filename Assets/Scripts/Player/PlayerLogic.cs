@@ -351,8 +351,10 @@ namespace FallingWizard.Player
 
             float hangHeight = pole.HangPosition.y;
 
+            float bonus = pole.safeDropBonus;
+
             pole.Release();
-            movement.BeginFallFrom(hangHeight);
+            movement.BeginFallFrom(hangHeight, bonus);
             State = PlayerState.Normal;
         }
 
@@ -561,6 +563,7 @@ namespace FallingWizard.Player
             const float NearbyGround = 1f;
 
             const float KineticEnergyFactor = 2f;
+            const float LandingBlip = 0.1f;
 
             const float Half = 0.5f;
             const float BothSides = 2f;
@@ -716,6 +719,7 @@ namespace FallingWizard.Player
             [NonSerialized] float baseGravityScale;
             [NonSerialized] float stepAssistTimer;
             [NonSerialized] float highestPoint;
+            [NonSerialized] float fallAllowance;
             [NonSerialized] float pendingFallDistance;
             [NonSerialized] bool hasLanded;
 
@@ -858,9 +862,10 @@ namespace FallingWizard.Player
                 isClimbingRamp = false;
             }
 
-            public void BeginFallFrom(float height)
+            public void BeginFallFrom(float height, float safeDropBonus = 0f)
             {
                 highestPoint = height;
+                fallAllowance = safeDropBonus;
                 IsGrounded = false;
                 stepAssistTimer = 0f;
             }
@@ -918,6 +923,7 @@ namespace FallingWizard.Player
                     return;
 
                 highestPoint = body.position.y;
+                fallAllowance = 0f;
                 IsGrounded = false;
                 stepAssistTimer = 0f;
             }
@@ -1410,8 +1416,12 @@ namespace FallingWizard.Player
             {
                 if (!wasGrounded)
                 {
-                    pendingFallDistance = Mathf.Max(0f, highestPoint - body.position.y);
+                    float fallen = highestPoint - body.position.y;
+                    pendingFallDistance = Mathf.Max(0f, fallen - fallAllowance);
                     hasLanded = true;
+
+                    if (fallen > LandingBlip)
+                        fallAllowance = 0f;
                 }
 
                 stepAssistTimer = stepAssistGrace;

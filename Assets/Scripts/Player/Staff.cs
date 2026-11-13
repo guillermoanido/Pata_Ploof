@@ -186,6 +186,11 @@ namespace FallingWizard.Player
                      "hand hang with the body dangling past the tip. Higher grip, lower hang.")]
             public float gripHeight = 0.25f;
 
+            [Tooltip("Extra boxes a drop off the bottom of this staff can fall before it hurts, on " +
+                     "top of the wizard's usual safe fall. This is what makes a better staff " +
+                     "take the wizard safely further down without making the pole any longer.")]
+            [Min(0f)] public float safeDropBonus = 0f;
+
             [Tooltip("Which layers the staff can find footing on, so it never lowers into solid " +
                      "ground. Defaults to Ground.")]
             public LayerMask groundLayers = Layers.GroundMask;

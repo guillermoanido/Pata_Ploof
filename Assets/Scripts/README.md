@@ -962,6 +962,11 @@ can never move again.
 
 ## The staff
 
+**Better staves let you drop further.** Each staff's `Pole` has a **Safe Drop Bonus**: extra
+boxes a drop off the bottom of that staff can fall before it hurts, on top of the wizard's usual
+safe fall. Level 1 has 0; Levels 2 and 3 have 1, so they take the wizard one tile further down
+unhurt. `DropFromStaff` hands it to `Movement.BeginFallFrom`, and the next real landing uses it up.
+
 A child of the wizard with its own hitbox and sprite. **`reachAboveFeet` is the mechanic** — you
 author how far above their feet the staff can get them, in boxes, and the pole is stretched to
 whatever length produces exactly that. The hitbox and the art are derived from the reach rather

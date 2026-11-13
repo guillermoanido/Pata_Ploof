@@ -786,6 +786,7 @@ MonoBehaviour:
     mountSeconds: 0.18
     lipClearance: 0.15
     gripHeight: 0.25
+    safeDropBonus: 0
     groundLayers:
       serializedVersion: 2
       m_Bits: 64
@@ -1442,6 +1443,7 @@ MonoBehaviour:
     mountSeconds: 0.18
     lipClearance: 0.15
     gripHeight: 0.25
+    safeDropBonus: 1
     groundLayers:
       serializedVersion: 2
       m_Bits: 64
@@ -6845,6 +6847,7 @@ MonoBehaviour:
     mountSeconds: 0.18
     lipClearance: 0.15
     gripHeight: 0.25
+    safeDropBonus: 1
     groundLayers:
       serializedVersion: 2
       m_Bits: 64
