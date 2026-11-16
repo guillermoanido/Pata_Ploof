@@ -25,8 +25,7 @@ namespace FallingWizard.World
 
         [Tooltip("Seconds from one drop forming to the next. Each drop hangs as a warning and " +
                  "then falls, so the stretch between one drop landing and the next one letting " +
-                 "go is the window to get past underneath. The Haste spell slows the rhythm " +
-                 "along with everything else.")]
+                 "go is the window to get past underneath.")]
         [Min(ShortestGap)] public float secondsBetweenDrops = 2.5f;
 
         [Tooltip("Where in its rhythm this candle starts, as a fraction of the gap between " +
@@ -58,7 +57,7 @@ namespace FallingWizard.World
 
         void Update()
         {
-            clock += Haste.DeltaTime;
+            clock += Time.deltaTime;
 
             if (clock < Interval)
                 return;

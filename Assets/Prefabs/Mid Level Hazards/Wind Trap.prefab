@@ -104,7 +104,6 @@ MonoBehaviour:
   openSeconds: 1.25
   shutterTravel: 0.6
   phase: 0
-  hasteSlowsCycle: 1
   kick: {x: -7, y: 0}
   kickLockout: 0.15
   tumbles: 0

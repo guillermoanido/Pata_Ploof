@@ -18,6 +18,16 @@ namespace FallingWizard.Player
                  "opposite of gliding.")]
         [Range(0.1f, 1f)] public float drag = 0.45f;
 
+        [Header("Riding the Wind")]
+        [Tooltip("Safe fall, in boxes, while the canopy is out and a wind is carrying the wizard. " +
+                 "Replaces the wizard's own Safe Fall Distance (3) when it is bigger, so 5 means a " +
+                 "5 box drop out of a gust is free. Without the canopy, wind gives nothing.")]
+        [Min(0f)] public float windSafeFall = 5f;
+
+        [Tooltip("How long the wind's safe fall lasts after the wizard leaves the wind, in " +
+                 "seconds, so dropping out of the bottom of a gust still counts.")]
+        [Min(0f)] public float windGraceSeconds = 0.5f;
+
         [Header("Folding")]
         [Tooltip("Touching down folds it and starts the cooldown.")]
         public bool foldsOnLanding = true;
@@ -46,11 +56,17 @@ namespace FallingWizard.Player
             stats.AirSpeedMultiplier *= tier.airSpeed;
             stats.AirControlMultiplier *= tier.airControl;
             stats.AirDragMultiplier *= drag;
+
+            if (IsRidingTheWind(wizard))
+                stats.LeastSafeFall = Mathf.Max(stats.LeastSafeFall, windSafeFall);
         }
 
         public override void OnLit(PlayerLogic wizard, float fixedDeltaTime)
         {
             Wing wing = wizard.spellbook.StateOf<Wing>(this);
+
+            if (wizard.IsInWind)
+                wing.windEndsAt = Time.time + windGraceSeconds;
 
             if (!wizard.movement.IsGrounded)
             {
@@ -69,6 +85,9 @@ namespace FallingWizard.Player
         protected override void Validate() => ValidateTiers(tiers);
 
         protected override void CleanUp(PlayerLogic wizard) => ShowCanopy(wizard, false);
+
+        bool IsRidingTheWind(PlayerLogic wizard) =>
+            Time.time < wizard.spellbook.StateOf<Wing>(this).windEndsAt;
 
         void ShowCanopy(PlayerLogic wizard, bool isShown) =>
             wizard.spellbook.StateOf<Wing>(this).canopy.Show(wizard, this, isShown);
@@ -97,6 +116,7 @@ namespace FallingWizard.Player
         {
             public readonly WizardEffect canopy = new WizardEffect(CanopyName);
             public bool hasFlown;
+            public float windEndsAt;
         }
     }
 }

@@ -1,25 +1,31 @@
 {
     "version": 2,
-    "scrap": 2,
-    "bonusHearts": 1,
+    "scrap": 0,
+    "bonusHearts": 0,
     "loadout": [
         "staff",
-        "",
-        "",
-        ""
+        "cloud",
+        "hand",
+        "star"
     ],
     "ranks": [
         {
+            "key": "cloud",
+            "rank": 1
+        },
+        {
+            "key": "hand",
+            "rank": 1
+        },
+        {
             "key": "staff",
+            "rank": 1
+        },
+        {
+            "key": "star",
             "rank": 1
         }
     ],
-    "taken": [
-        "heart1-1:64,-318",
-        "scrap1-1:26,-150",
-        "scrap1-1:60,-318"
-    ],
-    "completedLevels": [
-        "1-1"
-    ]
+    "taken": [],
+    "completedLevels": []
 }

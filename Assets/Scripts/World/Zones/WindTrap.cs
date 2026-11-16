@@ -1,5 +1,4 @@
 using System;
-using FallingWizard.Core;
 using FallingWizard.Player;
 using UnityEngine;
 
@@ -50,13 +49,6 @@ namespace FallingWizard.World
                  "a corridor. It is a fraction rather than seconds so that retuning the timings " +
                  "later keeps the stagger.")]
         [Range(0f, 1f)] public float phase = 0f;
-
-        [Tooltip("Let the Haste spell slow this turbine down along with everything else. Leave " +
-                 "it on: the spell exists to buy you time to get through something, and a vent " +
-                 "that kept its normal rhythm while the whole world waded would be the one " +
-                 "thing in the level the spell does not help with. It also keeps the total " +
-                 "shove per blast the same - gentler for longer, not weaker.")]
-        public bool hasteSlowsCycle = true;
 
         [Header("Blast")]
         [Tooltip("The punch, in boxes per second, landed once on the step the trap reaches full " +
@@ -227,7 +219,7 @@ namespace FallingWizard.World
 
             float strength = openness * (tumbling ? tumbleScale : 1f);
 
-            logic.Push(WorldPush * strength * Haste.WorldScale, rampup, groundScale);
+            logic.Push(WorldPush * strength, rampup, groundScale);
 
             if (openness < 1f || tumbling || clock > armedUntil)
                 return;
@@ -298,7 +290,7 @@ namespace FallingWizard.World
 
         void AdvanceTheCycle()
         {
-            clock += hasteSlowsCycle ? Haste.DeltaTime : Time.deltaTime;
+            clock += Time.deltaTime;
 
             bool isOpenNow = IsOpen;
 

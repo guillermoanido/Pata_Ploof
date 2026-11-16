@@ -1,5 +1,4 @@
 using System;
-using FallingWizard.Core;
 using FallingWizard.Player;
 using UnityEngine;
 
@@ -114,18 +113,18 @@ namespace FallingWizard.World
 
         void Update()
         {
-            clock += Haste.DeltaTime;
+            clock += Time.deltaTime;
             ShowTheRightLook();
         }
 
-        protected override void Affect(PlayerLogic wizard) => Disarm(rearmDelay / Haste.WorldScale);
+        protected override void Affect(PlayerLogic wizard) => Disarm(rearmDelay);
 
         protected override void OnPlayerInside(PlayerCharacter wizard, float fixedDeltaTime)
         {
             base.OnPlayerInside(wizard, fixedDeltaTime);
 
             if (IsBursting && push != Vector2.zero && CanAffect(wizard))
-                wizard.Logic.Push(push * Haste.WorldScale, SteamRampup, FullStrengthOnTheGround);
+                wizard.Logic.Push(push, SteamRampup, FullStrengthOnTheGround);
         }
 
         bool IsTimeBetween(float start, float end)

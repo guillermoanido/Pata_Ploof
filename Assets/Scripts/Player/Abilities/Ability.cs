@@ -71,6 +71,11 @@ namespace FallingWizard.Player
         [FormerlySerializedAs("usesPerRun")]
         [Min(0)] public int usesPerLevel = 0;
 
+        [Tooltip("Extra casts per level that each upgrade adds on top of Uses Per Level, so 2 here " +
+                 "and 1 there is two casts at rank 1 and three at rank 2. Ignored when Uses Per " +
+                 "Level is 0.")]
+        [Min(0)] public int usesAddedPerRank = 0;
+
         [Header("Upgrades")]
         [Tooltip("One entry per rank past the first. Element 0 is what rank 2 costs and what it " +
                  "buys, in the player's words. Leave it empty for a spell that never upgrades. " +
@@ -102,6 +107,9 @@ namespace FallingWizard.Player
 
             Validate();
         }
+
+        public int UsesPerLevelAt(int rank) =>
+            usesPerLevel <= 0 ? 0 : usesPerLevel + usesAddedPerRank * Mathf.Max(0, rank - 1);
 
         public Upgrade NextUpgrade(int rank) =>
             upgrades != null && rank >= 1 && rank <= upgrades.Length ? upgrades[rank - 1] : null;

@@ -31,7 +31,7 @@ coming back down it can never hurt you.
 | `Player/` | `PlayerCharacter` (the Unity side), `PlayerLogic` (everything the wizard does), `Staff`, `PlayerAnimator`, `RagdollBumps` |
 | `Player/Abilities/` | `Ability` and the spells, `AbilityBook` |
 | `Localization/` | `Loc`, `TextBook`, `LocalizedText` |
-| `World/` | `Item` (the base of everything the wizard touches) and `TileGrid`, with subfolders: `Hazards/` (`Hazard`, `TripHazard`, `BouncyTrash`, `SteamVent`, `WaxDrop`, `WaxCandle`, `PressurePlate`), `Zones/` (`Zone`, `WindZone2D`, `WindTrap`, `SlipperyFloor`), `Pickups/` (`Pickup`, `TimedReward`), `Level/` (`ShopStop`, `LevelExit`, `MovingPlatform`, `VineAnchor`, `Carryable`), `Camera/` (`FollowCamera`) |
+| `World/` | `Item` (the base of everything the wizard touches), with subfolders: `Hazards/` (`Hazard`, `TripHazard`, `BouncyTrash`, `SteamVent`, `WaxDrop`, `WaxCandle`, `PressurePlate`), `Zones/` (`Zone`, `WindZone2D`, `WindTrap`, `SlipperyFloor`), `Pickups/` (`Pickup`, `TimedReward`), `Level/` (`ShopStop`, `LevelExit`, `MovingPlatform`, `VineAnchor`, `StaffPlatform`, `MagicDoor`), `Camera/` (`FollowCamera`) |
 | `UI/` | `PlayerHud`, `HudSlot`, `FlingArrow`, `SelectedLook`, `Ui` and the screens (`ChoiceScreen`, `SkillScreen`, `ControlsScreen`) |
 | `Menus/` | `MenuScreen` and the three menus |
 | `Editor/` | `PixelArtImporter` (import settings for everything in `Assets/Art/Sprites`; editor only, never in the build), `MenuPrefabBuilder` (makes the screen prefabs once) |
@@ -168,7 +168,7 @@ active — otherwise a passive is free and there is no choice in it.
 
 **Shared pieces live in `Ability`.** `PickTier` and `ValidateTiers` handle the per-rank numbers.
 `WizardEffect` finds an effect object under the wizard by name, once, and switches it on and off:
-Glide's `Glide Canopy` and Haste's `Haste Trail` both use it.
+Glide's `Glide Canopy` and Falling Star's `Falling Star Trail` both use it.
 
 **Every spell keeps its own script, on purpose.** Unity only loads a spell asset whose script file
 has the same name as its class. The seven spells also really do behave differently, so one shared
@@ -177,8 +177,11 @@ to most spells.
 
 `usesPerLevel` above 0 gives a spell a number of casts that only the next level brings back — for
 something a cooldown alone cannot hold back. `Slot.UsesLeft` counts them and the HUD prints it.
+`usesAddedPerRank` lets an upgrade buy more of them: Cloud Step has 2 and 1, so two clouds at rank
+1 and three at rank 2 (`Ability.UsesPerLevelAt`). The charges refill on the scene load that
+rebuilds the spellbook, which is what a level transition is.
 
-A spell that needs to remember something between frames — a wall it grew, a rope it is holding —
+A spell that needs to remember something between frames — a cloud it made, a rope it is holding —
 keeps it in `spellbook.StateOf<T>(this)`, never in a field on itself. The asset is shared; a field
 on it would survive a scene load and follow you into the build.
 
@@ -197,8 +200,8 @@ It is editor-only, it covers the empty-slot case too (*"there is nothing in that
 `Spellbook.explainRefusals` turns it off. Cooldown and per-level charges are answered generically by
 `Spellbook` itself, so `WhyNot` only has to speak for the spell's own conditions.
 
-**Sorting order is the trap it exists to catch.** Both the vine and the wall shipped at −1 and were
-therefore behind the tilemap: solid, working perfectly, and completely invisible — which reads
+**Sorting order is the trap it exists to catch.** The vine shipped at −1 and was therefore behind
+the tilemap: solid, working perfectly, and completely invisible — which reads
 exactly like a spell doing nothing. Anything a spell puts into the world wants an order above the
 map.
 
@@ -208,15 +211,14 @@ The Staff is yours from the start and welded to E; everything else fights over t
 | --- | --- | --- |
 | **Staff** | Plant it at a ledge and climb down, or raise it against a wall and climb up. | longer staff |
 | **Mage Hand** | A spectral hand you swing from. | wider swing / climb it |
-| **Wall Growth** | One tile of stone off the edge of the floor you stand on, so the floor gets longer. | a second block |
+| **Cloud Step** | In the air, a little cloud appears under your feet to land on. Two per level. | a third cloud |
 | **Glide** | A canopy. It barely slows the drop - it carries you. | wider wing |
-| **Telekinesis** | Take a hazard with you and set it down where you want it. | longer reach |
-| **Haste** | You quicken; the world wades. Once per level. | deeper haste |
+| **Telekinesis** | A push of magic all round you: Magic Doors open, hazards fall asleep for a few seconds. | further, longer sleep |
+| **Falling Star** | While tumbling, dive into the ground and bounce back up on your feet. Once per level. | a three tile dive |
 | **Fling** | Hold to aim up or down (never more than 45° up), let go to be thrown into a tumble. | harder throw |
 
-Two of them want level content and already have it: Mage Hand needs a `Vine`, Telekinesis needs a
-`Carryable` — which the `Bouncy Trash` and `Wet Floor Sign` prefabs now carry, so every Bouncy
-Trash and sign already in a level can be picked up and put down somewhere better.
+Two of them want level content: Mage Hand needs a `Vine`, and Telekinesis wants a `Magic Door` or
+any hazard nearby. Every hazard can already be put to sleep, so it works in every level as it is.
 
 **Glide does not forgive fall damage, and that is the design.** Feather Fall — the spell that
 used to live in this slot — did, and that forgiveness was the only reason it was worth a button.
@@ -246,11 +248,8 @@ ledge folded it on the next physics step, put it on cooldown, and left the wizar
 completely normal speed with nothing to say why. The `Wing.hasFlown` flag is set the first step the
 wizard is off the ground and cleared on every cast. (The counter is gone now; nothing else read it.)
 
-**Telekinesis is one button doing two jobs**, chosen by whether your hands are full. Empty, the
-press takes hold of the nearest `Carryable` and stows it; full, the press sets it down in the first
-tile ahead that will have it. There is no lit window and nothing to time — `activeDuration` is 0
-and the only thing standing between the two presses is a short `cooldown`, so the spell cannot
-grab and drop on the same press.
+**Telekinesis is the one spell that is not about moving the wizard.** It is the "make this part
+easier" button; see *Telekinesis: doors and sleeping hazards*.
 
 ### Adding spell #5
 
@@ -383,8 +382,7 @@ red, reading `1:00`, each pickup still there is switched off, and its faded copy
 reward already taken leaves no faded copy, and once none are left the timer goes away too.
 
 `TimedReward` reads `Time.timeSinceLevelLoad`, so the clock starts over every time a level loads and
-stops while the game is paused or a menu is open. Haste does not slow it, because Haste does not
-touch `Time.timeScale`, so the spell really does help you beat it.
+stops while the game is paused or a menu is open.
 
 **Nothing here is drawn by the script.** It only switches objects on and off. `Faded Scrap` and
 `Faded Heart` are ordinary sprites with the alpha turned down on their Sprite Renderers, so restyle
@@ -441,21 +439,46 @@ The prefabs were made once by **Pata Ploof > Build Menu Prefabs** (`Editor/MenuP
 It only builds what is missing, so it never overwrites your edits; delete a prefab and run it again
 to get a fresh one. Once the prefabs exist the builder is no longer needed and can be deleted.
 
-## Haste, and why it is not `Time.timeScale`
+## Falling Star: dive out of a tumble
 
-Haste is a **flag**, `Core.Haste`, that anything which moves under its own steam multiplies itself
-by. Scaling time would have been fewer lines and wrong three ways: pausing already owns
-`timeScale`; physics runs on a fixed step, so slowing it changes how the wizard's own collisions
-resolve; and there would be no way to exempt anything.
+**It only casts while the wizard is tumbling** (`PlayerState.Ragdoll`), once per level. The press
+throws them head first along a diagonal: `diveAngle` (45°) below level, at `diveSpeed` (12 boxes a
+second), towards the stick if it is held, otherwise the way they were already going. The dive
+lasts until they have dropped `diveDepth` boxes (2, then 3 at rank 2).
 
-As a flag, **the wizard is untouched by construction, and so is their ragdoll** — only things that
-*ask* are slowed, and the ragdoll never asks. Wind is the first thing that asks
-(`WindZone2D.OnPlayerInside` scales `push`). Anything that moves later reads `Haste.WorldScale`
-the same way - the steam vents, wax drips, moving platforms and pressure plates all do.
+- **Ground inside the dive: saved.** `UpdateRagdoll` checks for ground *before* `CheckLanding`, so
+  the landing is thrown away (`Movement.ForgetLanding`) instead of billed. The tumble ends on the
+  spot, the wizard bounces `bounceHeight` boxes up (2) with `bounceOnward` sideways, and the fall
+  is counted again from the top of the bounce. The Impact Stars burst, as for any hit.
+- **No ground inside the dive: a miss.** The dive simply stops and they go on tumbling, still
+  carrying its speed. The fall was being counted the whole time from the highest point before the
+  dive, so the landing costs what it would have, plus the extra drop. That is the risk.
 
-`usesPerLevel` is the limit, and it means what it says: charges refill on the scene load that
-rebuilds the spellbook, which is what a level transition is. Dying wipes everything and starts the
-game again, so there is nothing there to police.
+Cast while skidding along the floor, the ground is already there, so it is an instant bounce back to
+your feet: the safe way to use it to stop a tumble.
+
+The dive lives in `Ragdoll` (`BeginDive`, `Dive`, `IsDiving`) because it has to beat the landing
+check, which runs inside the ragdoll update, by a step. `Ragdoll.Tick` holds the dive velocity every
+step, so neither gravity, wind nor the stick bends the line. It gives up early if the wizard stops
+going down at all, so wedging into a corner cannot leave them hanging in a dive forever. The trail
+is the `Falling Star Trail` child of PLAYER, a copy of Star Sparkles that streams behind.
+
+## Cloud Step: a floor in mid-air
+
+**Cast in the air** (not stood on anything, not tumbling) and a `Cloud Step` prefab appears with its
+top exactly at the wizard's soles (`Movement.Footing`). The fall stops there, so the wizard settles
+onto it instead of slamming through, and then it is an ordinary landing: **the drop so far is
+billed**, so a cloud thrown out within the first 3 boxes is free and one thrown out at 5 still hurts.
+That is the whole skill of it: one deadly 6 box drop becomes two safe 3 box drops if you cast in
+time.
+
+The cloud melts `secondsAfterLeaving` (0.25 s) after the wizard steps or falls off it, or when
+`activeDuration` (3 s) runs out, whichever comes first. A second cast replaces the first cloud. Two
+clouds per level, three at rank 2.
+
+The prefab is the cloud: a 1.5 × 0.25 box collider on **Ground** under its root, and a `Look` child
+that is a flattened, denser copy of Star Sparkles. Put your own cloud art in the `Look` and the
+spell does not change.
 
 ## Fling: aim, then tumble
 
@@ -488,36 +511,27 @@ edge on a slow frame and fires twice on a fast one.
 A held spell wants **`pressBuffer: 0`**. Anything else and `WhyNot` complains to the console every
 tenth of a second you spend aiming.
 
-## Carrying a hazard
+## Telekinesis: doors and sleeping hazards
 
-`Carryable` stows an object by **deactivating** it, not by destroying and re-spawning it. That
-keeps every field the level author set, keeps its icon available to the HUD while it is stowed, and
-means putting it down cannot lose anything.
+One press pushes magic out in a circle of `reach` boxes round the wizard (4, then 5.5 at rank 2),
+and everything inside answers:
 
-`Hazard.Disarm` exists because **`Awake` does not run again when an object is switched back on** —
-without it, a Bouncy Trash set down at your feet still has the re-arm timer it had when you picked it up,
-and bounces you on the very next physics step.
+- **A `MagicDoor` opens for good.** Its collider switches off and its Open Look shows. The level
+  reloads on death, so there is nothing to close it again.
+- **A `Hazard` falls asleep** for `sleepSeconds` (3, then 5). It cannot catch the wizard until it
+  wakes, and its `Asleep Look` shows on top of its own art: every hazard prefab ships with a copy of
+  Star Sparkles there, sized to the hazard, so stars hang around it while it sleeps. Stairs, rakes,
+  wet floor signs, steam vents, wax and broken glass are all `Hazard`s, so all of them can be
+  slept. Untick **Can Sleep** on one the level needs awake, like a Bouncy Trash that is the only
+  way across a gap.
 
-**Placement settles; it does not test one row.** `TileGrid.TryFindRestingCell` takes a column and the
-height the wizard aimed at, carries the thing up over anything in the way (`StepOver`, two boxes),
-then walks it down onto the first floor beneath (`LookDown`, six). What comes back is where the
-thing would come to rest — *on top of the tiles, as low as the column allows*.
+The press does nothing, and greys out on the HUD, when there is no shut door or awake hazard in
+reach, so the 5 second `cooldown` is never spent on nothing.
 
-Asking instead whether one fixed row was empty is what made the spell feel broken. Aimed at the
-row the wizard's feet were in, that row is solid floor everywhere except at a ledge — so the spell
-refused on flat ground, worked only at edges, and when it did work it dropped the rock into the
-thin air past the lip. Settling has no such failure: the answer is right whether the row it
-started from was or not.
+`Hazard.TrySleep` pushes the hazard's own re-arm timer out to the end of the sleep and never pulls
+it in, so a steam vent that has just burned the wizard keeps its own wait if that is longer.
 
-`needsAFloor` only decides what happens to a column with **no** ground within `LookDown`. On, it
-is refused. Off, the thing hangs at the height it was aimed at — which over a drop is a Bouncy
-Trash the player placed exactly where they wanted it.
-
-**Set down on the cell's FLOOR, not its middle.** A Bouncy Trash's hitbox is 0.7 of a box tall and a
-rock's is 0.6, so `PutDown` on `CentreOf` left both floating a sixth of a box off the ground.
-`PutDownOn` measures the thing's own footprint once it is switched back on — `Physics2D.SyncTransforms`
-first, because a transform move does not reach the physics shapes until the next step and stale
-bounds would settle it against wherever it used to be standing.
+**Wind is not a hazard and does not sleep.** It is a `Zone`, and Glide wants it.
 
 ## The grid line is not the floor
 
@@ -526,38 +540,16 @@ bounds would settle it against wherever it used to be standing.
 outline sits on `x.03125`, not on whole numbers.
 
 That is not a rounding error to ignore. **It is the surface everything else has to line up with.**
-A one-box block built to the bare grid tops out a pixel *below* the floor beside it, and a box
-collider walking back onto the platform does not step up over a lip — it stops dead against it. A
-wizard who walks out onto their own Wall Growth block and then cannot walk back is a spell that
-reads as broken, with the cause nowhere near the spell.
-
-The amount is a property of the **art**, not of the maths, and it is not even the same on both
-axes. So nothing carries a constant for it — the two spells each ask the world:
-
-| | takes its height from | why that is exact |
-| --- | --- | --- |
-| A carried Bouncy Trash, rock or boulder | `TileGrid.TryFindSurfaceUnder` — a cast straight down inside the cell, and `Footing.y` if it falls through | it is the tile's own top, whatever the slice did |
-| Wall Growth's block | `Movement.Footing.y`, the wizard's soles | they are STOOD on the platform being extended, so their soles *are* its surface |
-
-Re-slice the sheet to 32×32 one day and both keep working, having never been told what the old
-number was.
-
-**The cast carries `LookDown`, not one box.** Stopping at a single box meant a cell chosen even one
-row high found nothing beneath it, fell back to its own grid line, and left the rock hanging there
-— a grid line being the one number in this whole file that is never the floor. Reaching further
-cannot pick the wrong surface: a downward cast reports the FIRST thing it meets.
-
-**A footprint is measured in `Stow`, while the object is still switched on.** `Collider2D.bounds`
-on a GameObject reactivated the same step answers with the shape the physics world still holds —
-which is wherever the thing was standing when it was picked up. Setting something down against
-that is how a rock ends up in mid-air, and no amount of `Physics2D.SyncTransforms` fixes it,
-because the shape is not stale, it is *absent*.
+Anything placed to sit level with a floor takes its height from the floor itself, never from a grid
+line: Cloud Step puts its cloud at `Movement.Footing.y`, the wizard's soles, which *are* the surface
+they were standing on. Re-slice the sheet to 32×32 one day and it keeps working, having never been
+told what the old number was.
 
 **A block flush with the platform is the worst case, not the best.** Two box colliders whose top
 faces are exactly level still meet at a vertical face, and gravity sinks the wizard about a fifth
 of a pixel into the floor between solver steps — enough that the face catches them and they stop
-dead at the block instead of walking onto it. The tilemap never shows this because the composite merges its tiles and
-there are no internal faces at all.
+dead at the block instead of walking onto it. The tilemap never shows this because the composite
+merges its tiles and there are no internal faces at all.
 
 So `Stone Wall`'s collider is **0.9 square with a `0.05` edge radius**: one box on the outside,
 same flush top, but with rounded corners, so a wizard a fraction low rides up over the seam
@@ -566,58 +558,26 @@ has to come to one box.
 
 Do **not** reach for a custom `physicsShape` on the tiles instead. `spriteMeshType` is Tight and
 `physicsShape` is empty, so the slopes and half-tiles get outlines that follow their own art;
-squaring all 212 of them off would wall the level in.
+squaring all 212 of them off would wall the level in. The two stair tiles are the one exception:
+they get a straight triangle (see *Stairs*), because their drawn steps are not a shape to walk on.
 
-## Which row is the wizard standing in
+## Where the feet are
 
-Telekinesis settles with `TryFindRestingCell`, which survives the answer being a row out. Wall
-Growth does **not** hunt for a floor any more: it takes the row straight under `StandingCell` as
-the floor, on purpose. It used to search down `TryFindFloorRowUnder`, up to six rows, and a wizard
-stood with their middle over a drop found the bottom of the pit instead — and then walked along
-*that* floor and grew a block on the far side of the gap. Now it walks ahead along the floor the
-wizard is on, stops dead at a wall, and only grows in the first empty tile past an edge it has
-followed there, so it can only ever make that floor longer.
+`Movement.Footing` is the one answer to *where are the wizard's soles*: it asks the collider itself,
+`bounds.center.x` and `bounds.min.y`. The ground **probe** is not that answer. It hangs below the
+boots on purpose, and it drifts further the moment the collider is resized without
+`FitGroundCheckTo` being run again — it once sat almost a tenth of a box under the wizard.
 
-So `StandingCell` has to be right, and **it has to answer with the empty cell the body is in, never
-the solid one holding it up.** One row out is not a near miss — it is the spell aiming into the
-ground:
-
-- Telekinesis asked whether the tile ahead was free, got told about the *floor*, and refused every
-  cast with "every tile within 3 ahead of you is already filled".
-- Wall Growth hunted for the lip of a drop along the row *below* the floor, found solid rock all
-  the way out, and refused with "no lip within 3 tiles ahead of you".
-
-Both read exactly like a spell that does nothing, and neither is.
-
-It used to ask `Movement.FeetY + 0.05f` — the ground **probe**, lifted by what the default
-`groundCheckSkin` happens to be. The probe hangs below the boots on purpose, and it drifts further
-the moment the collider is resized without `FitGroundCheckTo` being run again, which is exactly
-what had happened: the probe sat almost a tenth of a box under the wizard, and `floor()` landed a
-row low. `Movement.Footing` asks the collider itself — `bounds.center.x` and `bounds.min.y` — and
-`StandingCell` lifts that clear of the cell line before flooring it, because the soles rest exactly
-*on* that line and `floor()` on a line is a coin toss decided by float error.
-
-`FitGroundCheckTo` now measures from the collider's bottom and its own middle rather than from half
+`FitGroundCheckTo` measures from the collider's bottom and its own middle rather than from half
 its height about the transform, so a collider carrying an offset — which is what Unity's
 fit-to-sprite button writes — no longer bakes that drift in the moment someone hits Reset. The
 PLAYER in `1-1` has been refitted to its collider: `groundCheckOffset` went from
 `(0, -0.596875)` to `(-0.050636888, -0.5525605)`, and `groundCheckSize.x` from `0.703125` to
 `0.64969389`.
 
-Both probes now hang from one `ProbeOrigin`. The ground check reads it, the ledge check reads it,
+Both probes hang from one `ProbeOrigin`. The ground check reads it, the ledge check reads it,
 and `TryFindLedgeEdge` reports its lip relative to it — otherwise a collider with an x offset of
 its own leaves the two disagreeing about which foot is over the drop.
-
-**Wall Growth wants the wizard stood still on the floor, not just `PlayerState.Normal`.** `Normal`
-is every state that is not staff, vine or ragdoll, and that includes falling — so the spell would
-grow a block under a wizard in mid-air, one press at a time, all the way down. `IsGrounded` alone
-is not enough either: the ground probe on the PLAYER is wider than the body, so a wizard sliding
-down a wall face counts as grounded while they fall. `IsStandingFirmly` also refuses anyone
-dropping faster than `FallingSpeed`, half a box a second.
-
-**Rank 2 grows two blocks.** `WallGrowthAbility.tiers` holds how many blocks each rank may grow
-before the spell rests. Each block crumbles `activeDuration` seconds after it grew; the spell stays
-lit until the last one goes, and only then does the cooldown start and the count go back to zero.
 
 ## The vine
 
@@ -694,26 +654,38 @@ art or animation and the script only switches that object on and off. Leave the 
 nothing is shown.
 
 Spell effects work the same way, as children of the wizard found by name: **Glide Canopy** (under
-`Visual`, so it faces the right way), **Haste Trail** (anywhere under the wizard), and an object
-with a **Fling Arrow** component (a direct child of the wizard, art pointing right, Danger Look
-optional). Missing one just means that effect does not show.
+`Visual`, so it faces the right way), **Falling Star Trail** (anywhere under the wizard), and an
+object with a **Fling Arrow** component (a direct child of the wizard, art pointing right, Danger
+Look optional). Missing one just means that effect does not show.
 
 **Placeholder art ships in the prefabs**, so every effect shows something until the real art
-arrives. The sprites are plain shapes in `Assets/Art/Placeholders`:
+arrives.
+
+**Star Sparkles is the default for anything without art yet.** `Assets/Prefabs/Star Sparkles.prefab`
+is the wizard's Impact Stars turned into a gentle loop: your star sprite (`Art/Sprites/VFX.png`),
+circling slowly around a ring. Its emitter is in **Shape** scaling mode, so scaling the object
+stretches the ring around whatever it sits on while the stars stay the same size. Every copy is a
+nested prefab, so editing Star Sparkles itself changes them all; a copy can still override its own
+numbers (the cloud and the trail do). It is used for:
+
+- **Hand Hold:** the `Glow Look`, stars around the knot while Mage Hand can reach it.
+- **Every hazard:** the `Asleep Look`, stars around it while Telekinesis holds it asleep.
+- **Cloud Step:** the cloud itself, flattened and denser.
+- **PLAYER:** the `Falling Star Trail`, streaming behind the dive.
+
+The other placeholders are plain shapes in `Assets/Art/Placeholders`:
 
 - **PLAYER:** a `Glide Canopy` under `Visual`, and a `Fling Arrow` with an `Arrow Art` child and a red
   `Danger Look`.
-- **Hand Hold:** a blue `Glow Look` behind the hand.
 - **Stone Wall:** a stone block on its `Body`.
 
-To replace one, open the prefab and drag your sprite onto that object's Sprite Renderer, or put your
-own object in its place under the same name. Haste Trail is the one still empty: until a child of
-that name exists, Haste shows nothing.
+To replace one, open the prefab and put your own object in its place under the same name (or drag
+your sprite onto that object's Sprite Renderer).
 
 The only things a script still moves are the ones where the movement *is* the mechanic: the
-wizard's `Visual` is flipped to face their way and spun when they tumble, the staff sprite is
-flipped, the vine's rope is stretched as it unrolls and leans with the swing, the Wall Growth
-block is scaled as it grows, and the fling arrow is pointed along the aim.
+wizard's `Visual` is flipped to face their way and spun when they tumble (and pointed head first
+along a Falling Star dive), the staff sprite is flipped, the vine's rope is stretched as it unrolls
+and leans with the swing, and the fling arrow is pointed along the aim.
 
 ## Getting to the loadout, and making it stick
 
@@ -764,8 +736,10 @@ flat colour, so each one is visible the moment it lands and is waiting for a spr
 | `Wind` | Pushes you the way its arrows point. Rotate it to aim it. | Hazard |
 | `Wind Trap` | The same push, on a timer: a wall mouth that opens and blows left. Shut, Warning and Blowing Looks. It shoves, it never hurts. | Hazard |
 | `Hand Hold` | The knot Mage Hand catches. | Default |
-| `Boulder` | What Telekinesis lifts. Solid, so it is also a platform. | **Ground** |
-| `Stone Wall` | What Wall Growth raises. Already wired into the spell. | **Ground** |
+| `Magic Door` | `MagicDoor`: a solid door, one box wide and two tall, that Telekinesis opens for good. Put your art in its Closed Look and Open Look children. | **Ground** |
+| `Stone Wall` | A one-box stone block to stand on. It was the old Wall Growth spell's block; now it is a plain level piece. | **Ground** |
+| `Cloud Step` | The cloud the Cloud Step spell makes. Already wired into the spell; not for placing by hand. | **Ground** |
+| `Star Sparkles` | Stars hanging around whatever it sits on. The stand-in for any effect without art yet; scale it to fit. | Default |
 | `Level Exit` | The bottom. Marks the level completed and opens the Level Select. | Default |
 
 The steampunk set for the second world lives in `Assets/Prefabs/Mid Level Hazards`, and is set up
@@ -786,18 +760,6 @@ The ones on **Ground** are there because the wizard has to be able to stand on t
 check only looks at that layer. The ones on **Hazard** are triggers you pass straight through.
 `Hazard.passThrough` sets that on Awake, so ticking the box fixes one already placed, and wind and
 ice are triggers in their prefabs.
-
-`Stone Wall` is shaped the way the spell needs: the root carries nothing and the **first child**
-carries the sprite and collider, one box square and centred on itself. The spell centres that
-child on the root and scales the root up from nothing over `growTime`. Any stone art of your own
-wants that same two-object shape.
-
-**Where it grows is the whole spell.** It only ever makes the floor you are stood on longer. It
-walks ahead of you along that floor, up to `reachInTiles`, and grows one block in the first empty
-tile past its edge, with its top level with your soles so you walk straight onto it. A wall in the
-way stops the hunt, and it will not cast while you are in the air or falling, so there is no way
-to grow a block on the far side of anything. Stand on the first block and cast again (rank 2) and
-the second one carries on from the first.
 
 `Level Exit` marks the level completed (`Progress.CompleteLevel`) and loads the `Level Select`
 scene.
@@ -1169,10 +1131,21 @@ That is also why they no longer show the Hazard settings, which did nothing on t
 
 ### Stairs
 
-The steps themselves are **tilemap**, not the hazard. `Movement` already walks them: the slope
-handling steers along the face and the step assist carries the wizard over each tread. The `Stairs`
-prefab is a `TripHazard` trigger box you lay over the top saying *this stretch of floor is a
-staircase*, and all it does is `TryTrip()` above `minimumSpeed`.
+The steps themselves are **tilemap**, not the hazard. The two stair tiles (`Tilemap-Tutorial-W1_31`
+rising, `_32` falling) are drawn as 3-pixel steps, but their **hitbox is a clean 45 degree
+triangle**, set as a custom Physics Shape in the Sprite Editor. Following the drawn steps gave the
+collider ten tiny ledges per tile, which the step assist had to hop one by one; a straight face hands
+the job to the ramp handling instead, so the wizard runs up at full speed. A stacked flight of them
+meets corner to corner with no lip. The feet land in the notches of the drawn steps.
+
+The `Stairs` prefab is a `TripHazard` trigger you lay over a staircase, saying *this stretch of floor
+is a staircase*, and all it does is `TryTrip()` above `minimumSpeed`. Its shape covers one two-tile
+hump (rise then fall) plus half a box above the treads, where the wizard's body is. Put its root at
+the bottom of the hump, on the line between the two tiles. For a longer flight, edit the collider's
+points to follow it.
+
+Walk mode (`ignoresWalking`) is always safe on stairs. So is a staircase Telekinesis has put to
+sleep: run it while the stars are still out.
 
 That gives the whole rule in two numbers a designer can see: **run at them and you go down them the
 way you were already travelling; walk, or jog, and you go up and down without noticing.** The

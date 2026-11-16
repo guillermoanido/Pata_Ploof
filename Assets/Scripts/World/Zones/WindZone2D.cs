@@ -1,4 +1,3 @@
-using FallingWizard.Core;
 using FallingWizard.Player;
 using UnityEngine;
 
@@ -69,7 +68,7 @@ namespace FallingWizard.World
             if (!CanAffect(wizard))
                 return;
 
-            wizard.Logic.Push(WorldPush * Haste.WorldScale, rampup, groundScale);
+            wizard.Logic.Push(WorldPush, rampup, groundScale);
         }
 
         protected Vector2 TurnWithThisObject(Vector2 direction) =>

@@ -49,10 +49,10 @@ ability.glide.name,Glide,Planeo
 ability.glide.desc,Throw out your hat to glide around.,Despliega tu sombrero para planear.
 ability.glide.upgrade.0.title,Wider hat gives more control.,El sombrero se agranda otorgando mayor control.
 ability.glide.upgrade.0.desc,Lets you grab wind better.,Permite utilizar mejor el viento.
-ability.haste.name,Haste,Prisa
-ability.haste.desc,"Quicken yourself for 10 seconds, everything else in the floor slows down. Can be used only once per floor.","Acelérate por 10 segundos y gana velocidad, el nivel entero se enlentece. Puede ser usado una vez por nivel."
-ability.haste.upgrade.0.title,Deeper haste,Prisa más honda
-ability.haste.upgrade.0.desc,"You move faster still, and the world slows further.",Te mueves aún más rápido y el mundo se frena más.
+ability.star.name,Falling Star,Estrella fugaz
+ability.star.desc,"While tumbling, dive into the ground and bounce back up on your feet. Miss the ground and the fall hurts as usual. Once per level.","Mientras caes dando vueltas, lánzate en picada contra el suelo y rebota de pie. Si no llegas al suelo, la caída duele como siempre. Una vez por nivel."
+ability.star.upgrade.0.title,Longer dive,Picada más larga
+ability.star.upgrade.0.desc,Dives three tiles deep instead of two.,La picada llega a tres casillas de profundidad en vez de dos.
 ability.vine.name,Mage Hand,Mano de mago
 ability.vine.desc,"Reach out a spectral hand and swing from it, press the button to let go.","Saca una mano espectral y colúmpiate, presiona nuevamente el botón para soltarte."
 ability.vine.upgrade.0.title,Wider swing,Vaivén amplio
@@ -64,13 +64,13 @@ ability.staff.desc,"Hold it up against a wall and climb, as high as the staff is
 ability.staff.upgrade.0.title,Longer staff,Bastón largo
 ability.staff.upgrade.0.desc,"Half again as long, so it climbs walls that used to be too tall and reaches drops that used to be too deep.",La mitad más largo: trepa muros que antes eran demasiado altos y llega a caídas más hondas.
 ability.hand.name,Telekinesis,Telequinesis
-ability.hand.desc,"Take a hazard with you, and set it down where you want it.",Llévate un peligro contigo y déjalo donde tú quieras.
-ability.hand.upgrade.0.title,Longer reach,Mayor alcance
-ability.hand.upgrade.0.desc,Takes hold of things half again as far away.,Agarra cosas la mitad más lejos.
-ability.wall.name,Wall Growth,Muro
-ability.wall.desc,"Grow a block of stone off the edge of the floor you stand on, and walk out onto it.","Haz crecer un bloque de piedra desde el borde del suelo donde estás, y camina sobre él."
-ability.wall.upgrade.0.title,Second block,Segundo bloque
-ability.wall.upgrade.0.desc,"Grow two blocks before the spell rests, so the floor reaches twice as far.","Haz crecer dos bloques antes de que el hechizo descanse: el suelo llega el doble de lejos."
+ability.hand.desc,Push magic out all around you. Magic doors swing open and nearby hazards fall asleep for a few seconds.,Empuja magia a tu alrededor. Las puertas mágicas se abren y los peligros cercanos se duermen unos segundos.
+ability.hand.upgrade.0.title,Deeper sleep,Sueño profundo
+ability.hand.upgrade.0.desc,"Reaches further, and hazards sleep for longer.",Llega más lejos y los peligros duermen más tiempo.
+ability.cloud.name,Cloud Step,Paso de nube
+ability.cloud.desc,"In the air, make a little cloud under your feet and land on it. It melts once you step off.","En el aire, crea una pequeña nube bajo tus pies y aterriza en ella. Se deshace cuando te bajas."
+ability.cloud.upgrade.0.title,Third cloud,Tercera nube
+ability.cloud.upgrade.0.desc,One more cloud every level.,Una nube más en cada nivel.
 settings.controls,Controls,Controles
 controls.title,Controls,Controles
 controls.keyboard,Keyboard,Teclado

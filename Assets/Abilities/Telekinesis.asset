@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: hand
   displayName: Telekinesis
-  description: Take a hazard with you, and set it down where you want it.
+  description: Push magic out all around you. Magic doors swing open and nearby hazards fall asleep for a few seconds.
   icon: {fileID: 0}
   cost: 4
   locked: 0
@@ -23,17 +23,15 @@ MonoBehaviour:
   pressBuffer: 0.12
   chargesOnHold: 0
   activeDuration: 0
-  cooldown: 0.4
+  cooldown: 5
   usesPerLevel: 0
   collectedEffect: {fileID: 0}
   upgrades:
   - cost: 2
-    title: Longer reach
-    description: Takes hold of things half again as far away.
-  reach: 6
-  placeInTiles: 3
-  liftInTiles: 0
-  needsAFloor: 0
+    title: Deeper sleep
+    description: Reaches further, and hazards sleep for longer.
   tiers:
-  - reach: 6
-  - reach: 9
+  - reach: 4
+    sleepSeconds: 3
+  - reach: 5.5
+    sleepSeconds: 5

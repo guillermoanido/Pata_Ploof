@@ -27,13 +27,12 @@ namespace FallingWizard.World
 
         [Tooltip("How fast it travels along the path, in boxes per second. A wizard stood on it " +
                  "rides along at this speed and runs on top of it, so running the way it is going " +
-                 "is quicker than a run on solid ground. The Haste spell slows it down with the " +
-                 "rest of the world. 0 holds it still.")]
+                 "is quicker than a run on solid ground. 0 holds it still.")]
         [Min(0f)] public float speed = 2f;
 
         [Tooltip("Seconds it waits at each end before heading back. This is the calm moment to " +
                  "step on or off, so be generous on a platform the player has to board from a " +
-                 "ledge. The Haste spell stretches the wait as well.")]
+                 "ledge.")]
         [Min(0f)] public float pauseSeconds = 0.5f;
 
         [Tooltip("How far along the path it starts when the level begins, from 0 (where you " +
@@ -93,12 +92,12 @@ namespace FallingWizard.World
         {
             if (pauseLeft > 0f)
             {
-                pauseLeft -= Haste.FixedDeltaTime;
+                pauseLeft -= Time.fixedDeltaTime;
                 return;
             }
 
             float end = isHeadingOut ? 1f : 0f;
-            along = Mathf.MoveTowards(along, end, speed * Haste.FixedDeltaTime / PathLength);
+            along = Mathf.MoveTowards(along, end, speed * Time.fixedDeltaTime / PathLength);
 
             if (Mathf.Approximately(along, end))
                 TurnAround();

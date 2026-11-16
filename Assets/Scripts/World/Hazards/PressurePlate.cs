@@ -1,5 +1,4 @@
 using System;
-using FallingWizard.Core;
 using FallingWizard.Player;
 using UnityEngine;
 
@@ -19,8 +18,7 @@ namespace FallingWizard.World
                  "part of the wizard is over this object's collider, so they are on it for the " +
                  "plate's width PLUS their own: walking across a 1-box plate takes most of a " +
                  "second, running across takes under half. Try it at a walk before settling on " +
-                 "a number. The Haste spell slows the count along with the rest of the world. " +
-                 "0 throws them the moment they step on.")]
+                 "a number. 0 throws them the moment they step on.")]
         [Min(0f)] public float secondsToLaunch = 1f;
 
         [Tooltip("How high it throws the wizard, in boxes. Worked out from gravity, so 3 really " +
@@ -110,7 +108,7 @@ namespace FallingWizard.World
                 return;
             }
 
-            secondsStoodOn += Haste.FixedDeltaTime;
+            secondsStoodOn += Time.fixedDeltaTime;
 
             if (secondsStoodOn >= secondsToLaunch)
                 LaunchTheWizard(wizard.Logic);

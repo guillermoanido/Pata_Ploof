@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 941a0626012843c591464b31601d1c94, type: 3}
+  m_Name: Falling Star
+  m_EditorClassIdentifier: 
+  id: star
+  displayName: Falling Star
+  description: While tumbling, dive into the ground and bounce back up on your feet.
+    Miss the ground and the fall hurts as usual. Once per level.
+  icon: {fileID: 0}
+  cost: 4
+  locked: 0
+  fixedSlot: -1
+  passive: 0
+  pressBuffer: 0.12
+  chargesOnHold: 0
+  activeDuration: 1
+  cooldown: 0
+  usesPerLevel: 1
+  usesAddedPerRank: 0
+  collectedEffect: {fileID: 0}
+  upgrades:
+  - cost: 3
+    title: Longer dive
+    description: Dives three tiles deep instead of two.
+  diveAngle: 45
+  diveSpeed: 12
+  bounceHeight: 2
+  bounceOnward: 2
+  tiers:
+  - diveDepth: 2
+  - diveDepth: 3

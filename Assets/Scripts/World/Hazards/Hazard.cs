@@ -45,10 +45,9 @@ namespace FallingWizard.World
 
         [Tooltip("Let a wizard WALKING ACROSS it pass untouched. This reads the walk toggle rather " +
                  "than a speed, so it still fires on a wizard who is falling onto it or shoved " +
-                 "into it, and it cannot be fooled by Haste - which lifts a walk to the same 3 " +
-                 "boxes a second that Minimum Speed would have to sit at to tell a walk from a " +
-                 "run. Walk mode only protects while the wizard is actually moving: standing " +
-                 "still on it hurts, toggle or not.")]
+                 "into it, and a fast walk can never be mistaken for a run. Walk mode only " +
+                 "protects while the wizard is actually moving: standing still on it hurts, " +
+                 "toggle or not.")]
         public bool ignoresWalking = false;
 
         [Header("Hit Look")]
@@ -66,7 +65,22 @@ namespace FallingWizard.World
         [Tooltip("How long the Hit Look shows after each hit, in seconds.")]
         [Min(0f)] public float hitSeconds = 0.5f;
 
+        [Header("Telekinesis")]
+        [Tooltip("Telekinesis can put this hazard to sleep for a few seconds, and while it sleeps " +
+                 "it does nothing to the wizard. Untick for a hazard the level needs to always " +
+                 "work, like a Bouncy Trash that is the only way across a gap.")]
+        public bool canSleep = true;
+
+        [Tooltip("A child object shown while Telekinesis holds this asleep, on top of the hazard's " +
+                 "own art. Every hazard prefab ships with the Star Sparkles prefab here, the " +
+                 "stars hanging around it; swap in your own sleep art whenever you like. Leave " +
+                 "it empty and the hazard looks the same asleep or awake.")]
+        public GameObject asleepLook;
+
         [NonSerialized] float readyAt;
+        [NonSerialized] float asleepUntil;
+
+        public bool IsAsleep => Time.time < asleepUntil;
 
         protected virtual bool IsDangerousNow => true;
 
@@ -78,9 +92,25 @@ namespace FallingWizard.World
 
             if (hitbox != null)
                 hitbox.isTrigger = passThrough;
+
+            ShowLook(asleepLook, false);
         }
 
         public void Disarm(float seconds) => readyAt = Time.time + Mathf.Max(0f, seconds);
+
+        public bool TrySleep(float seconds)
+        {
+            if (!canSleep || seconds <= 0f)
+                return false;
+
+            asleepUntil = Time.time + seconds;
+            readyAt = Mathf.Max(readyAt, asleepUntil);
+
+            ShowLook(asleepLook, true);
+            CancelInvoke(nameof(WakeUp));
+            Invoke(nameof(WakeUp), seconds);
+            return true;
+        }
 
         protected virtual void Affect(PlayerLogic wizard) { }
 
@@ -116,6 +146,8 @@ namespace FallingWizard.World
         }
 
         void ShowTheIdleLook() => SwitchHitLook(false);
+
+        void WakeUp() => ShowLook(asleepLook, false);
 
         void SwitchHitLook(bool isHit)
         {

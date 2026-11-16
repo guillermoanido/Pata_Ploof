@@ -23,7 +23,7 @@ namespace FallingWizard.World
 
         [Tooltip("How fast it falls, in boxes per second. It falls at a steady speed rather " +
                  "than speeding up, so at 6 a drop three boxes above the wizard's head lands " +
-                 "in half a second. The Haste spell slows it along with everything else.")]
+                 "in half a second.")]
         [Min(SlowestFall)] public float fallSpeed = 6f;
 
         [Tooltip("How far a drop may fall, in boxes, before it is removed. This only matters " +
@@ -92,7 +92,7 @@ namespace FallingWizard.World
 
         void HangOneStep()
         {
-            hungFor += Haste.FixedDeltaTime;
+            hungFor += Time.fixedDeltaTime;
 
             if (hungFor >= hangSeconds)
                 isFalling = true;
@@ -100,7 +100,7 @@ namespace FallingWizard.World
 
         void FallOneStep()
         {
-            float distance = fallSpeed * Haste.FixedDeltaTime;
+            float distance = fallSpeed * Time.fixedDeltaTime;
 
             if (Physics2D.Raycast(body.position, Vector2.down, GroundFilter, Hits, distance) > 0)
             {
