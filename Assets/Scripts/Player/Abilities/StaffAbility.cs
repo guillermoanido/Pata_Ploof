@@ -6,7 +6,9 @@ namespace FallingWizard.Player
     public class StaffAbility : Ability
     {
         [Header("Controls")]
-        [Tooltip("A press shorter than this toggles looking down. Hold it longer and the staff raises instead.")]
+        [Tooltip("A press shorter than this toggles looking down - or, stood on a wooden " +
+                 "Staff Platform, pushes down through the planks. Hold it longer and the staff " +
+                 "raises instead.")]
         [Min(0.01f)] public float tapSeconds = 0.2f;
 
         [Tooltip("Shown in the HUD slot while the staff is looking down. Empty keeps the normal icon.")]
@@ -20,7 +22,8 @@ namespace FallingWizard.Player
 
         public override bool CanCast(PlayerLogic wizard) =>
             wizard.IsOnStaff || wizard.IsStaffLookingDown ||
-            (wizard.IsStaffFree && (wizard.movement.IsAtEdge || wizard.CanClimbHere));
+            (wizard.IsStaffFree && (wizard.movement.IsAtEdge || wizard.CanClimbHere ||
+                                     wizard.movement.IsOnStaffPlatform));
 
         public override void OnHeld(PlayerLogic wizard, float heldSeconds, float fixedDeltaTime)
         {
@@ -52,6 +55,9 @@ namespace FallingWizard.Player
             bool tapped = heldSeconds <= tapSeconds && !aim.hasLetGoOfTheStaff;
 
             aim.Clear();
+
+            if (tapped && wizard.TryDropThroughFloor())
+                return;
 
             if (tapped)
             {

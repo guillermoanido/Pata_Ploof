@@ -410,6 +410,18 @@ out and back in to open it again.
 Drag in `Assets/Prefabs/Shop Stop.prefab`: a trigger box one box wide and one and a half tall,
 with a `ShopStop` on it and a placeholder block on its `Art` child for you to swap for real art.
 
+### The storybook look
+
+The menus share the HUD's palette: a parchment page in a wooden frame for panels, stitched
+hat-red cloth for buttons, mauve cloth for cards and settings controls, the star patch for
+checkmarks and slider handles, plum ink on parchment and cream ink on cloth. The art is in
+`Assets/Art/UI Kit` - redraw any of it and every menu follows; keep each one 9-sliced. The colours
+the skill screen sets while it runs are in `Ui` (`Ink`, `ClothInk`, `Card`, `Accent`...).
+
+**Pata Ploof > Apply Storybook UI Style** (`Editor/MenuStyler.cs`) put it on the three screen
+prefabs, the Pause Menu, the Main Menu and the Level Select. It only replaces Unity's built-in
+placeholder graphics, never a sprite of yours, so it is safe to run again after adding a menu.
+
 ### Screens are prefabs
 
 `ChoiceScreen` (the death message and the reset-save question), `SkillScreen` and `ControlsScreen`
@@ -727,6 +739,14 @@ nested `SkillScreen.Door`, installed once when the game starts; the shop stop an
 go through `SkillScreen.OpenInLevel`.
 
 ## Prefabs
+
+**Wooden Platform** (`Assets/Prefabs/Wooden Platform.prefab`) is solid planks on the Ground layer
+with a `StaffPlatform`. Stood on one, a **tap** of the staff button pushes the wizard down through
+the planks: `Movement.TryDropThroughFloor` switches the collider off, the fall is counted from the
+planks as usual, and the planks shut again the moment the wizard is clear underneath. It only
+happens when everything under the wizard's feet is a staff platform, so standing half on stone
+does nothing. The art is the `Planks` child (your `Wood Platform` sprite, native size); put an
+opened version in **Open Look** if you draw one. A longer platform is several side by side.
 
 Everything below is a plain object you drag in. All the art is Unity's built-in Square tinted a
 flat colour, so each one is visible the moment it lands and is waiting for a sprite of yours.

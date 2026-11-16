@@ -233,7 +233,7 @@ namespace FallingWizard.UI
             card.icon.color = owned ? Color.white : UnownedIconTint;
 
             card.nameLabel.text = spell.Name;
-            card.nameLabel.color = owned ? Ui.Ink : Ui.FadedInk;
+            card.nameLabel.color = owned ? Ui.ClothInk : Ui.FadedClothInk;
             card.ShowPips(rank, owned ? Ui.Accent : Ui.FadedInk);
 
             card.blurb.text = WriteBlurb(spell, owned, rank, slot);

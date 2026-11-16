@@ -8,17 +8,20 @@ namespace FallingWizard.UI
 {
     public static class Ui
     {
-        public static readonly Color Ink = new Color(0.93f, 0.92f, 0.98f);
-        public static readonly Color FadedInk = new Color(0.62f, 0.60f, 0.72f);
+        public static readonly Color Ink = new Color(0.31f, 0.12f, 0.23f);
+        public static readonly Color FadedInk = new Color(0.53f, 0.22f, 0.37f);
 
-        public static readonly Color Panel = new Color(0.07f, 0.06f, 0.11f, 0.97f);
-        public static readonly Color Card = new Color(0.13f, 0.12f, 0.19f, 0.95f);
-        public static readonly Color CardLit = new Color(0.20f, 0.19f, 0.30f, 0.98f);
+        public static readonly Color ClothInk = new Color(1f, 0.95f, 0.86f);
+        public static readonly Color FadedClothInk = new Color(0.93f, 0.76f, 0.6f);
 
-        public static readonly Color Accent = new Color(0.55f, 0.85f, 1f);
-        public static readonly Color Warning = new Color(0.95f, 0.72f, 0.36f);
+        public static readonly Color Panel = Color.white;
+        public static readonly Color Card = new Color(0.82f, 0.78f, 0.82f, 1f);
+        public static readonly Color CardLit = Color.white;
 
-        public static readonly Color PipEmpty = new Color(1f, 1f, 1f, 0.16f);
+        public static readonly Color Accent = new Color(0.91f, 0.87f, 0.37f);
+        public static readonly Color Warning = new Color(0.85f, 0.34f, 0.39f);
+
+        public static readonly Color PipEmpty = new Color(0.53f, 0.22f, 0.37f);
 
         public static bool IsModalOpen { get; private set; }
 

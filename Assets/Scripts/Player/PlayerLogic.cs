@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using FallingWizard.Core;
+using FallingWizard.World;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -250,6 +251,9 @@ namespace FallingWizard.Player
             State = PlayerState.Ragdoll;
             return true;
         }
+
+        public bool TryDropThroughFloor() =>
+            State == PlayerState.Normal && health.IsAlive && movement.TryDropThroughFloor();
 
         public bool TryPlantStaff(StaffMode mode)
         {
@@ -870,7 +874,35 @@ namespace FallingWizard.Player
                 stepAssistTimer = 0f;
             }
 
+            public bool IsOnStaffPlatform =>
+                IsGrounded && CountFloorsUnderFeet() > 0 && AreAllStaffPlatforms();
+
+            public bool TryDropThroughFloor()
+            {
+                if (!IsOnStaffPlatform)
+                    return false;
+
+                foreach (Collider2D floor in Overlaps)
+                    floor.GetComponent<StaffPlatform>().LetThrough(hull);
+
+                BeginFallFrom(body.position.y);
+                return true;
+            }
+
             public void UseBaseGravity() => body.gravityScale = baseGravityScale;
+
+            int CountFloorsUnderFeet() => hull == null
+                ? 0
+                : Physics2D.OverlapBox(FeetProbeCentre, FeetProbeSize, 0f, GroundFilter, Overlaps);
+
+            bool AreAllStaffPlatforms()
+            {
+                foreach (Collider2D floor in Overlaps)
+                    if (floor.GetComponent<StaffPlatform>() == null)
+                        return false;
+
+                return true;
+            }
 
             public void ApplyWind(Vector2 target, float rampup, float groundScale, float fixedDeltaTime)
             {
