@@ -5,8 +5,8 @@ using UnityEngine;
 
 namespace FallingWizard.Player
 {
-    [CreateAssetMenu(menuName = "Falling Wizard/Abilities/Mage Slap", fileName = "Mage Slap")]
-    public class MageSlapAbility : Ability
+    [CreateAssetMenu(menuName = "Falling Wizard/Abilities/Star Slap", fileName = "Star Slap")]
+    public class StarSlapAbility : Ability
     {
         const float ShortestReach = 0.5f;
         const float AimStep = 45f;
@@ -39,38 +39,32 @@ namespace FallingWizard.Player
         [Min(0f)] public float furnitureKnock = 6f;
 
         [Header("Hand")]
-        [Tooltip("Shown where the hand lands, turned to face the way it slapped, then removed. " +
-                 "The Mage Slap Hand prefab, or your own: draw the hand pointing right, with the " +
-                 "palm on the prefab's root. Empty slaps without showing anything.")]
+        [Tooltip("Shown where the hand lands, turned to face the way it slapped, then removed - " +
+                 "on every press, even one that only swats the air. The Star Slap Hand prefab, or " +
+                 "your own: draw the hand pointing right, fingertips on the prefab's root. Empty " +
+                 "slaps without showing anything.")]
         public GameObject handPrefab;
 
         [Tooltip("Seconds the hand stays before it is removed.")]
-        [Min(0f)] public float handSeconds = 0.3f;
+        [Min(0f)] public float handSeconds = 0.35f;
 
         [Header("Ranks")]
         [Tooltip("One block per rank. Element 0 is what learning it gives you.")]
         public Tier[] tiers = { new Tier() };
 
-        public override bool CanCast(PlayerLogic wizard) =>
-            IsFreeToSlap(wizard) && Aim(wizard).IsWorthIt;
+        public override bool CanCast(PlayerLogic wizard) => IsFreeToSlap(wizard);
 
         public override string WhyNot(PlayerLogic wizard)
         {
-            if (!IsFreeToSlap(wizard))
-                return wizard.IsDiving ? "you are diving" : $"you are {wizard.State} and your hands are busy";
+            if (IsFreeToSlap(wizard))
+                return null;
 
-            return Aim(wizard).IsWorthIt
-                ? null
-                : $"nothing to slap within {PickTier(tiers, wizard).reach} boxes that way: no wall, " +
-                  "ceiling or furniture, and slapping the floor straight down does nothing";
+            return wizard.IsDiving ? "you are diving" : $"you are {wizard.State} and your hands are busy";
         }
 
         public override bool OnCast(PlayerLogic wizard)
         {
             Swing swing = Aim(wizard);
-
-            if (!swing.IsWorthIt)
-                return false;
 
             foreach (Furniture piece in InTheWay)
                 piece.TakeSlap(swing.direction * furnitureKnock);
@@ -94,19 +88,19 @@ namespace FallingWizard.Player
             Bounds body = wizard.movement.HitboxBounds;
             float reach = PickTier(tiers, wizard).reach;
 
+            swing.handPoint = FindFullReach(body, swing.direction, reach);
+
             if (TryFindSurface(body, swing.direction, reach, out RaycastHit2D surface))
             {
                 reach = surface.distance;
                 swing.handPoint = surface.point;
-                swing.pushesOff = PushesOff(swing.direction);
                 swing.shove = FindShove(wizard.movement.Velocity, swing.direction);
             }
 
             if (TryFindFurniture(body, swing.direction, reach, out Vector2 nearestPiece) &&
-                !swing.pushesOff)
+                surface.collider == null)
                 swing.handPoint = nearestPiece;
 
-            swing.hasFurniture = InTheWay.Count > 0;
             return swing;
         }
 
@@ -121,6 +115,12 @@ namespace FallingWizard.Player
             float radians = degrees * Mathf.Deg2Rad;
 
             return new Vector2(Mathf.Cos(radians), Mathf.Sin(radians));
+        }
+
+        static Vector2 FindFullReach(Bounds body, Vector2 direction, float reach)
+        {
+            float edge = Mathf.Abs(direction.x) * body.extents.x + Mathf.Abs(direction.y) * body.extents.y;
+            return (Vector2)body.center + direction * (edge + reach);
         }
 
         static bool TryFindSurface(Bounds body, Vector2 direction, float reach,
@@ -139,9 +139,6 @@ namespace FallingWizard.Player
         static Vector2 ShrinkForSweep(Vector2 size) =>
             new Vector2(Mathf.Max(0f, size.x - SweepSkin * BothSides),
                 Mathf.Max(0f, size.y - SweepSkin * BothSides));
-
-        static bool PushesOff(Vector2 direction) =>
-            Mathf.Abs(direction.x) > LeastAimPart || direction.y > LeastAimPart;
 
         Vector2 FindShove(Vector2 velocity, Vector2 direction)
         {
@@ -217,8 +214,7 @@ namespace FallingWizard.Player
         {
             [Tooltip("How far the hand reaches at this rank, in boxes, measured from the edge of " +
                      "the wizard. A wall, ceiling or piece of furniture further away than this " +
-                     "cannot be slapped, so the button waits a moment for one to come into reach " +
-                     "and the HUD greys while there is none.")]
+                     "is out of reach: the hand swats the air at full stretch and nothing moves.")]
             [Min(ShortestReach)] public float reach = 2f;
 
             public void Validate() => reach = Mathf.Max(ShortestReach, reach);
@@ -229,10 +225,6 @@ namespace FallingWizard.Player
             public Vector2 direction;
             public Vector2 handPoint;
             public Vector2 shove;
-            public bool pushesOff;
-            public bool hasFurniture;
-
-            public bool IsWorthIt => pushesOff || hasFurniture;
         }
     }
 }

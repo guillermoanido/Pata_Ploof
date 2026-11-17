@@ -5,7 +5,7 @@ namespace FallingWizard.World
     [RequireComponent(typeof(Rigidbody2D))]
     public class Furniture : MonoBehaviour
     {
-        [Tooltip("Upward speed a Mage Slap adds, in boxes per second, so the piece hops as it " +
+        [Tooltip("Upward speed a Star Slap adds, in boxes per second, so the piece hops as it " +
                  "goes instead of only sliding. How far it goes is the Rigidbody 2D's Mass: a " +
                  "heavier piece is knocked a shorter way.")]
         [Min(0f)] public float hop = 2f;

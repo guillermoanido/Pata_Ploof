@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 834a3dacfb21437cb154e6906fa03197, type: 3}
-  m_Name: Mage Slap
+  m_Name: Star Slap
   m_EditorClassIdentifier:
   id: slap
-  displayName: Mage Slap
-  description: A magical hand that slaps walls to push you away, it can also shove furniture around.
+  displayName: Star Slap
+  description: A magical star hand that slaps walls to push you away, it can also shove furniture around.
   icon: {fileID: 21300000, guid: d74995a603e643a4ac906f065b2b9f3c, type: 3}
   cost: 2
   locked: 0
@@ -29,13 +29,13 @@ MonoBehaviour:
   upgrades:
   - cost: 2
     title: Longer arm
-    description: Your magical hand reaches further.
+    description: Your star hand reaches further.
   sidewaysShove: 9
   downwardShove: 6
   steeringLockout: 0.2
   furnitureKnock: 6
   handPrefab: {fileID: 1960000001, guid: a54b5e86a66f4fa386ec3c1b6627d9a4, type: 3}
-  handSeconds: 0.3
+  handSeconds: 0.35
   tiers:
   - reach: 2
   - reach: 3

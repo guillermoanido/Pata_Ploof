@@ -31,7 +31,7 @@ coming back down it can never hurt you.
 | `Player/` | `PlayerCharacter` (the Unity side), `PlayerLogic` (everything the wizard does), `Staff`, `PlayerAnimator`, `RagdollBumps` |
 | `Player/Abilities/` | `Ability` and the spells, `AbilityBook` |
 | `Localization/` | `Loc`, `TextBook`, `LocalizedText` |
-| `World/` | `Item` (the base of everything the wizard touches), with subfolders: `Hazards/` (`Hazard`, `TripHazard`, `BouncyTrash`, `SteamVent`, `WaxDrop`, `WaxCandle`, `PressurePlate`), `Zones/` (`Zone`, `WindZone2D`, `WindTrap`, `SlipperyFloor`), `Pickups/` (`Pickup`, `TimedReward`), `Level/` (`ShopStop`, `LevelExit`, `MovingPlatform`, `VineAnchor`, `StaffPlatform`, `MagicDoor`), `Camera/` (`FollowCamera`) |
+| `World/` | `Item` (the base of everything the wizard touches), with subfolders: `Hazards/` (`Hazard`, `TripHazard`, `BouncyTrash`, `SteamVent`, `WaxDrop`, `WaxCandle`, `PressurePlate`), `Zones/` (`Zone`, `WindZone2D`, `WindTrap`, `SlipperyFloor`), `Pickups/` (`Pickup`, `TimedReward`), `Level/` (`ShopStop`, `LevelExit`, `MovingPlatform`, `VineAnchor`, `StaffPlatform`, `MagicDoor`, `Furniture`), `Camera/` (`FollowCamera`) |
 | `UI/` | `PlayerHud`, `HudSlot`, `FlingArrow`, `SelectedLook`, `ButtonPrompt`, `ButtonIcons`, `Ui` (with `BlipRow`) and the screens (`ChoiceScreen`, `SkillScreen`, `ControlsScreen`) |
 | `Menus/` | `MenuScreen`, `SettingsPanel` and the three menus |
 | `Editor/` | `PixelArtImporter` (import settings for everything in `Assets/Art/Sprites`; editor only, never in the build) |
@@ -211,7 +211,7 @@ The Staff is yours from the start and welded to E; everything else fights over t
 | --- | --- | --- |
 | **Staff** | Plant it at a ledge and climb down, or raise it against a wall and climb up. | longer staff |
 | **Mage Hand** | A spectral hand you swing from. | wider swing / climb it |
-| **Mage Slap** | A magical hand slaps a wall to shove you away from it, or knocks furniture flying. As often as you like. | a longer arm |
+| **Star Slap** | A magical star hand slaps a wall to shove you away from it, or knocks furniture flying. As often as you like. | a longer arm |
 | **Glide** | A canopy. It barely slows the drop - it carries you. | wider wing |
 | **Telekinesis** | A push of magic all round you: Magic Doors open, hazards fall asleep for a few seconds. | further, longer sleep |
 | **Falling Star** | While tumbling, dive into the ground and bounce back up on your feet. Once per level. | a three tile dive |
@@ -491,9 +491,11 @@ step, so neither gravity, wind nor the stick bends the line. It gives up early i
 going down at all, so wedging into a corner cannot leave them hanging in a dive forever. The trail
 is the `Falling Star Trail` child of PLAYER, a copy of Star Sparkles that streams behind.
 
-## Mage Slap: push off walls
+## Star Slap: push off walls
 
-**Falling Star saves you; Mage Slap moves you.** It has no charges, only a 0.4 s `cooldown`, so it
+The spell's id is `slap`; its script is `StarSlapAbility` and its asset `Abilities/Star Slap`.
+
+**Falling Star saves you; Star Slap moves you.** It has no charges, only a 0.4 s `cooldown`, so it
 can never be what stops a fall: it never pushes the wizard up, never changes how fast they are
 falling, and never restarts the fall count. What it can do is put them somewhere better, such as
 onto the ledge they are falling past.
@@ -509,6 +511,7 @@ boxes from their edge (2, then 3 at rank 2):
 | The floor | Nothing upward. Slapped diagonally, it shoves them sideways; straight down, nothing. |
 | `Furniture` | Every piece in the way is knocked flying, at `furnitureKnock` for a Mass of 1. |
 | Anything else | Hazards, wind, Bouncy Trash and pickups are passed straight through. |
+| Nothing in reach | The hand swats the air at full stretch. Nothing moves. |
 
 The shove only ever **tops up** speed: a wizard already flying away from the wall faster than the
 shove keeps their speed. The stick is locked for `steeringLockout` (0.2 s) after it, so a slap
@@ -516,21 +519,29 @@ carries the wizard instead of being steered straight back out of. It works stood
 while tumbling, where it steers the tumble but never ends it: getting back up is Falling Star's
 job. Not on the Staff, on a Mage Hand vine, or during a Falling Star dive.
 
-With nothing to slap that way, `CanCast` says no: the HUD slot greys, and a press waits
-`pressBuffer` (0.12 s) for a wall to come into reach. Only walls, floors and ceilings on the
-**Ground** layer push the wizard; the sweep is a skin smaller than the hitbox so the floor they
-stand on never counts as a wall.
+**Every press slaps.** `CanCast` only checks that the wizard is free to, so the hand always shows,
+even when it only swats the air. Only walls, floors and ceilings on the **Ground** layer push the
+wizard; the sweep is a skin smaller than the hitbox so the floor they stand on never counts as a
+wall.
 
-**The hand** is `Mage Slap Hand.prefab`, spawned where the slap lands, turned to face it, and
-removed after `handSeconds` (0.3 s). Its `Look` is a copy of Star Sparkles until you draw a hand:
-put it in the `Look`, **pointing right**, with the palm on the prefab's root. Left slaps mirror it,
-so the thumb stays on top.
+**The hand** is `Star Slap Hand.prefab`, spawned where the slap lands, turned to face it, and
+removed after `handSeconds` (0.35 s):
+
+```
+Star Slap Hand      root = where the hand lands
+├── Look            the hand: Art/Placeholders/Star Slap Hand.png until you draw your own
+└── Sparkles        a small copy of Star Sparkles, the burst on impact
+```
+
+Draw your hand **pointing right**, and set the `Look` so the fingertips sit on the root (the
+placeholder is moved a quarter box left for that). Left slaps mirror the whole prefab, so the thumb
+stays on top. Keep its sorting order above the wizard's (6); the placeholder uses 8.
 
 ### Furniture
 
 `Assets/Prefabs/Furniture` holds a prefab per sprite on `Art/Sprites/Muebles.png`: Teapot,
 Armchair, Side Table, Bookcase, Chest, Crystal Ball, Sofa, Gramophone and Lantern. **Furniture is
-decoration**: the wizard walks straight through it, and nothing stands on it. A Mage Slap is the only
+decoration**: the wizard walks straight through it, and nothing stands on it. A Star Slap is the only
 thing that moves it.
 
 ```
@@ -740,7 +751,7 @@ numbers (the slap and the trail do). It is used for:
 
 - **Hand Hold:** the `Glow Look`, stars around the knot while Mage Hand can reach it.
 - **Every hazard:** the `Asleep Look`, stars around it while Telekinesis holds it asleep.
-- **Mage Slap Hand:** the `Look`, a small burst where the hand lands.
+- **Star Slap Hand:** the `Sparkles`, a small burst where the hand lands.
 - **PLAYER:** the `Falling Star Trail`, streaming behind the dive.
 
 The other placeholders are plain shapes in `Assets/Art/Placeholders`:
@@ -783,12 +794,39 @@ go through `SkillScreen.OpenInLevel`.
 ## Prefabs
 
 **Wooden Platform** (`Assets/Prefabs/Wooden Platform.prefab`) is solid planks on the Ground layer
-with a `StaffPlatform`. Stood on one, a **tap** of the staff button pushes the wizard down through
-the planks: `Movement.TryDropThroughFloor` switches the collider off, the fall is counted from the
-planks as usual, and the planks shut again the moment the wizard is clear underneath. It only
-happens when everything under the wizard's feet is a staff platform, so standing half on stone
-does nothing. The art is the `Planks` child (your `Wood Platform` sprite, native size); put an
-opened version in **Open Look** if you draw one. A longer platform is several side by side.
+with a `StaffPlatform` on them. **Both ends of the planks work exactly like the edge of a
+ledge.**
+
+```
+Wooden Platform     Box Collider 2D (the planks, solid, on Ground) and StaffPlatform
+└── Planks          your Wood Platform sprite, native size
+```
+
+A tap of the staff button locks the staff looking down, as it does before a ledge. While it is
+locked and the wizard stands on a wooden platform, the staff is planted straight down at the
+**nearest end** of the planks under their feet, and the wizard climbs down it as they would off a
+ledge: they swing over onto the pole, push down to slide, hold down at the bottom to let go, push
+up at the top to step back onto the planks. Lock it first and walk onto a platform, or lock it
+while stood on one: it goes the moment both are true, and going down unlocks the staff again.
+
+A longer platform is several one-box pieces side by side, so it has an edge every box: where two
+pieces meet, their edges are in the same place, and whichever edge is closest to the wizard wins.
+Stood anywhere on a platform, the nearest edge is never more than half a box away.
+
+**How it is wired.** Each physics step `PlayerLogic.GoDownWhileLookingDown` checks the lock and
+tries `TryGoDownPlatformEdge` first, then `TryTakeLedge` (the ordinary ledge climb-down).
+`Movement.TryFindPlatformEdge` looks at what is under the wizard's feet with the same probe the
+ground check uses, takes every `StaffPlatform` there, and keeps the edge nearest the wizard.
+`Staff.Pole.TryPlantThroughFloor` plants the pole at that edge with its top flush with the planks,
+and measures the reach from **under** the planks so they never cut it short. Nothing checks
+whether the wizard fits: like a ledge, another platform or floor below only stops the climb just
+above it. The wizard is kinematic on the pole and slides through the solid planks, and stepping off
+at the top puts them back on solid wood.
+
+**One safety rule.** An edge that sits flush against a wall (anything solid on the Ground layer
+just past the end of the planks that is not another wooden platform) would slide the wizard down
+inside the wall. `StepAwayFromWall` moves the pole half the wizard's width back onto the planks
+there, so they go down beside the wall instead of into it.
 
 Everything below is a plain object you drag in. All the art is Unity's built-in Square tinted a
 flat colour, so each one is visible the moment it lands and is waiting for a sprite of yours.
@@ -808,8 +846,8 @@ flat colour, so each one is visible the moment it lands and is waiting for a spr
 | `Hand Hold` | The knot Mage Hand catches. | Default |
 | `Magic Door` | `MagicDoor`: a solid door, one box wide and two tall, that Telekinesis opens for good. Put your art in its Closed Look and Open Look children. | **Ground** |
 | `Stone Wall` | A one-box stone block to stand on. It was the old Wall Growth spell's block; now it is a plain level piece. | **Ground** |
-| `Mage Slap Hand` | The hand Mage Slap shows where it lands. Already wired into the spell; not for placing by hand. | Default |
-| `Furniture/…` | Decoration a Mage Slap knocks flying: the wizard walks through it. See *Mage Slap > Furniture*. | Default |
+| `Star Slap Hand` | The hand Star Slap shows where it lands. Already wired into the spell; not for placing by hand. | Default |
+| `Furniture/…` | Decoration a Star Slap knocks flying: the wizard walks through it. See *Star Slap > Furniture*. | Default |
 | `Star Sparkles` | Stars hanging around whatever it sits on. The stand-in for any effect without art yet; scale it to fit. | Default |
 | `Level Exit` | The bottom. Marks the level completed and opens the Level Select. | Default |
 

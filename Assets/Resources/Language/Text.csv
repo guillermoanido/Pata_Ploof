@@ -65,10 +65,10 @@ ability.hand.name,Telekinesis,Telequinesis
 ability.hand.desc,A wave of magic that opens magic doors and puts nearby hazards to sleep.,Una onda de magia que abre las puertas mágicas y adormece a los peligros cercanos.
 ability.hand.upgrade.0.title,Deeper sleep,Sueño profundo
 ability.hand.upgrade.0.desc,Wider reach and longer sleep.,Más alcance y sueño más largo.
-ability.slap.name,Mage Slap,Manotazo mágico
-ability.slap.desc,"A magical hand that slaps walls to push you away, it can also shove furniture around.","Una mano mágica que golpea las paredes para empujarte, también puede mover muebles."
+ability.slap.name,Star Slap,Manotazo estelar
+ability.slap.desc,"A magical star hand that slaps walls to push you away, it can also shove furniture around.","Una mano estelar que golpea las paredes para empujarte, también puede mover muebles."
 ability.slap.upgrade.0.title,Longer arm,Brazo más largo
-ability.slap.upgrade.0.desc,Your magical hand reaches further.,Tu mano mágica llega más lejos.
+ability.slap.upgrade.0.desc,Your star hand reaches further.,Tu mano estelar llega más lejos.
 settings.controls,Controls,Controles
 controls.title,Controls,Controles
 controls.keyboard,Keyboard,Teclado

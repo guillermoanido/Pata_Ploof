@@ -5,78 +5,23 @@ namespace FallingWizard.World
     [RequireComponent(typeof(Collider2D))]
     public class StaffPlatform : MonoBehaviour
     {
-        [Header("Opening")]
-        [Tooltip("Longest the planks stay open once the wizard pushes through with the staff, in " +
-                 "seconds. They normally shut the moment the wizard is clear underneath; this is " +
-                 "only a safety net, and they still wait until nobody is inside them.")]
-        [Min(0f)] public float mostSecondsOpen = 1.5f;
+        const int LeftSide = -1;
+        const int RightSide = 1;
 
-        [Header("Looks")]
-        [Tooltip("Shown while the planks are shut. A child object. Leave it empty for none.")]
-        public GameObject closedLook;
+        Collider2D planks;
 
-        [Tooltip("Shown while the wizard is passing through. A child object. Leave it empty and " +
-                 "the closed look simply stays.")]
-        public GameObject openLook;
+        public float Bottom => planks.bounds.min.y;
 
-        Collider2D floor;
-        Collider2D passenger;
-        Bounds shutBounds;
-        float giveUpAt;
+        public float Middle => planks.bounds.center.y;
 
-        public bool IsOpen => passenger != null;
+        void Awake() => planks = GetComponent<Collider2D>();
 
-        void Awake()
+        public int NearestSideTo(float x)
         {
-            floor = GetComponent<Collider2D>();
-            ShowOpen(false);
+            Bounds box = planks.bounds;
+            return x - box.min.x <= box.max.x - x ? LeftSide : RightSide;
         }
 
-        void FixedUpdate()
-        {
-            if (IsOpen && CanShut())
-                Shut();
-        }
-
-        public void LetThrough(Collider2D wizardHull)
-        {
-            if (IsOpen || wizardHull == null)
-                return;
-
-            shutBounds = floor.bounds;
-            passenger = wizardHull;
-            giveUpAt = Time.time + mostSecondsOpen;
-
-            floor.enabled = false;
-            ShowOpen(true);
-        }
-
-        bool CanShut()
-        {
-            Bounds wizard = passenger.bounds;
-
-            if (wizard.max.y < shutBounds.min.y)
-                return true;
-
-            return Time.time >= giveUpAt && !wizard.Intersects(shutBounds);
-        }
-
-        void Shut()
-        {
-            passenger = null;
-            floor.enabled = true;
-            ShowOpen(false);
-        }
-
-        void ShowOpen(bool isOpen)
-        {
-            if (openLook == null)
-                return;
-
-            openLook.SetActive(isOpen);
-
-            if (closedLook != null)
-                closedLook.SetActive(!isOpen);
-        }
+        public float EdgeOn(int side) => side < 0 ? planks.bounds.min.x : planks.bounds.max.x;
     }
 }

@@ -133,6 +133,8 @@ namespace FallingWizard.Player
 
             const float CarrierProbe = 0.05f;
 
+            const float UnderFloorGap = 0.02f;
+
             const float Half = 0.5f;
 
             const float NotMounting = -1f;
@@ -367,6 +369,19 @@ namespace FallingWizard.Player
                 return true;
             }
 
+            public bool TryPlantThroughFloor(int wielderFacing, float poleX, float floorBottomY)
+            {
+                if (!HasPole || !HasWielder)
+                    return false;
+
+                Face(wielderFacing);
+
+                float surfaceY = wielder.position.y - WielderFeetOffset;
+
+                return TryHangLadder(poleX, floorBottomY - UnderFloorGap,
+                    new Vector2(poleX, surfaceY - CarrierProbe), Epsilon);
+            }
+
             public StaffHold Slide(float lean, float fixedDeltaTime)
             {
                 if (!IsPlanted || !HasWielder || Mode != StaffMode.Ladder)
@@ -586,25 +601,31 @@ namespace FallingWizard.Player
 
                 Face(wielderFacing);
 
+                float surfaceY = wielder.position.y - WielderFeetOffset;
+
+                return TryHangLadder(edgeX + facing * lipClearance, surfaceY,
+                    new Vector2(edgeX - facing * CarrierProbe, surfaceY - CarrierProbe), Epsilon);
+            }
+
+            bool TryHangLadder(float poleX, float clearBelowY, Vector2 groundPoint, float leastReach)
+            {
                 anchor = wielder.position;
                 depth = 0f;
                 dropTimer = 0f;
 
                 float surfaceY = anchor.y - WielderFeetOffset;
-                float topAboveOrigin = MeasureTopAboveOrigin();
 
-                PlantPoleAt(edgeX + facing * lipClearance, surfaceY - topAboveOrigin,
-                    Quaternion.identity);
+                PlantPoleAt(poleX, surfaceY - MeasureTopAboveOrigin(), Quaternion.identity);
 
-                reach = FindReachThatFits(MeasureReach() + HangBelowTip);
+                reach = FindReachThatFits(MeasureReach() + HangBelowTip, clearBelowY);
 
-                if (reach <= Epsilon)
+                if (reach <= leastReach)
                 {
                     ShoulderPole();
                     return false;
                 }
 
-                RideOn(new Vector2(edgeX - facing * CarrierProbe, surfaceY - CarrierProbe));
+                RideOn(groundPoint);
                 HangWielderOnTheLadder();
                 return true;
             }
@@ -633,15 +654,17 @@ namespace FallingWizard.Player
                 return size.y * Mathf.Abs(poleTransform.lossyScale.y);
             }
 
-            float FindReachThatFits(float rawReach)
+            float FindReachThatFits(float rawReach, float clearBelowY)
             {
                 if (rawReach <= Epsilon)
                     return 0f;
 
                 float surfaceY = anchor.y - WielderFeetOffset;
-                var origin = new Vector2(plantedPosition.x, surfaceY);
+                var origin = new Vector2(plantedPosition.x, clearBelowY);
+                float rayLength = rawReach - (surfaceY - clearBelowY);
 
-                if (Physics2D.Raycast(origin, Vector2.down, GroundFilter, Rays, rawReach) == 0)
+                if (rayLength <= 0f ||
+                    Physics2D.Raycast(origin, Vector2.down, GroundFilter, Rays, rayLength) == 0)
                     return rawReach;
 
                 return Mathf.Clamp(surfaceY - Rays[0].point.y, 0f, rawReach);
