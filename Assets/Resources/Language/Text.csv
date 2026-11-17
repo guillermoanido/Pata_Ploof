@@ -50,7 +50,7 @@ ability.glide.upgrade.0.desc,Your hat grows wider and glides better.,Tu sombrero
 ability.star.name,Falling Star,Estrella fugaz
 ability.star.desc,"While tumbling, dive into the ground like a falling star and bounce back up. Once per level.","Si caes dando vueltas, lánzate al suelo como estrella fugaz y rebota. Una vez por nivel."
 ability.star.upgrade.0.title,Longer dive,Picada más larga
-ability.star.upgrade.0.desc,Your dive goes three tiles deep.,Tu picada llega a tres casillas.
+ability.star.upgrade.0.desc,Your dive goes two tiles deep.,Tu picada llega a dos casillas.
 ability.vine.name,Mage Hand,Mano de mago
 ability.vine.desc,"Call down a spectral hand to swing on, press the button again to let go.","Haz bajar una mano espectral para columpiarte, presiona otra vez el botón para soltarte."
 ability.vine.upgrade.0.title,Wider swing,Vaivén más amplio

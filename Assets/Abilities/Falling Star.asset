@@ -30,11 +30,11 @@ MonoBehaviour:
   upgrades:
   - cost: 3
     title: Longer dive
-    description: Your dive goes three tiles deep.
+    description: Your dive goes two tiles deep.
   diveAngle: 45
   diveSpeed: 12
   bounceHeight: 2
   bounceOnward: 2
   tiers:
+  - diveDepth: 1.25
   - diveDepth: 2
-  - diveDepth: 3

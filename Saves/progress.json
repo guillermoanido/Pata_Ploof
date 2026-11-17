@@ -6,15 +6,11 @@
         "staff",
         "star",
         "slap",
-        "hand"
+        "glide"
     ],
     "ranks": [
         {
-            "key": "cloud",
-            "rank": 1
-        },
-        {
-            "key": "hand",
+            "key": "glide",
             "rank": 1
         },
         {

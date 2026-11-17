@@ -102,10 +102,11 @@ namespace FallingWizard.Player
         [System.Serializable]
         public class Tier : ITier
         {
-            [Tooltip("How far down the dive reaches at this rank, in boxes. The ground has to be " +
-                     "within this many tiles below you when you cast, or the dive gives up there " +
-                     "and you go on tumbling, and the landing hurts as normal.")]
-            [Min(ShallowestDepth)] public float diveDepth = 2f;
+            [Tooltip("How far down the dive reaches at this rank, in boxes. This IS the window: " +
+                     "the ground has to be within this many tiles below you when you cast, or the " +
+                     "dive gives up there and you go on tumbling, and the landing hurts as normal. " +
+                     "Smaller is a tighter, harder save.")]
+            [Min(ShallowestDepth)] public float diveDepth = 1.25f;
 
             public void Validate() => diveDepth = Mathf.Max(ShallowestDepth, diveDepth);
         }

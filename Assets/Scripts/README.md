@@ -214,7 +214,7 @@ The Staff is yours from the start and welded to E; everything else fights over t
 | **Star Slap** | A magical star hand slaps a wall to shove you away from it, or knocks furniture flying. As often as you like. | a longer arm |
 | **Glide** | A canopy. It barely slows the drop - it carries you. | wider wing |
 | **Telekinesis** | A push of magic all round you: Magic Doors open, hazards fall asleep for a few seconds. | further, longer sleep |
-| **Falling Star** | While tumbling, dive into the ground and bounce back up on your feet. Once per level. | a three tile dive |
+| **Falling Star** | While tumbling, dive into the ground and bounce back up on your feet. Once per level. | a two tile dive |
 | **Fling** | Hold to aim up or down (never more than 45° up), let go to be thrown into a tumble. | harder throw |
 
 Each spell's picture is its asset's **Icon**, from `Assets/Art/Sprites/Icons/Spells`: 10 x 10
@@ -472,7 +472,7 @@ dim, through each Button's **Disabled Color**. Change those tints on the Button 
 **It only casts while the wizard is tumbling** (`PlayerState.Ragdoll`), once per level. The press
 throws them head first along a diagonal: `diveAngle` (45°) below level, at `diveSpeed` (12 boxes a
 second), towards the stick if it is held, otherwise the way they were already going. The dive
-lasts until they have dropped `diveDepth` boxes (2, then 3 at rank 2).
+lasts until they have dropped `diveDepth` boxes (1.25, then 2 at rank 2). That depth **is** the window: the ground has to be within it when they cast. Tighten or loosen it per rank on the Falling Star asset.
 
 - **Ground inside the dive: saved.** `UpdateRagdoll` checks for ground *before* `CheckLanding`, so
   the landing is thrown away (`Movement.ForgetLanding`) instead of billed. The tumble ends on the
@@ -827,6 +827,18 @@ at the top puts them back on solid wood.
 just past the end of the planks that is not another wooden platform) would slide the wizard down
 inside the wall. `StepAwayFromWall` moves the pole half the wizard's width back onto the planks
 there, so they go down beside the wall instead of into it.
+
+**The planks have rounded corners**, for the same reason as `Stone Wall` (see *The grid line is
+not the floor*): the collider is **0.9 × 0.0875 with a 0.05 edge radius**, which still comes to one
+box wide and 0.1875 tall with its top flush where it was. Two plank pieces side by side, or a plank
+beside a floor tile, otherwise meet at a sharp vertical face the wizard walks into and stops dead.
+Keep `size + 2 × edgeRadius` at one box if you resize it.
+
+**A platform the staff will not go down through** has something solid right under its planks.
+Check the level's Composite Collider 2D first: its **Generation Type must be Synchronous**. On
+Manual, the collision is only rebuilt when someone presses Regenerate Geometry, so tiles that were
+painted and later erased still collide, invisibly. That is what blocked the staff under two
+platforms in `1-1`.
 
 Everything below is a plain object you drag in. All the art is Unity's built-in Square tinted a
 flat colour, so each one is visible the moment it lands and is waiting for a sprite of yours.
