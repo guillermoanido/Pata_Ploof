@@ -162,8 +162,6 @@ namespace FallingWizard.Localization
             public const string SkillHintPick = "skill.hint.pick";
             public const string SkillHintMove = "skill.hint.move";
             public const string SkillHintLocked = "skill.hint.locked";
-            public const string SkillOn = "skill.on";
-            public const string SkillBench = "skill.bench";
             public const string SkillNext = "skill.next";
             public const string SkillLearn = "skill.learn";
             public const string SkillMastered = "skill.mastered";

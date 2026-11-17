@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -8,21 +9,6 @@ namespace FallingWizard.UI
 {
     public static class Ui
     {
-        public static readonly Color Ink = new Color(0.31f, 0.12f, 0.23f);
-        public static readonly Color FadedInk = new Color(0.53f, 0.22f, 0.37f);
-
-        public static readonly Color ClothInk = new Color(1f, 0.95f, 0.86f);
-        public static readonly Color FadedClothInk = new Color(0.93f, 0.76f, 0.6f);
-
-        public static readonly Color Panel = Color.white;
-        public static readonly Color Card = new Color(0.82f, 0.78f, 0.82f, 1f);
-        public static readonly Color CardLit = Color.white;
-
-        public static readonly Color Accent = new Color(0.91f, 0.87f, 0.37f);
-        public static readonly Color Warning = new Color(0.85f, 0.34f, 0.39f);
-
-        public static readonly Color PipEmpty = new Color(0.53f, 0.22f, 0.37f);
-
         public static bool IsModalOpen { get; private set; }
 
         public static void ClaimScreen() => IsModalOpen = true;
@@ -35,8 +21,8 @@ namespace FallingWizard.UI
 
             if (prefab == null)
             {
-                Debug.LogError($"There is no '{prefabName}' prefab in a Resources folder. Run " +
-                               "Pata Ploof > Build Menu Prefabs once to make it.");
+                Debug.LogError($"There is no '{prefabName}' prefab in a Resources folder. The " +
+                               "screens are prefabs in Assets/Resources - put it back from git.");
                 return null;
             }
 
@@ -102,6 +88,69 @@ namespace FallingWizard.UI
 
             var eventSystemObject = new GameObject("Event System", typeof(EventSystem));
             eventSystemObject.AddComponent<InputSystemUIInputModule>();
+        }
+    }
+
+    [System.Serializable]
+    public class BlipRow
+    {
+        [Tooltip("One blip, copied once per blip needed and placed where it sits. It stays " +
+                 "switched off itself, so restyle it and every copy follows.")]
+        public GameObject template;
+
+        [Tooltip("A child of the blip, shown while that blip is filled and hidden while it is " +
+                 "empty. Put the filled art here and the empty art on the blip itself.")]
+        public GameObject filledLook;
+
+        readonly List<GameObject> copies = new List<GameObject>();
+        readonly List<GameObject> fills = new List<GameObject>();
+
+        public void Show(int count, int filled)
+        {
+            if (template == null)
+                return;
+
+            template.SetActive(false);
+
+            if (copies.Count != count)
+                Rebuild(count);
+
+            for (int i = 0; i < fills.Count; i++)
+            {
+                if (fills[i] != null)
+                    fills[i].SetActive(i < filled);
+            }
+        }
+
+        public BlipRow CopyInto(GameObject copy, GameObject original) => new BlipRow
+        {
+            template = SameObjectIn(copy, original, template),
+            filledLook = SameObjectIn(copy, original, filledLook),
+        };
+
+        static GameObject SameObjectIn(GameObject copy, GameObject original, GameObject part)
+        {
+            if (part == null)
+                return null;
+
+            Transform match = Ui.SameChildIn(copy, original, part.transform);
+            return match != null ? match.gameObject : null;
+        }
+
+        void Rebuild(int count)
+        {
+            foreach (GameObject copy in copies)
+                Object.Destroy(copy);
+
+            copies.Clear();
+            fills.Clear();
+
+            for (int i = 0; i < count; i++)
+            {
+                GameObject copy = Ui.CopyOf(template);
+                copies.Add(copy);
+                fills.Add(SameObjectIn(copy, template, filledLook));
+            }
         }
     }
 }

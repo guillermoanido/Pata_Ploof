@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: glide
   displayName: Glide
-  description: Throw out a canopy. It barely slows the drop - it carries you.
-  icon: {fileID: 0}
+  description: Open your magical hat like a wing to glide, ride the wind to survive bigger falls.
+  icon: {fileID: 21300000, guid: 6206b3ccbb5f4fd9ab18a25083064092, type: 3}
   cost: 2
   locked: 0
   fixedSlot: -1
@@ -28,8 +28,8 @@ MonoBehaviour:
   collectedEffect: {fileID: 0}
   upgrades:
   - cost: 2
-    title: Wider wing
-    description: Carries you half again as far across a fall.
+    title: Wider hat
+    description: Your hat grows wider and glides better.
   fallSpeed: 0.5
   airSpeed: 1.9
   airControl: 1.6

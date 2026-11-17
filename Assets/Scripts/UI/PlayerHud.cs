@@ -36,8 +36,9 @@ namespace FallingWizard.UI
                  "player can see there is room for more.")]
         public bool showEmptySlots = true;
 
-        [Tooltip("Print the button under each spell. It follows whichever device is in use, so it " +
-                 "reads E on a keyboard and X on a pad without anyone touching a setting.")]
+        [Tooltip("Show the button under each spell, as a picture from Resources/Button Icons. It " +
+                 "follows whichever device is in use, so it shows the E key on a keyboard and the " +
+                 "pad button on a controller without anyone touching a setting.")]
         public bool showButtons = true;
 
         public Color emptyTint = new Color(1f, 1f, 1f, 0.18f);
@@ -81,8 +82,6 @@ namespace FallingWizard.UI
                                "HudSlot to copy, which stays switched off.", this);
         }
 
-        void OnEnable() => Core.Controls.SchemeChanged += RefreshButtons;
-
         void LateUpdate()
         {
             BindToCurrentWizard();
@@ -102,8 +101,6 @@ namespace FallingWizard.UI
             RefreshSpells();
             ShowHealth(boundWizard.Logic.health);
         }
-
-        void OnDisable() => Core.Controls.SchemeChanged -= RefreshButtons;
 
         void BindToCurrentWizard()
         {
@@ -142,7 +139,6 @@ namespace FallingWizard.UI
 
             builtVersion = boundWizard.Logic.spellbook.Version;
             BuildSpellBar();
-            RefreshButtons();
         }
 
         void BuildSpellBar()
@@ -210,18 +206,6 @@ namespace FallingWizard.UI
                 blip.gameObject.SetActive(true);
                 blips.Add(blip);
             }
-        }
-
-        void RefreshButtons()
-        {
-            if (boundWizard == null)
-                return;
-
-            IReadOnlyList<PlayerLogic.Spellbook.Slot> spellbookSlots =
-                boundWizard.Logic.spellbook.Slots;
-
-            for (int i = 0; i < slots.Count && i < spellbookSlots.Count; i++)
-                slots[i].ShowButton(spellbookSlots[i], showButtons);
         }
     }
 }

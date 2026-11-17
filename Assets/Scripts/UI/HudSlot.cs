@@ -1,6 +1,5 @@
 using System;
 using FallingWizard.Player;
-using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -18,17 +17,15 @@ namespace FallingWizard.UI
                  "Filled, or it will sit there at full and never move.")]
         public Image charge;
 
-        [Tooltip("The button to press. Hidden for passive spells, which have no button.")]
-        public TextMeshProUGUI button;
+        [Tooltip("The button to press, shown as a picture from Resources/Button Icons. Hidden for " +
+                 "passive spells, which have no button.")]
+        public ButtonPrompt prompt;
 
-        [Tooltip("Casts left before the next rest, for a spell that only has so many. Blank for " +
-                 "everything else.")]
-        public TextMeshProUGUI uses;
+        [Tooltip("One blip per cast left this level, for a spell that only has so many. Nothing " +
+                 "shows for spells without a limit.")]
+        public BlipRow charges = new BlipRow();
 
         [NonSerialized] InputAction shownAction;
-        [NonSerialized] string shownScheme;
-        [NonSerialized] bool wasWanted;
-        [NonSerialized] bool hasShownBefore;
         [NonSerialized] Sprite emptyIcon;
 
         void Awake()
@@ -49,30 +46,25 @@ namespace FallingWizard.UI
                 return;
 
             ShowIcon(slot, hud, wizard, filled);
-            ShowUses(slot, filled);
+            ShowCharges(slot, filled);
             ShowCharge(slot, hud, wizard, filled);
         }
 
-        public void ShowButton(PlayerLogic.Spellbook.Slot slot, bool show)
+        void ShowButton(PlayerLogic.Spellbook.Slot slot, bool show)
         {
-            if (button == null)
+            if (prompt == null)
                 return;
 
             bool passive = slot.Ability != null && slot.Ability.IsPassive;
             bool wanted = show && slot.Action != null && !passive;
-            string scheme = Core.Controls.Scheme;
 
-            if (IsAlreadyShowing(wanted, slot.Action, scheme))
+            prompt.gameObject.SetActive(wanted);
+
+            if (!wanted || slot.Action == shownAction)
                 return;
 
-            hasShownBefore = true;
-            wasWanted = wanted;
             shownAction = slot.Action;
-            shownScheme = scheme;
-
-            button.enabled = wanted;
-
-            button.text = wanted ? Core.Controls.Glyph(slot.Action) : string.Empty;
+            prompt.Show(slot.Action);
         }
 
         void ShowIcon(PlayerLogic.Spellbook.Slot slot, PlayerHud hud, PlayerLogic wizard,
@@ -99,15 +91,11 @@ namespace FallingWizard.UI
             return hud.notReadyTint;
         }
 
-        void ShowUses(PlayerLogic.Spellbook.Slot slot, bool filled)
+        void ShowCharges(PlayerLogic.Spellbook.Slot slot, bool filled)
         {
-            if (uses == null)
-                return;
-
             bool counted = filled && slot.Ability.usesPerLevel > 0;
 
-            uses.enabled = counted;
-            uses.text = counted ? slot.UsesLeft.ToString() : string.Empty;
+            charges.Show(counted ? slot.MaxUses : 0, slot.UsesLeft);
         }
 
         void ShowCharge(PlayerLogic.Spellbook.Slot slot, PlayerHud hud, PlayerLogic wizard,
@@ -136,9 +124,5 @@ namespace FallingWizard.UI
 
             return 0f;
         }
-
-        bool IsAlreadyShowing(bool wanted, InputAction action, string scheme) =>
-            hasShownBefore && wanted == wasWanted && action == shownAction &&
-            scheme == shownScheme;
     }
 }

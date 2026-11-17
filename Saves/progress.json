@@ -4,17 +4,13 @@
     "bonusHearts": 0,
     "loadout": [
         "staff",
+        "star",
         "cloud",
-        "hand",
-        "star"
+        ""
     ],
     "ranks": [
         {
             "key": "cloud",
-            "rank": 1
-        },
-        {
-            "key": "hand",
             "rank": 1
         },
         {

@@ -14,9 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: cloud
   displayName: Cloud Step
-  description: In the air, make a little cloud under your feet and land on it. It
-    melts once you step off.
-  icon: {fileID: 0}
+  description: Summon a little cloud under your feet in mid-air to land on. Two per level.
+  icon: {fileID: 21300000, guid: b58e8b6748c54c6e8db32971b7b2f505, type: 3}
   cost: 2
   locked: 0
   fixedSlot: -1
@@ -31,6 +30,6 @@ MonoBehaviour:
   upgrades:
   - cost: 2
     title: Third cloud
-    description: One more cloud every level.
+    description: Get one more cloud every level.
   cloudPrefab: {fileID: 1610000001, guid: b5f6b03a1fb148b7bd3a8c98e01777ef, type: 3}
   secondsAfterLeaving: 0.25

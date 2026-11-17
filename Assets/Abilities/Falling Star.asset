@@ -14,9 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: star
   displayName: Falling Star
-  description: While tumbling, dive into the ground and bounce back up on your feet.
-    Miss the ground and the fall hurts as usual. Once per level.
-  icon: {fileID: 0}
+  description: While tumbling, dive into the ground like a falling star and bounce back up. Once per level.
+  icon: {fileID: 21300000, guid: d216fb6b3cd541788779539dff138b52, type: 3}
   cost: 4
   locked: 0
   fixedSlot: -1
@@ -31,7 +30,7 @@ MonoBehaviour:
   upgrades:
   - cost: 3
     title: Longer dive
-    description: Dives three tiles deep instead of two.
+    description: Your dive goes three tiles deep.
   diveAngle: 45
   diveSpeed: 12
   bounceHeight: 2

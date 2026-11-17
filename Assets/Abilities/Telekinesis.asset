@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: hand
   displayName: Telekinesis
-  description: Push magic out all around you. Magic doors swing open and nearby hazards fall asleep for a few seconds.
-  icon: {fileID: 0}
+  description: A wave of magic that opens magic doors and puts nearby hazards to sleep.
+  icon: {fileID: 21300000, guid: ae67407472fa4d799f3eb49095585cb3, type: 3}
   cost: 4
   locked: 0
   fixedSlot: -1
@@ -29,7 +29,7 @@ MonoBehaviour:
   upgrades:
   - cost: 2
     title: Deeper sleep
-    description: Reaches further, and hazards sleep for longer.
+    description: Wider reach and longer sleep.
   tiers:
   - reach: 4
     sleepSeconds: 3

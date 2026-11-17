@@ -28,11 +28,9 @@ skill.noBook,No spellbook found at Assets/Resources/Spellbook.asset.,No hay grim
 skill.dive,Descend,Bajar
 skill.back,Back to the tower,De vuelta a la torre
 skill.hint.pick,"Pick a spell, then press the button you want it on.",Elige un hechizo y presiona el botón donde lo quieres.
-skill.hint.move,{0}: press {1} to move it.,{0}: presiona {1} para moverlo.
+skill.hint.move,{0}: press a spell button to put it there.,{0}: presiona un botón de hechizo para ponerlo ahí.
 skill.hint.locked,{0} is not learned yet.,Aún no lo aprendiste {0}.
-skill.on,On {0}.,En {0}.
-skill.bench,On the bench.,En la banca.
-skill.next,{0}  Next: {1} - {2},{0}  Sigue: {1} - {2}
+skill.next,Next level: {0},Siguiente nivel: {0}
 skill.learn,Learn - {0},Aprender - {0}
 skill.mastered,Mastered,Dominado
 skill.learned,Learned,Aprendido
@@ -42,35 +40,35 @@ death.blurb,"Everything you carried down is gone: your Magical Scrap, your spell
 death.startAgain,Start again,Empezar de nuevo
 death.mainMenu,Main menu,Menú principal
 ability.fling.name,Fling,Impulso
-ability.fling.desc,"Hold to aim up or down, let go to be thrown into a tumble.","Mantén presionado para apuntar arriba o abajo, suelta para salir lanzado dando vueltas."
-ability.fling.upgrade.0.title,Harder throw,Tiro más fuerte
-ability.fling.upgrade.0.desc,Throws you further.,Te lanza más lejos.
+ability.fling.desc,"Summon a trusty hand to fling you into the air, hold the button to aim.","Invoca una mano fiel que te lanza por los aires, mantén presionado el botón para apuntar."
+ability.fling.upgrade.0.title,Stronger hand,Mano más fuerte
+ability.fling.upgrade.0.desc,Your magical hand gets stronger.,Tu mano mágica se hace más fuerte.
 ability.glide.name,Glide,Planeo
-ability.glide.desc,Throw out your hat to glide around.,Despliega tu sombrero para planear.
-ability.glide.upgrade.0.title,Wider hat gives more control.,El sombrero se agranda otorgando mayor control.
-ability.glide.upgrade.0.desc,Lets you grab wind better.,Permite utilizar mejor el viento.
+ability.glide.desc,"Open your magical hat like a wing to glide, ride the wind to survive bigger falls.","Abre tu sombrero mágico como un ala para planear, usa el viento para aguantar caídas más altas."
+ability.glide.upgrade.0.title,Wider hat,Sombrero más ancho
+ability.glide.upgrade.0.desc,Your hat grows wider and glides better.,Tu sombrero crece y planea mejor.
 ability.star.name,Falling Star,Estrella fugaz
-ability.star.desc,"While tumbling, dive into the ground and bounce back up on your feet. Miss the ground and the fall hurts as usual. Once per level.","Mientras caes dando vueltas, lánzate en picada contra el suelo y rebota de pie. Si no llegas al suelo, la caída duele como siempre. Una vez por nivel."
+ability.star.desc,"While tumbling, dive into the ground like a falling star and bounce back up. Once per level.","Si caes dando vueltas, lánzate al suelo como estrella fugaz y rebota. Una vez por nivel."
 ability.star.upgrade.0.title,Longer dive,Picada más larga
-ability.star.upgrade.0.desc,Dives three tiles deep instead of two.,La picada llega a tres casillas de profundidad en vez de dos.
+ability.star.upgrade.0.desc,Your dive goes three tiles deep.,Tu picada llega a tres casillas.
 ability.vine.name,Mage Hand,Mano de mago
-ability.vine.desc,"Reach out a spectral hand and swing from it, press the button to let go.","Saca una mano espectral y colúmpiate, presiona nuevamente el botón para soltarte."
-ability.vine.upgrade.0.title,Wider swing,Vaivén amplio
-ability.vine.upgrade.0.desc,The hand leans much further either side before it stops.,La mano se inclina mucho más a cada lado.
-ability.vine.upgrade.1.title,Up and down,Subir y bajar
-ability.vine.upgrade.1.desc,Climb the hand as well as swing on it.,"Además de columpiarte, puedes trepar por la mano."
+ability.vine.desc,"Call down a spectral hand to swing on, press the button again to let go.","Haz bajar una mano espectral para columpiarte, presiona otra vez el botón para soltarte."
+ability.vine.upgrade.0.title,Wider swing,Vaivén más amplio
+ability.vine.upgrade.0.desc,Your spectral hand swings wider.,Tu mano espectral se balancea más.
+ability.vine.upgrade.1.title,Climbing hand,Mano trepadora
+ability.vine.upgrade.1.desc,Climb up and down your spectral hand.,Sube y baja por tu mano espectral.
 ability.staff.name,Staff,Bastón
-ability.staff.desc,"Hold it up against a wall and climb, as high as the staff is long. At a ledge it goes over the lip and you climb down instead.","Apóyalo en un muro y trepa, tan alto como largo sea. En un borde lo clavas sobre el filo y bajas."
-ability.staff.upgrade.0.title,Longer staff,Bastón largo
-ability.staff.upgrade.0.desc,"Half again as long, so it climbs walls that used to be too tall and reaches drops that used to be too deep.",La mitad más largo: trepa muros que antes eran demasiado altos y llega a caídas más hondas.
+ability.staff.desc,A magical wooden staff that allows you to climb up or climb down surfaces.,Un bastón mágico de madera que te permite trepar o descender por las superficies.
+ability.staff.upgrade.0.title,Longer staff,Bastón más largo
+ability.staff.upgrade.0.desc,Get a longer staff.,Consigue un bastón más largo.
 ability.hand.name,Telekinesis,Telequinesis
-ability.hand.desc,Push magic out all around you. Magic doors swing open and nearby hazards fall asleep for a few seconds.,Empuja magia a tu alrededor. Las puertas mágicas se abren y los peligros cercanos se duermen unos segundos.
+ability.hand.desc,A wave of magic that opens magic doors and puts nearby hazards to sleep.,Una onda de magia que abre las puertas mágicas y adormece a los peligros cercanos.
 ability.hand.upgrade.0.title,Deeper sleep,Sueño profundo
-ability.hand.upgrade.0.desc,"Reaches further, and hazards sleep for longer.",Llega más lejos y los peligros duermen más tiempo.
+ability.hand.upgrade.0.desc,Wider reach and longer sleep.,Más alcance y sueño más largo.
 ability.cloud.name,Cloud Step,Paso de nube
-ability.cloud.desc,"In the air, make a little cloud under your feet and land on it. It melts once you step off.","En el aire, crea una pequeña nube bajo tus pies y aterriza en ella. Se deshace cuando te bajas."
+ability.cloud.desc,Summon a little cloud under your feet in mid-air to land on. Two per level.,Invoca una pequeña nube bajo tus pies en el aire para aterrizar en ella. Dos por nivel.
 ability.cloud.upgrade.0.title,Third cloud,Tercera nube
-ability.cloud.upgrade.0.desc,One more cloud every level.,Una nube más en cada nivel.
+ability.cloud.upgrade.0.desc,Get one more cloud every level.,Consigue una nube más por nivel.
 settings.controls,Controls,Controles
 controls.title,Controls,Controles
 controls.keyboard,Keyboard,Teclado
@@ -86,7 +84,6 @@ controls.skip,Skip cutscene,Saltar escena
 controls.menuMove,Navigate,Moverse
 controls.menuPick,Select,Elegir
 controls.menuBack,Back,Atrás
-controls.none,—,—
 controls.close,Back,Volver
 levels.top,Top level,Nivel superior
 levels.mid,Mid section,Sección media

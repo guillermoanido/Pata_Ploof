@@ -15,8 +15,6 @@ namespace FallingWizard.UI
     {
         const string PrefabName = "Skill Screen";
 
-        static readonly Color UnownedIconTint = new Color(1f, 1f, 1f, 0.3f);
-
         [Header("Rig")]
         public TextMeshProUGUI purse;
         public TextMeshProUGUI hint;
@@ -108,7 +106,7 @@ namespace FallingWizard.UI
             slotInputs = new InputAction[PlayerLogic.Spellbook.SlotCount];
 
             for (int i = 0; i < slotInputs.Length; i++)
-                slotInputs[i] = Core.Controls.Player(PlayerLogic.Spellbook.SlotActions[i]);
+                slotInputs[i] = FindSlotAction(i);
 
             if (book != null)
                 PlayerLogic.Spellbook.Seed(book);
@@ -149,7 +147,6 @@ namespace FallingWizard.UI
                 card.root.name = spell.displayName;
                 card.button.onClick.AddListener(() => Focus(spell));
                 card.action.onClick.AddListener(() => Act(spell));
-                card.BuildPips(spell.HasUpgrades ? spell.MaxRank : 0);
                 cards.Add(card);
             }
         }
@@ -203,20 +200,17 @@ namespace FallingWizard.UI
         void ShowSlot(SlotParts slot, int index)
         {
             Ability held = FindSpellInSlot(index);
-            bool locked = held != null && held.locked;
             bool hasIcon = held != null && held.icon != null;
 
-            slot.plate.interactable = !locked;
-            slot.plate.image.color = held != null ? Ui.CardLit : Ui.Card;
+            slot.plate.interactable = held == null || !held.locked;
 
             slot.icon.gameObject.SetActive(hasIcon);
             slot.icon.sprite = hasIcon ? held.icon : null;
 
-            slot.glyph.gameObject.SetActive(!hasIcon);
-            slot.glyph.text = GetSlotGlyph(index);
+            if (slot.prompt != null)
+                slot.prompt.Show(FindSlotAction(index));
 
-            slot.caption.text = held != null ? $"{GetSlotGlyph(index)}  {held.Name}" : GetSlotGlyph(index);
-            slot.caption.color = locked ? Ui.Warning : held != null ? Ui.Ink : Ui.FadedInk;
+            slot.caption.text = held != null ? held.Name : string.Empty;
         }
 
         void ShowCard(CardParts card)
@@ -224,21 +218,29 @@ namespace FallingWizard.UI
             Ability spell = card.spell;
             bool owned = Progress.Owns(spell.Key);
             int rank = Progress.Rank(spell.Key);
-            int slot = Progress.SlotHolding(spell.Key);
 
             card.button.interactable = owned;
-            card.button.image.color = slot >= 0 ? Ui.CardLit : Ui.Card;
 
             card.icon.sprite = spell.icon;
-            card.icon.color = owned ? Color.white : UnownedIconTint;
+            card.icon.enabled = spell.icon != null;
+            ShowLook(card.lockedLook, !owned);
+            ShowEquipped(card, Progress.SlotHolding(spell.Key));
 
             card.nameLabel.text = spell.Name;
-            card.nameLabel.color = owned ? Ui.ClothInk : Ui.FadedClothInk;
-            card.ShowPips(rank, owned ? Ui.Accent : Ui.FadedInk);
-
-            card.blurb.text = WriteBlurb(spell, owned, rank, slot);
+            card.pips.Show(spell.HasUpgrades ? spell.MaxRank : 0, rank);
+            card.blurb.text = WriteBlurb(spell, owned, rank);
 
             ShowAction(card, spell, owned, rank);
+        }
+
+        void ShowEquipped(CardParts card, int slot)
+        {
+            bool isEquipped = slot >= 0;
+
+            ShowLook(card.equippedLook, isEquipped);
+
+            if (isEquipped && card.equippedPrompt != null)
+                card.equippedPrompt.Show(FindSlotAction(slot));
         }
 
         void ShowAction(CardParts card, Ability spell, bool owned, int rank)
@@ -271,41 +273,19 @@ namespace FallingWizard.UI
                 return Loc.Get(Loc.Keys.SkillHintPick);
 
             if (Progress.Owns(picked.Key))
-                return Loc.Format(Loc.Keys.SkillHintMove, picked.Name, ListFreeButtons());
+                return Loc.Format(Loc.Keys.SkillHintMove, picked.Name);
 
             return Loc.Format(Loc.Keys.SkillHintLocked, picked.Name);
         }
 
-        string ListFreeButtons()
+        static string WriteBlurb(Ability spell, bool owned, int rank)
         {
-            var freeGlyphs = new List<string>();
+            Ability.Upgrade nextUpgrade = owned ? spell.NextUpgrade(rank) : null;
 
-            for (int i = 0; i < PlayerLogic.Spellbook.SlotCount; i++)
-            {
-                Ability held = FindSpellInSlot(i);
-
-                if (held == null || !held.locked)
-                    freeGlyphs.Add(GetSlotGlyph(i));
-            }
-
-            return string.Join(" ", freeGlyphs);
-        }
-
-        string WriteBlurb(Ability spell, bool owned, int rank, int slot)
-        {
-            if (!owned)
+            if (nextUpgrade == null)
                 return spell.Description;
 
-            Ability.Upgrade nextUpgrade = spell.NextUpgrade(rank);
-
-            string placement = slot >= 0
-                ? Loc.Format(Loc.Keys.SkillOn, GetSlotGlyph(slot))
-                : Loc.Get(Loc.Keys.SkillBench);
-
-            return nextUpgrade != null
-                ? Loc.Format(Loc.Keys.SkillNext, placement, spell.UpgradeTitle(rank),
-                             spell.UpgradeDescription(rank))
-                : $"{placement}  {spell.Description}";
+            return spell.Description + "\n" + Loc.Format(Loc.Keys.SkillNext, spell.UpgradeDescription(rank));
         }
 
         void Focus(Ability spell)
@@ -411,13 +391,18 @@ namespace FallingWizard.UI
         Ability FindSpellInSlot(int slot) =>
             book != null ? book.Find(Progress.EquippedIn(slot)) : null;
 
-        static string GetSlotGlyph(int slot)
+        static InputAction FindSlotAction(int slot)
         {
             if (slot < 0 || slot >= PlayerLogic.Spellbook.SlotActions.Length)
-                return string.Empty;
+                return null;
 
-            return Core.Controls.Glyph(
-                Core.Controls.Player(PlayerLogic.Spellbook.SlotActions[slot]));
+            return Core.Controls.Player(PlayerLogic.Spellbook.SlotActions[slot]);
+        }
+
+        static void ShowLook(GameObject look, bool isShown)
+        {
+            if (look != null)
+                look.SetActive(isShown);
         }
 
         [Serializable]
@@ -425,11 +410,14 @@ namespace FallingWizard.UI
         {
             public GameObject root;
             public Button plate;
+
+            [Tooltip("The spell in the slot. Hidden while the slot is empty.")]
             public Image icon;
 
-            [Tooltip("Shows the button's name when the slot holds no spell.")]
-            public TextMeshProUGUI glyph;
+            [Tooltip("Which button this slot is, as a picture.")]
+            public ButtonPrompt prompt;
 
+            [Tooltip("The name of the spell in the slot.")]
             public TextMeshProUGUI caption;
 
             public SlotParts Copy()
@@ -441,7 +429,7 @@ namespace FallingWizard.UI
                     root = copy,
                     plate = Ui.SameChildIn(copy, root, plate),
                     icon = Ui.SameChildIn(copy, root, icon),
-                    glyph = Ui.SameChildIn(copy, root, glyph),
+                    prompt = Ui.SameChildIn(copy, root, prompt),
                     caption = Ui.SameChildIn(copy, root, caption),
                 };
             }
@@ -456,11 +444,22 @@ namespace FallingWizard.UI
             public Button button;
 
             public Image icon;
+
+            [Tooltip("Shown while the spell is not learned yet, for example a padlock over the " +
+                     "icon. A child object, switched on and off.")]
+            public GameObject lockedLook;
+
+            [Tooltip("Shown while the spell sits in one of the slots. A child object, switched on " +
+                     "and off.")]
+            public GameObject equippedLook;
+
+            [Tooltip("Inside the Equipped Look: which button the spell is on, as a picture.")]
+            public ButtonPrompt equippedPrompt;
+
             public TextMeshProUGUI nameLabel;
 
-            [Tooltip("One upgrade pip, copied once per rank the spell can reach. It stays " +
-                     "switched off itself.")]
-            public Image pipTemplate;
+            [Tooltip("One pip per rank the spell can reach, filled up to the rank it has.")]
+            public BlipRow pips = new BlipRow();
 
             public TextMeshProUGUI blurb;
 
@@ -472,8 +471,6 @@ namespace FallingWizard.UI
 
             [NonSerialized] public Ability spell;
 
-            readonly List<Image> pips = new List<Image>();
-
             public CardParts Copy()
             {
                 GameObject copy = Ui.CopyOf(root);
@@ -483,29 +480,24 @@ namespace FallingWizard.UI
                     root = copy,
                     button = Ui.SameChildIn(copy, root, button),
                     icon = Ui.SameChildIn(copy, root, icon),
+                    lockedLook = SameObjectIn(copy, lockedLook),
+                    equippedLook = SameObjectIn(copy, equippedLook),
+                    equippedPrompt = Ui.SameChildIn(copy, root, equippedPrompt),
                     nameLabel = Ui.SameChildIn(copy, root, nameLabel),
-                    pipTemplate = Ui.SameChildIn(copy, root, pipTemplate),
+                    pips = pips.CopyInto(copy, root),
                     blurb = Ui.SameChildIn(copy, root, blurb),
                     action = Ui.SameChildIn(copy, root, action),
                     status = Ui.SameChildIn(copy, root, status),
                 };
             }
 
-            public void BuildPips(int count)
+            GameObject SameObjectIn(GameObject copy, GameObject part)
             {
-                if (pipTemplate == null)
-                    return;
+                if (part == null)
+                    return null;
 
-                pipTemplate.gameObject.SetActive(false);
-
-                for (int i = 0; i < count; i++)
-                    pips.Add(Ui.CopyOf(pipTemplate.gameObject).GetComponent<Image>());
-            }
-
-            public void ShowPips(int filled, Color lit)
-            {
-                for (int i = 0; i < pips.Count; i++)
-                    pips[i].color = i < filled ? lit : Ui.PipEmpty;
+                Transform match = Ui.SameChildIn(copy, root, part.transform);
+                return match != null ? match.gameObject : null;
             }
         }
 

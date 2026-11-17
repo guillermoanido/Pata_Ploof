@@ -32,9 +32,9 @@ coming back down it can never hurt you.
 | `Player/Abilities/` | `Ability` and the spells, `AbilityBook` |
 | `Localization/` | `Loc`, `TextBook`, `LocalizedText` |
 | `World/` | `Item` (the base of everything the wizard touches), with subfolders: `Hazards/` (`Hazard`, `TripHazard`, `BouncyTrash`, `SteamVent`, `WaxDrop`, `WaxCandle`, `PressurePlate`), `Zones/` (`Zone`, `WindZone2D`, `WindTrap`, `SlipperyFloor`), `Pickups/` (`Pickup`, `TimedReward`), `Level/` (`ShopStop`, `LevelExit`, `MovingPlatform`, `VineAnchor`, `StaffPlatform`, `MagicDoor`), `Camera/` (`FollowCamera`) |
-| `UI/` | `PlayerHud`, `HudSlot`, `FlingArrow`, `SelectedLook`, `Ui` and the screens (`ChoiceScreen`, `SkillScreen`, `ControlsScreen`) |
-| `Menus/` | `MenuScreen` and the three menus |
-| `Editor/` | `PixelArtImporter` (import settings for everything in `Assets/Art/Sprites`; editor only, never in the build), `MenuPrefabBuilder` (makes the screen prefabs once) |
+| `UI/` | `PlayerHud`, `HudSlot`, `FlingArrow`, `SelectedLook`, `ButtonPrompt`, `ButtonIcons`, `Ui` (with `BlipRow`) and the screens (`ChoiceScreen`, `SkillScreen`, `ControlsScreen`) |
+| `Menus/` | `MenuScreen`, `SettingsPanel` and the three menus |
+| `Editor/` | `PixelArtImporter` (import settings for everything in `Assets/Art/Sprites`; editor only, never in the build) |
 
 ### The wizard is two scripts
 
@@ -216,6 +216,18 @@ The Staff is yours from the start and welded to E; everything else fights over t
 | **Telekinesis** | A push of magic all round you: Magic Doors open, hazards fall asleep for a few seconds. | further, longer sleep |
 | **Falling Star** | While tumbling, dive into the ground and bounce back up on your feet. Once per level. | a three tile dive |
 | **Fling** | Hold to aim up or down (never more than 45° up), let go to be thrown into a tumble. | harder throw |
+
+Each spell's picture is its asset's **Icon**, from `Assets/Art/Sprites/Icons/Spells`: 10 x 10
+pixel art in the HUD's palette, which the HUD draws at 4x inside the ring. Redraw one there, or
+drag a different sprite into the asset's Icon, and the HUD and the skill screen both follow.
+
+Each spell's words live in `Resources/Language/Text.csv`, English and Spanish side by side:
+`ability.<id>.name`, `.desc`, and per upgrade `.upgrade.<n>.title` (the upgrade button, "Longer
+staff - 4") and `.upgrade.<n>.desc` (the card's "Next level" line). A line there wins over the text
+typed on the spell asset, which is only the fallback. The card shows the description with the Next
+level line under it, and has room for about two lines plus that one, so keep a description near
+90 characters. Anything longer shrinks to the smallest size and then spills. For more room, raise
+**Cell Size Y** on `Cards` and the `Blurb`'s **Preferred Height** by the same amount.
 
 Two of them want level content: Mage Hand needs a `Vine`, and Telekinesis wants a `Magic Door` or
 any hazard nearby. Every hazard can already be put to sleep, so it works in every level as it is.
@@ -410,15 +422,21 @@ with a `ShopStop` on it and a placeholder block on its `Art` child for you to sw
 
 ### The storybook look
 
-The menus share the HUD's palette: a parchment page in a wooden frame for panels, stitched
-hat-red cloth for buttons, mauve cloth for cards and settings controls, the star patch for
-checkmarks and slider handles, plum ink on parchment and cream ink on cloth. The art is in
-`Assets/Art/UI Kit` - redraw any of it and every menu follows; keep each one 9-sliced. The colours
-the skill screen sets while it runs are in `Ui` (`Ink`, `ClothInk`, `Card`, `Accent`...).
+The menus share the HUD's palette, and **all of it is set in the prefabs themselves**: no script
+paints a colour or swaps a sprite on a menu while the game runs, so whatever you change in a prefab
+is exactly what shows. The pieces are in `Assets/Art/UI Kit`, all 9-sliced, drawn at 4 screen
+units per art pixel (`Pixels Per Unit Multiplier` 0.78125 on the Image):
 
-**Pata Ploof > Apply Storybook UI Style** (`Editor/MenuStyler.cs`) put it on the three screen
-prefabs, the Pause Menu, the Main Menu and the Level Select. It only replaces Unity's built-in
-placeholder graphics, never a sprite of yours, so it is safe to run again after adding a menu.
+| Piece | Used for | Text on it |
+| --- | --- | --- |
+| `Panel Parchment` | every page: pause, title, settings, skill screen, controls, choices | plum ink, magenta titles |
+| `Button Cloth` (hat red) | buttons, slider fill, scrollbar handles | cream, bold |
+| `Card Cloth` (plum) | spell cards and slots, dropdowns, the fullscreen box, the slider track | cream |
+
+Card Cloth is a dark plum on purpose: cream text on it reads at about 7:1, where the old mauve was
+4:1 and hard to read at blurb size. The star from the wizard's Impact Stars marks checkboxes and
+the slider handle. Behind every page is a `Shroud`: a see-through plum layer, opaque on the title
+screen.
 
 ### Screens are prefabs
 
@@ -429,15 +447,25 @@ prefab and change it like any other UI. They sit at sorting order 200, 220 and 2
 Menu's 100. All of them set `Ui.IsModalOpen`, and `MenuScreen.Update` checks it, so the pause
 menu underneath does not eat Escape.
 
+**Settings is one prefab too, `Assets/Prefabs/Settings Panel.prefab`.** The Pause Menu prefab and
+the Main Menu scene each hold a copy of it, so edit the prefab and both follow. Its `Page` child is
+the parchment; the rows, dropdowns, toggle, slider and buttons are inside it.
+
 The parts that repeat - an answer button, a spell slot, a spell card, an upgrade pip - are
 **templates**: one switched-off copy in the prefab, copied once per answer, slot, spell or rank and
 placed where the template sits. Restyle the template and every copy follows. The Skill Screen
 lists each template's parts (icon, name, button...) under **Slot Template** and **Card
 Template**; keep those filled in if you rearrange a card.
 
-The prefabs were made once by **Pata Ploof > Build Menu Prefabs** (`Editor/MenuPrefabBuilder.cs`).
-It only builds what is missing, so it never overwrites your edits; delete a prefab and run it again
-to get a fresh one. Once the prefabs exist the builder is no longer needed and can be deleted.
+The Skill Screen lays its cards out **two to a row** (`Cards`, a Grid Layout Group: change Cell Size
+to resize every card). A card shows its states with Look objects you can redraw:
+
+- **Locked Look** (a padlock on the icon) while the spell is not learned yet.
+- **Equipped Look** (the button's own picture, top right) while the spell sits in a slot.
+- **Pips**, one per rank: the `Pip` template is the empty blip, its `Full` child the filled one.
+
+The card itself goes dim while the spell is not learned, and a learn button you cannot afford goes
+dim, through each Button's **Disabled Color**. Change those tints on the Button components.
 
 ## Falling Star: dive out of a tumble
 
@@ -1266,11 +1294,20 @@ can open up and restyle:
 HUD              Canvas (Overlay, order 10) + CanvasScaler + PlayerHud
 ├── Spell Bar    bottom-left, HorizontalLayoutGroup + ContentSizeFitter
 │   └── Spell Slot   TEMPLATE, inactive - Image + HudSlot
-│       ├── Icon         the spell's own icon
+│       ├── Icon         the spell's own icon, 40 x 40: a 10 pixel icon at 4x, like the ring
 │       ├── Charge       Image, Filled/Radial360 - the running and cooling wipe
-│       └── Button       TextMeshProUGUI
+│       ├── Ring         your ring art
+│       ├── Button       ButtonPrompt; its text is only the fallback
+│       │   └── Icon         the button's picture
+│       └── Charges      one blip per cast left this level, above the ring
+│           └── Charge Blip  TEMPLATE: the empty blip, with its Full child on top
 └── Scrap Count  top-right, TextMeshProUGUI - built at runtime unless Scrap Label is set
 ```
+
+**Charges are blips.** A spell with `Uses Per Level` (Falling Star, Cloud Step) shows one `Charge
+Blip` per cast it can make this level; `Full` hides on each blip as the casts are spent. Spells with
+no limit show none. With **cheats on** (`M`) every spell keeps all its charges: `Slot.UsesLeft`
+answers the maximum and casting spends nothing.
 
 Slots are **copies of the template**, made at runtime, one per spell. Restyle the template —
 sprite, size, colour, add a border — and every slot follows. `PlayerHud` only ever fills them in;
@@ -1287,11 +1324,32 @@ It finds the wizard through the singleton and re-checks every frame, because eve
 destroys them and builds a new one — anything that had subscribed would be holding a destroyed
 object.
 
-The button under each spell follows **whichever device is actually in use**: `E` on a keyboard,
-`X` on an Xbox pad, `Square` on a DualSense. `Core.Controls` watches only the actions this game
-asked for, which is what stops a mouse twitch flipping the HUD back to keyboard letters mid
-gamepad play. Asking for the glyph without naming a device returns `"E | X"` — always go through
-`Controls.Glyph`.
+The button under each spell follows **whichever device is actually in use**: the E key on a
+keyboard, the left face button on a pad. `Core.Controls` watches only the actions this game asked
+for, which is what stops a mouse twitch flipping the HUD back to keyboard pictures mid gamepad
+play.
+
+### Button prompts are pictures
+
+Everywhere the game names a button - under each spell, on the skill screen's slots and cards, both
+columns of the controls sheet - it shows a **picture**, through a `ButtonPrompt`. The pictures are
+all in one table, `Assets/Resources/Button Icons.asset`: one row per key or pad button, the
+control on the left (`<Keyboard>/q`, `<Gamepad>/leftShoulder`), the sprite on the right. **Swap a
+sprite there and every prompt in the game follows.** The starter pictures are in
+`Assets/Art/Sprites/Icons/Buttons`.
+
+- A combined binding is named `composite:` and its name: the WASD keys are `composite:WASD`.
+- The menu buttons are bound as "whatever the device calls Submit", so their rows name the device
+  first: `Keyboard&Mouse */{Submit}`, `Gamepad */{Cancel}`.
+- A button with no row shows its name as text instead (the prompt's `Fallback` label), so a new
+  binding never shows a blank. Add a row to give it a picture.
+
+To put a prompt anywhere else, for example a "press this to open the spellbook" sign in a level:
+add a `ButtonPrompt` to a UI object, give it an `Image` for `Icon`, and type the action in
+`Action` (`UI/Loadout`). `Device` picks the keyboard, the controller, or whichever is in use.
+
+The face buttons are drawn as the four-dot diamond with one dot lit, so the same picture is right on
+an Xbox, PlayStation or Switch pad. The shoulders and triggers say LB, RB, LT and RT.
 
 No `GraphicRaycaster`, on purpose: the HUD must never swallow a pause-menu click or steal
 controller focus from the menus. The `Charge` image must stay set to **Filled** — an `Image` with
@@ -1322,7 +1380,8 @@ life of the scene even as its contents change.
 
 ### Menus on a controller
 
-Each button in the Pause Menu prefab and the three screen prefabs has a `Highlight` child: a frame that is part of the prefab,
+Each button in the Pause Menu, the Settings Panel, the Main Menu's title page and the three screen
+prefabs has a `Highlight` child: a frame that is part of the prefab,
 so it is moved, resized or redrawn there like any other UI element. A `SelectedLook` on the
 button switches it on while that button is selected and a controller is in use (tick **Show With
 Keyboard** to show it always). The stand-in art is `Art/Placeholders/Menu Highlight.png`; keep

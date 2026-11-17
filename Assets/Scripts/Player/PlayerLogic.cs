@@ -2860,11 +2860,15 @@ namespace FallingWizard.Player
                 public float LitLeft;
                 public float CooldownLeft;
 
+                int usesLeft;
+
                 public Ability Ability { get; private set; }
 
                 public InputAction Action { get; private set; }
 
-                public int UsesLeft { get; private set; }
+                public int MaxUses { get; private set; }
+
+                public int UsesLeft => Cheats.IsActive ? MaxUses : usesLeft;
 
                 public bool IsLit => LitLeft > 0f;
 
@@ -2887,7 +2891,8 @@ namespace FallingWizard.Player
                     BufferLeft = 0f;
                     LitLeft = 0f;
                     CooldownLeft = 0f;
-                    UsesLeft = spell != null ? spell.UsesPerLevelAt(Rank) : 0;
+                    MaxUses = spell != null ? spell.UsesPerLevelAt(Rank) : 0;
+                    usesLeft = MaxUses;
 
                     DropCharge();
                 }
@@ -2905,8 +2910,8 @@ namespace FallingWizard.Player
                     HasFired = true;
                     LitLeft = Ability.activeDuration;
 
-                    if (Ability.usesPerLevel > 0)
-                        UsesLeft = Mathf.Max(0, UsesLeft - 1);
+                    if (Ability.usesPerLevel > 0 && !Cheats.IsActive)
+                        usesLeft = Mathf.Max(0, usesLeft - 1);
 
                     if (LitLeft <= 0f)
                         CooldownLeft = Ability.cooldown;

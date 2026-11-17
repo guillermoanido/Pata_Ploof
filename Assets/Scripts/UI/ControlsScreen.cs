@@ -14,8 +14,9 @@ namespace FallingWizard.UI
         [Header("Rig")]
         public Button closeButton;
 
-        [Tooltip("One entry per line of the sheet. Each names the input action it explains and " +
-                 "the three labels that show it. Add a row in the prefab, then add it here.")]
+        [Tooltip("One entry per line of the sheet. Each names the input action it explains, the " +
+                 "label for its name and the two button prompts. Add a row in the prefab, then add " +
+                 "it here.")]
         public Row[] rows = new Row[0];
 
         static ControlsScreen openScreen;
@@ -96,8 +97,12 @@ namespace FallingWizard.UI
             public string action;
 
             public TextMeshProUGUI nameLabel;
-            public TextMeshProUGUI keyboardLabel;
-            public TextMeshProUGUI controllerLabel;
+
+            [Tooltip("The keyboard's button for this row, as a picture. Its Device is Keyboard.")]
+            public ButtonPrompt keyboardPrompt;
+
+            [Tooltip("The controller's button for this row, as a picture. Its Device is Controller.")]
+            public ButtonPrompt controllerPrompt;
 
             public void Show()
             {
@@ -106,18 +111,11 @@ namespace FallingWizard.UI
                 if (nameLabel != null)
                     nameLabel.text = number > 0 ? Loc.Format(nameKey, number) : Loc.Get(nameKey);
 
-                if (keyboardLabel != null)
-                    keyboardLabel.text = DescribeBinding(input, Core.Controls.KeyboardScheme);
+                if (keyboardPrompt != null)
+                    keyboardPrompt.Show(input);
 
-                if (controllerLabel != null)
-                    controllerLabel.text = DescribeBinding(input, Core.Controls.GamepadScheme);
-            }
-
-            static string DescribeBinding(InputAction input, string scheme)
-            {
-                string glyph = Core.Controls.GlyphFor(input, scheme);
-
-                return string.IsNullOrEmpty(glyph) ? Loc.Get("controls.none") : glyph;
+                if (controllerPrompt != null)
+                    controllerPrompt.Show(input);
             }
         }
     }
