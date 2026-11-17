@@ -5,12 +5,20 @@
     "loadout": [
         "staff",
         "star",
-        "cloud",
-        ""
+        "slap",
+        "hand"
     ],
     "ranks": [
         {
             "key": "cloud",
+            "rank": 1
+        },
+        {
+            "key": "hand",
+            "rank": 1
+        },
+        {
+            "key": "slap",
             "rank": 1
         },
         {

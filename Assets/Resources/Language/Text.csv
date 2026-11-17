@@ -65,10 +65,10 @@ ability.hand.name,Telekinesis,Telequinesis
 ability.hand.desc,A wave of magic that opens magic doors and puts nearby hazards to sleep.,Una onda de magia que abre las puertas mágicas y adormece a los peligros cercanos.
 ability.hand.upgrade.0.title,Deeper sleep,Sueño profundo
 ability.hand.upgrade.0.desc,Wider reach and longer sleep.,Más alcance y sueño más largo.
-ability.cloud.name,Cloud Step,Paso de nube
-ability.cloud.desc,Summon a little cloud under your feet in mid-air to land on. Two per level.,Invoca una pequeña nube bajo tus pies en el aire para aterrizar en ella. Dos por nivel.
-ability.cloud.upgrade.0.title,Third cloud,Tercera nube
-ability.cloud.upgrade.0.desc,Get one more cloud every level.,Consigue una nube más por nivel.
+ability.slap.name,Mage Slap,Manotazo mágico
+ability.slap.desc,"A magical hand that slaps walls to push you away, it can also shove furniture around.","Una mano mágica que golpea las paredes para empujarte, también puede mover muebles."
+ability.slap.upgrade.0.title,Longer arm,Brazo más largo
+ability.slap.upgrade.0.desc,Your magical hand reaches further.,Tu mano mágica llega más lejos.
 settings.controls,Controls,Controles
 controls.title,Controls,Controles
 controls.keyboard,Keyboard,Teclado

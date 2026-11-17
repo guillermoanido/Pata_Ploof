@@ -177,11 +177,11 @@ to most spells.
 
 `usesPerLevel` above 0 gives a spell a number of casts that only the next level brings back — for
 something a cooldown alone cannot hold back. `Slot.UsesLeft` counts them and the HUD prints it.
-`usesAddedPerRank` lets an upgrade buy more of them: Cloud Step has 2 and 1, so two clouds at rank
-1 and three at rank 2 (`Ability.UsesPerLevelAt`). The charges refill on the scene load that
-rebuilds the spellbook, which is what a level transition is.
+`usesAddedPerRank` lets an upgrade buy more of them: 2 and 1 would be two casts at rank 1 and
+three at rank 2 (`Ability.UsesPerLevelAt`). The charges refill on the scene load that rebuilds the
+spellbook, which is what a level transition is.
 
-A spell that needs to remember something between frames — a cloud it made, a rope it is holding —
+A spell that needs to remember something between frames — a trail it switched on, a rope it is holding —
 keeps it in `spellbook.StateOf<T>(this)`, never in a field on itself. The asset is shared; a field
 on it would survive a scene load and follow you into the build.
 
@@ -211,7 +211,7 @@ The Staff is yours from the start and welded to E; everything else fights over t
 | --- | --- | --- |
 | **Staff** | Plant it at a ledge and climb down, or raise it against a wall and climb up. | longer staff |
 | **Mage Hand** | A spectral hand you swing from. | wider swing / climb it |
-| **Cloud Step** | In the air, a little cloud appears under your feet to land on. Two per level. | a third cloud |
+| **Mage Slap** | A magical hand slaps a wall to shove you away from it, or knocks furniture flying. As often as you like. | a longer arm |
 | **Glide** | A canopy. It barely slows the drop - it carries you. | wider wing |
 | **Telekinesis** | A push of magic all round you: Magic Doors open, hazards fall asleep for a few seconds. | further, longer sleep |
 | **Falling Star** | While tumbling, dive into the ground and bounce back up on your feet. Once per level. | a three tile dive |
@@ -491,22 +491,64 @@ step, so neither gravity, wind nor the stick bends the line. It gives up early i
 going down at all, so wedging into a corner cannot leave them hanging in a dive forever. The trail
 is the `Falling Star Trail` child of PLAYER, a copy of Star Sparkles that streams behind.
 
-## Cloud Step: a floor in mid-air
+## Mage Slap: push off walls
 
-**Cast in the air** (not stood on anything, not tumbling) and a `Cloud Step` prefab appears with its
-top exactly at the wizard's soles (`Movement.Footing`). The fall stops there, so the wizard settles
-onto it instead of slamming through, and then it is an ordinary landing: **the drop so far is
-billed**, so a cloud thrown out within the first 3 boxes is free and one thrown out at 5 still hurts.
-That is the whole skill of it: one deadly 6 box drop becomes two safe 3 box drops if you cast in
-time.
+**Falling Star saves you; Mage Slap moves you.** It has no charges, only a 0.4 s `cooldown`, so it
+can never be what stops a fall: it never pushes the wizard up, never changes how fast they are
+falling, and never restarts the fall count. What it can do is put them somewhere better, such as
+onto the ledge they are falling past.
 
-The cloud melts `secondsAfterLeaving` (0.25 s) after the wizard steps or falls off it, or when
-`activeDuration` (3 s) runs out, whichever comes first. A second cast replaces the first cloud. Two
-clouds per level, three at rank 2.
+The press slaps the way the stick points, snapped to the nearest of eight directions, or the way
+the wizard faces with no stick held. `Aim` sweeps the wizard's own hitbox that way, up to `reach`
+boxes from their edge (2, then 3 at rank 2):
 
-The prefab is the cloud: a 1.5 × 0.25 box collider on **Ground** under its root, and a `Look` child
-that is a flattened, denser copy of Star Sparkles. Put your own cloud art in the `Look` and the
-spell does not change.
+| The hand meets | What happens |
+| --- | --- |
+| A wall | The wizard is shoved straight away from it at `sidewaysShove` (9 boxes a second). |
+| A ceiling | They are shoved down at `downwardShove` (6). |
+| The floor | Nothing upward. Slapped diagonally, it shoves them sideways; straight down, nothing. |
+| `Furniture` | Every piece in the way is knocked flying, at `furnitureKnock` for a Mass of 1. |
+| Anything else | Hazards, wind, Bouncy Trash and pickups are passed straight through. |
+
+The shove only ever **tops up** speed: a wizard already flying away from the wall faster than the
+shove keeps their speed. The stick is locked for `steeringLockout` (0.2 s) after it, so a slap
+carries the wizard instead of being steered straight back out of. It works stood up, in the air and
+while tumbling, where it steers the tumble but never ends it: getting back up is Falling Star's
+job. Not on the Staff, on a Mage Hand vine, or during a Falling Star dive.
+
+With nothing to slap that way, `CanCast` says no: the HUD slot greys, and a press waits
+`pressBuffer` (0.12 s) for a wall to come into reach. Only walls, floors and ceilings on the
+**Ground** layer push the wizard; the sweep is a skin smaller than the hitbox so the floor they
+stand on never counts as a wall.
+
+**The hand** is `Mage Slap Hand.prefab`, spawned where the slap lands, turned to face it, and
+removed after `handSeconds` (0.3 s). Its `Look` is a copy of Star Sparkles until you draw a hand:
+put it in the `Look`, **pointing right**, with the palm on the prefab's root. Left slaps mirror it,
+so the thumb stays on top.
+
+### Furniture
+
+`Assets/Prefabs/Furniture` holds a prefab per sprite on `Art/Sprites/Muebles.png`: Teapot,
+Armchair, Side Table, Bookcase, Chest, Crystal Ball, Sofa, Gramophone and Lantern. **Furniture is
+decoration**: the wizard walks straight through it, and nothing stands on it. A Mage Slap is the only
+thing that moves it.
+
+```
+Armchair        Rigidbody 2D, Box Collider 2D, Furniture    root on the floor
+└── Art         Sprite Renderer, your sprite at native size
+```
+
+- **The Rigidbody 2D and the Box Collider 2D** exclude the **Player** and **Hazard** layers (Layer
+  Overrides > Exclude Layers, with the collider's Layer Override Priority at 1 so it wins). That is
+  what lets the wizard pass through, and keeps furniture out of hazards and wind. It still lands on
+  floors and bumps into walls and other furniture.
+- **How far a slap sends it is the Rigidbody 2D's Mass**: 1 for the teapot, 4 for the bookcase.
+- **`Furniture`** adds a `hop` up and a `spin` the way it was slapped, so pieces tumble instead of
+  sliding. Tick **Freeze Rotation** on the Rigidbody 2D to keep a piece upright.
+- **A new piece:** duplicate one, drop your sprite on its `Art`, and set the collider to the
+  sprite's size with its bottom on the root.
+
+Nothing about furniture is saved: a level reload puts every piece back where you placed it.
 
 ## Fling: aim, then tumble
 
@@ -569,9 +611,9 @@ outline sits on `x.03125`, not on whole numbers.
 
 That is not a rounding error to ignore. **It is the surface everything else has to line up with.**
 Anything placed to sit level with a floor takes its height from the floor itself, never from a grid
-line: Cloud Step puts its cloud at `Movement.Footing.y`, the wizard's soles, which *are* the surface
-they were standing on. Re-slice the sheet to 32×32 one day and it keeps working, having never been
-told what the old number was.
+line: `Movement.Footing.y`, the wizard's soles, *is* the surface they are standing on, and is the
+height to use. Re-slice the sheet to 32×32 one day and anything built that way keeps working,
+having never been told what the old number was.
 
 **A block flush with the platform is the worst case, not the best.** Two box colliders whose top
 faces are exactly level still meet at a vertical face, and gravity sinks the wizard about a fifth
@@ -694,11 +736,11 @@ is the wizard's Impact Stars turned into a gentle loop: your star sprite (`Art/S
 circling slowly around a ring. Its emitter is in **Shape** scaling mode, so scaling the object
 stretches the ring around whatever it sits on while the stars stay the same size. Every copy is a
 nested prefab, so editing Star Sparkles itself changes them all; a copy can still override its own
-numbers (the cloud and the trail do). It is used for:
+numbers (the slap and the trail do). It is used for:
 
 - **Hand Hold:** the `Glow Look`, stars around the knot while Mage Hand can reach it.
 - **Every hazard:** the `Asleep Look`, stars around it while Telekinesis holds it asleep.
-- **Cloud Step:** the cloud itself, flattened and denser.
+- **Mage Slap Hand:** the `Look`, a small burst where the hand lands.
 - **PLAYER:** the `Falling Star Trail`, streaming behind the dive.
 
 The other placeholders are plain shapes in `Assets/Art/Placeholders`:
@@ -766,7 +808,8 @@ flat colour, so each one is visible the moment it lands and is waiting for a spr
 | `Hand Hold` | The knot Mage Hand catches. | Default |
 | `Magic Door` | `MagicDoor`: a solid door, one box wide and two tall, that Telekinesis opens for good. Put your art in its Closed Look and Open Look children. | **Ground** |
 | `Stone Wall` | A one-box stone block to stand on. It was the old Wall Growth spell's block; now it is a plain level piece. | **Ground** |
-| `Cloud Step` | The cloud the Cloud Step spell makes. Already wired into the spell; not for placing by hand. | **Ground** |
+| `Mage Slap Hand` | The hand Mage Slap shows where it lands. Already wired into the spell; not for placing by hand. | Default |
+| `Furniture/…` | Decoration a Mage Slap knocks flying: the wizard walks through it. See *Mage Slap > Furniture*. | Default |
 | `Star Sparkles` | Stars hanging around whatever it sits on. The stand-in for any effect without art yet; scale it to fit. | Default |
 | `Level Exit` | The bottom. Marks the level completed and opens the Level Select. | Default |
 
@@ -1304,7 +1347,7 @@ HUD              Canvas (Overlay, order 10) + CanvasScaler + PlayerHud
 └── Scrap Count  top-right, TextMeshProUGUI - built at runtime unless Scrap Label is set
 ```
 
-**Charges are blips.** A spell with `Uses Per Level` (Falling Star, Cloud Step) shows one `Charge
+**Charges are blips.** A spell with `Uses Per Level` (Falling Star) shows one `Charge
 Blip` per cast it can make this level; `Full` hides on each blip as the casts are spent. Spells with
 no limit show none. With **cheats on** (`M`) every spell keeps all its charges: `Slot.UsesLeft`
 answers the maximum and casting spends nothing.

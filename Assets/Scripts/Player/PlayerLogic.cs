@@ -816,6 +816,8 @@ namespace FallingWizard.Player
                 ? new Vector2(hull.bounds.center.x, hull.bounds.min.y)
                 : new Vector2(Position.x, FeetY + groundCheckSkin);
 
+            public Bounds HitboxBounds => hull != null ? hull.bounds : new Bounds(Position, Vector3.zero);
+
             public float HorizontalSpeed => body == null ? 0f : Mathf.Abs(body.linearVelocityX);
             public Vector2 Velocity => body == null ? Vector2.zero : body.linearVelocity;
 

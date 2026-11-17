@@ -15,7 +15,7 @@ MonoBehaviour:
   spells:
   - {fileID: 11400000, guid: 3fa4bf53ce77fd8bdf03a2a3f735d855, type: 2}
   - {fileID: 11400000, guid: 6c76da3e40c8727b822c3db2879e5a62, type: 2}
-  - {fileID: 11400000, guid: 38876cd723274f3ebc82e1f78ef4de24, type: 2}
+  - {fileID: 11400000, guid: 14dc654ce0044bd0915f833fadacaab7, type: 2}
   - {fileID: 11400000, guid: 31b9fdde0c515f66baed76d98608061c, type: 2}
   - {fileID: 11400000, guid: ef99c0cac6605f2ab53cdd8d46785355, type: 2}
   - {fileID: 11400000, guid: a67565323b5c44ceb48f9bfe7acf2e77, type: 2}
