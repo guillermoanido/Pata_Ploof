@@ -23,7 +23,7 @@ MonoBehaviour:
   pressBuffer: 0.12
   chargesOnHold: 0
   activeDuration: 0
-  cooldown: 0.4
+  cooldown: 0.75
   usesPerLevel: 0
   usesAddedPerRank: 0
   upgrades:

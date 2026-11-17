@@ -495,7 +495,7 @@ is the `Falling Star Trail` child of PLAYER, a copy of Star Sparkles that stream
 
 The spell's id is `slap`; its script is `StarSlapAbility` and its asset `Abilities/Star Slap`.
 
-**Falling Star saves you; Star Slap moves you.** It has no charges, only a 0.4 s `cooldown`, so it
+**Falling Star saves you; Star Slap moves you.** It has no charges, only a 0.75 s `cooldown`, so it
 can never be what stops a fall: it never pushes the wizard up, never changes how fast they are
 falling, and never restarts the fall count. What it can do is put them somewhere better, such as
 onto the ledge they are falling past.
