@@ -15,14 +15,14 @@ namespace FallingWizard.World
                  "switches off.")]
         public GameObject openLook;
 
-        Collider2D shut;
+        Collider2D[] solidParts;
 
         public bool IsOpen { get; private set; }
 
         void Awake()
         {
-            shut = GetComponent<Collider2D>();
             ShowOpen(false);
+            solidParts = GetComponentsInChildren<Collider2D>();
         }
 
         public bool TryOpen()
@@ -31,7 +31,10 @@ namespace FallingWizard.World
                 return false;
 
             IsOpen = true;
-            shut.enabled = false;
+
+            foreach (Collider2D part in solidParts)
+                part.enabled = false;
+
             ShowOpen(true);
             return true;
         }

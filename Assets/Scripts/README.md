@@ -597,7 +597,9 @@ tenth of a second you spend aiming.
 One press pushes magic out in a circle of `reach` boxes round the wizard (4, then 5.5 at rank 2),
 and everything inside answers:
 
-- **A `MagicDoor` opens for good.** Its collider switches off and its Open Look shows. The level
+- **A `MagicDoor` opens for good.** Every collider on it and on its shown children switches off,
+  its Closed Look hides and its Open Look shows. The Closed Look slot must hold the object that
+  holds all of the shut art, or part of the shut door stays on screen. The level
   reloads on death, so there is nothing to close it again.
 - **A `Hazard` falls asleep** for `sleepSeconds` (3, then 5). It cannot catch the wizard until it
   wakes, and its `Asleep Look` shows on top of its own art: every hazard prefab ships with a copy of
