@@ -153,4 +153,57 @@ namespace FallingWizard.UI
             }
         }
     }
+
+    [System.Serializable]
+    public class DigitRow
+    {
+        const int NothingShownYet = -1;
+
+        [Tooltip("One digit: an object whose children are the faces 0 to 9, in that order, " +
+                 "each holding your digit art. It is copied once per digit the number needs, " +
+                 "and the copies sit where it sits. The script only switches the faces on and " +
+                 "off - the same as the timed reward clock - so the art is yours to redraw. The " +
+                 "template itself stays switched off while the game runs.")]
+        public GameObject template;
+
+        readonly List<GameObject> copies = new List<GameObject>();
+
+        int shown = NothingShownYet;
+
+        public void Show(int number)
+        {
+            if (template == null || number == shown)
+                return;
+
+            shown = number;
+            template.SetActive(false);
+
+            string digits = Mathf.Max(0, number).ToString();
+
+            if (copies.Count != digits.Length)
+                Rebuild(digits.Length);
+
+            for (int i = 0; i < digits.Length; i++)
+                ShowFace(copies[i], digits[i] - '0');
+        }
+
+        static void ShowFace(GameObject digit, int face)
+        {
+            Transform faces = digit.transform;
+
+            for (int i = 0; i < faces.childCount; i++)
+                faces.GetChild(i).gameObject.SetActive(i == face);
+        }
+
+        void Rebuild(int count)
+        {
+            foreach (GameObject copy in copies)
+                Object.Destroy(copy);
+
+            copies.Clear();
+
+            for (int i = 0; i < count; i++)
+                copies.Add(Ui.CopyOf(template));
+        }
+    }
 }

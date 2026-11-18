@@ -27,7 +27,7 @@ coming back down it can never hurt you.
 
 | Folder | What lives there |
 | --- | --- |
-| `Core/` | `Game` (pause, scene flow, quit), `GameSettings`, `Controls` (every input lookup, plus which device is in use), `Progress` (the save: Magical Scrap, spells, loadout, hearts, finished levels, taken pickups), `SaveFile` |
+| `Core/` | `Game` (pause, scene flow, quit), `GameSettings`, `Controls` (every input lookup, plus which device is in use), `Progress` (the save: Knowledge, spells, loadout, hearts, finished levels, taken pickups), `SaveFile` |
 | `Player/` | `PlayerCharacter` (the Unity side), `PlayerLogic` (everything the wizard does), `Staff`, `PlayerAnimator`, `RagdollBumps` |
 | `Player/Abilities/` | `Ability` and the spells, `AbilityBook` |
 | `Localization/` | `Loc`, `TextBook`, `LocalizedText` |
@@ -269,7 +269,7 @@ easier" button; see *Telekinesis: doors and sleeping hazards*.
 ### Adding spell #5
 
 1. One `.cs` in `Player/Abilities/`, deriving from `Ability`, named the same as its class.
-2. One asset via **Assets ▸ Create ▸ Falling Wizard ▸ Abilities ▸ …**, with a `cost` in Magical Scrap.
+2. One asset via **Assets ▸ Create ▸ Falling Wizard ▸ Abilities ▸ …**, with a `cost` in Knowledge.
 3. Drag it into `Assets/Resources/Spellbook.asset` → `spells`.
 
 **No input edits, no scene edits, no HUD edits.** The buttons already exist and belong to the
@@ -308,18 +308,18 @@ and silently kill every clamp on the chain.
 list, top to bottom — **drag to reorder, nothing in any scene depends on it**. `known` is granted
 free on a new game; the Staff belongs there and nothing else has to.
 
-Everything else is **bought with Magical Scrap** at the skill screen.
+Everything else is **bought with Knowledge** at the skill screen.
 
 `Core.Progress` holds all of it, outside the wizard, because every scene load builds a brand new
 wizard.
 
-## Magical Scrap, hearts and dying
+## Knowledge, hearts and dying
 
 There is one purse and one save, and dying empties both:
 
 | What | Where it lives | Kept while alive | After a death |
 | --- | --- | --- | --- |
-| Magical Scrap | `Progress.Scrap` | yes, on disk | gone |
+| Knowledge | `Progress.Scrap` | yes, on disk | gone |
 | Spells and their ranks | `Progress.ranks` | yes, on disk | gone (the `known` spells come back free) |
 | The loadout | `Progress.equipped` | yes, on disk | gone |
 | Bonus hearts | `Progress.BonusHearts` | yes, on disk | gone |
@@ -327,7 +327,7 @@ There is one purse and one save, and dying empties both:
 | Taken pickups | `Progress.taken` | yes, on disk | gone, so every pickup is back |
 | Settings | `GameSettings` | yes, on disk | **kept** |
 
-**Magical Scrap goes straight into the purse** the moment a pickup is touched, and is spent at the
+**Knowledge goes straight into the purse** the moment a pickup is touched, and is spent at the
 skill screen. There is no carrying and no banking: what you picked up is yours, and it is saved
 straight away, so quitting halfway down and coming back carries on with everything you had.
 
@@ -345,7 +345,7 @@ There is **one `Pickup` script** for every collectable. Its **Gives** setting pi
 
 | Gives | What it does |
 | --- | --- |
-| Scrap | Adds **Amount** Magical Scrap to the purse. |
+| Knowledge | Adds **Amount** Knowledge to the purse. |
 | Heart | Adds **Amount** hearts to the wizard's health and heals them. |
 
 Either way the pickup's id goes into `Progress.taken` and `Pickup.Awake` destroys it on every later
@@ -356,7 +356,7 @@ To add a new kind of collectable, add a value to `Pickup.Gift` and a short `Give
 
 The highest **Health Look** under the wizard is what a brand new save starts with (see Health
 below) and `Health.maxBonusHearts` caps what can be added on top of it. A heart pickup that finds
-the bar already at that cap pays out `scrapIfFull` Magical Scrap instead — never leave a player
+the bar already at that cap pays out `knowledgeIfFull` Knowledge instead — never leave a player
 standing over dead loot — and is taken all the same.
 
 A `Pickup` remembers itself by **where it
@@ -368,19 +368,19 @@ the position across a quarter-box boundary and quietly rename the pickup between
 being touched. For the same reason **only the art bobs** — `FindArtToBob` refuses to bob a
 `SpriteRenderer` sitting on the root, because that would walk the trigger around with it.
 
-Drag in `Assets/Prefabs/Top Level/Basura Mágica` (Magical Scrap) and `Assets/Prefabs/Heart Upgrade`
+Drag in `Assets/Prefabs/Knowledge` and `Assets/Prefabs/Heart Upgrade`
 and they work as they land: a trigger `CircleCollider2D`, the component, and an `Art` child to drop
 a sprite onto. The code never changes that sprite — what you put there is what is drawn.
 
 ### Timed rewards
 
-`Assets/Prefabs/Timed Reward` is one Magical Scrap and one Heart Upgrade the wizard can only grab
+`Assets/Prefabs/Timed Reward` is one Knowledge and one Heart Upgrade the wizard can only grab
 within **60 seconds** of the level starting. Every level has one, on the way to its exit. Drag it to
 move it: its root sits on the floor, at the middle of the pair.
 
 ```
 Timed Reward    TimedReward: Seconds Allowed
-├── Basura Mágica, Heart Upgrade    the real pickups
+├── Knowledge, Heart Upgrade    the real pickups
 ├── Faded Scrap, Faded Heart    switched off until time is up
 └── Timer
     ├── Running Clock    white, shown while it counts up
@@ -410,7 +410,7 @@ prefab, or in one level to change only that level.
 
 ### Shop stops
 
-A `ShopStop` is the place to spend Magical Scrap mid-level. Walk into one — alive, with no other
+A `ShopStop` is the place to spend Knowledge mid-level. Walk into one — alive, with no other
 screen open — and it opens the skill screen with `SkillScreen.OpenInLevel`, which pauses the game.
 Buy spells and upgrades, rearrange the loadout, and leave with the back button or Escape: the
 screen's close callback reloads the spellbook so the wizard has exactly what is on the slots, and
@@ -878,9 +878,9 @@ flat colour, so each one is visible the moment it lands and is waiting for a spr
 
 | Prefab | What it does | Layer |
 | --- | --- | --- |
-| `Basura Mágica` | Magical Scrap, the currency. Goes straight into the purse. Taken until the wizard dies. | Default |
+| `Knowledge` | Knowledge, the currency (a book). Goes straight into the purse. Taken until the wizard dies. | Default |
 | `Heart Upgrade` | +1 max HP. Taken until the wizard dies, like everything else. | Default |
-| `Timed Reward` | A Magical Scrap and a Heart Upgrade to grab within 60 seconds of the level starting, under a white timer counting up. At `1:00` the timer stops and turns red, and they fade. | Default |
+| `Timed Reward` | A Knowledge and a Heart Upgrade to grab within 60 seconds of the level starting, under a white timer counting up. At `1:00` the timer stops and turns red, and they fade. | Default |
 | `Wet Floor Sign` | `TripHazard`: trips a runner. `minimumSpeed` 3, so a walk is safe. | Hazard |
 | `Rake`, `Rake 1` | `TripHazard` aimed Left or Right: trips you BACKWARDS, the way you came. | Hazard |
 | `Ice` | Ground that does not hold you. Nothing else changes. | Hazard |
@@ -967,10 +967,10 @@ Project window, add it to File > Build Settings, and add it to a world in the Wo
 ## Saving
 
 There is no checkpoint and no respawn: every level starts the wizard where the scene places them,
-and dying shows a message and starts the whole game again with nothing (see *Magical Scrap, hearts
+and dying shows a message and starts the whole game again with nothing (see *Knowledge, hearts
 and dying*).
 
-**Everything is written the moment it changes.** Picking up Magical Scrap or a heart, buying,
+**Everything is written the moment it changes.** Picking up Knowledge or a heart, buying,
 upgrading, moving a spell and finishing a level each save on the spot, so quitting halfway down and
 coming back carries on with everything you had. The save is also **read back** —
 `Progress.Load()` runs on `BeforeSceneLoad`, after `ResetOnPlay` clears the statics.
@@ -1241,7 +1241,7 @@ Item                      finds the wizard in its trigger; shared Look helpers
 │   │   └── WaxDrop       falls and burns
 │   ├── WindZone2D        pushes you (WindTrap: on a timer)
 │   └── SlipperyFloor     takes your grip
-├── Pickup                collectables: Gives Magical Scrap or a Heart
+├── Pickup                collectables: Gives Knowledge or a Heart
 ├── ShopStop              opens the skill screen mid-level
 └── LevelExit             the way out
 ```
@@ -1427,7 +1427,9 @@ HUD              Canvas (Overlay, order 10) + CanvasScaler + PlayerHud
 │       │   └── Icon         the button's picture
 │       └── Charges      one blip per cast left this level, above the ring
 │           └── Charge Blip  TEMPLATE: the empty blip, with its Full child on top
-└── Scrap Count  top-right, TextMeshProUGUI - built at runtime unless Scrap Label is set
+└── Knowledge    top-right, HorizontalLayoutGroup + ContentSizeFitter
+    ├── Icon         the Knowledge pickup's book (Upgrade.png), 128 x 128: 32 pixels at 4x
+    └── Digit        TEMPLATE: children 0 to 9, the Timer Digits sprites at 4x (32 x 44)
 ```
 
 **Charges are blips.** A spell with `Uses Per Level` (Falling Star) shows one `Charge
@@ -1439,9 +1441,12 @@ Slots are **copies of the template**, made at runtime, one per spell. Restyle th
 sprite, size, colour, add a border — and every slot follows. `PlayerHud` only ever fills them in;
 it never builds layout. The icon each slot shows is the spell's own `icon`.
 
-The **Scrap Count** shows the one purse: how much Magical Scrap the wizard has, from the `hud.scrap`
-line (`{0} Magical Scrap`, `{0} Basura Mágica`). It is the `Scrap Count` label in the HUD prefab: move or
-restyle it there, clear `scrapLabel` to show none, or type a `scrapFormat` for a one-off wording.
+The **Knowledge** counter shows the one purse: the book icon, then the number drawn with the same
+digit art as the timed reward clock. It has no words, so it reads the same in every language. The
+digits are a `DigitRow` (in `Ui.cs`, next to `BlipRow`): `Digit` is copied once per digit the
+number needs and the script only switches its `0` to `9` children on and off, so redraw the
+digits by swapping those sprites. Move or restyle the whole row in the HUD prefab, or clear
+`knowledgeCounter` to show none. In code the purse is still `Progress.Scrap`.
 
 Set `CanvasScaler.referencePixelsPerUnit` to **32**, not the default 100, or every icon comes out
 at a third of its size.

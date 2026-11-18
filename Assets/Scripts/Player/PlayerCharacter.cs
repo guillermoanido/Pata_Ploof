@@ -31,7 +31,7 @@ namespace FallingWizard.Player
         [Header("Death")]
         [Tooltip("Seconds to wait once the wizard runs out of hearts, so the death can be seen, " +
                  "before the message saying so comes up. The message offers to start again or " +
-                 "go back to the main menu. Dying wipes everything: Magical Scrap, spells, " +
+                 "go back to the main menu. Dying wipes everything: Knowledge, spells, " +
                  "upgrades, the loadout, bonus hearts, finished levels and taken pickups. " +
                  "Settings are kept.")]
         [Min(0f)] public float secondsBeforeDeathMessage = 2.5f;

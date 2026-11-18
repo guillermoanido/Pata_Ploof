@@ -21,7 +21,7 @@ namespace FallingWizard.Menus
         [SerializeField] TMP_Text volumeValueLabel;
         [SerializeField] Button backButton;
 
-        [Tooltip("Wipes every spell, all the Magical Scrap and every heart and returns to the " +
+        [Tooltip("Wipes every spell, all the Knowledge and every heart and returns to the " +
                  "main menu, after asking.")]
         [SerializeField] Button resetSaveButton;
 

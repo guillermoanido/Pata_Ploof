@@ -81,8 +81,8 @@ namespace FallingWizard.Core
             SetWizardInvulnerable(isActive);
 
             Debug.Log(isActive
-                ? "CHEATS ON - god mode, endless spell charges, everything costs no Magical Scrap, and every level is open. Press L for the Level Select, M to turn cheats off."
-                : "CHEATS OFF - damage, spell charges, Magical Scrap costs and locked levels are back to normal.");
+                ? "CHEATS ON - god mode, endless spell charges, everything costs no Knowledge, and every level is open. Press L for the Level Select, M to turn cheats off."
+                : "CHEATS OFF - damage, spell charges, Knowledge costs and locked levels are back to normal.");
 
             Toggled?.Invoke();
         }

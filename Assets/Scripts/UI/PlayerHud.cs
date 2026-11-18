@@ -1,8 +1,6 @@
 using System.Collections.Generic;
 using FallingWizard.Core;
-using FallingWizard.Localization;
 using FallingWizard.Player;
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -21,15 +19,15 @@ namespace FallingWizard.UI
                  "the template - like the bar's right end - stays at the end as the bar grows.")]
         public HudSlot slotTemplate;
 
-        [Tooltip("Reads out how much Magical Scrap is in the purse. Leave it empty for no counter.")]
-        public TextMeshProUGUI scrapLabel;
+        [Header("Knowledge")]
+        [Tooltip("The Knowledge counter: the book icon and the digits beside it, under one " +
+                 "object. It is switched off while there is no wizard. Leave it empty for no " +
+                 "counter.")]
+        public GameObject knowledgeCounter;
 
-        [Header("Magical Scrap")]
-        [Tooltip("How the counter reads, for a scene that wants its own wording. {0} is the " +
-                 "Magical Scrap in the purse. LEAVE IT EMPTY, which is what you want almost " +
-                 "always: the counter then uses the translated line and follows the player's " +
-                 "language. Anything typed here is used exactly as typed, in every language.")]
-        public string scrapFormat = "";
+        [Tooltip("The digits that read out how much Knowledge is in the purse, drawn with the " +
+                 "same digit art as the timed reward clock.")]
+        public DigitRow knowledgeDigits = new DigitRow();
 
         [Header("Spells")]
         [Tooltip("Draw a dimmed slot for an empty button, so the bar never shifts around and the " +
@@ -91,7 +89,7 @@ namespace FallingWizard.UI
             if (spellBar != null)
                 spellBar.gameObject.SetActive(showing);
 
-            ShowScrapCount(showing);
+            ShowKnowledge(showing);
             ShowHealthBar(showing);
 
             if (!showing)
@@ -113,17 +111,13 @@ namespace FallingWizard.UI
             builtVersion = NotBuilt;
         }
 
-        void ShowScrapCount(bool showing)
+        void ShowKnowledge(bool showing)
         {
-            if (scrapLabel == null)
-                return;
-
-            scrapLabel.enabled = showing;
+            if (knowledgeCounter != null)
+                knowledgeCounter.SetActive(showing);
 
             if (showing)
-                scrapLabel.text = string.IsNullOrEmpty(scrapFormat)
-                    ? Loc.Format(Loc.Keys.HudScrap, Progress.Scrap)
-                    : string.Format(scrapFormat, Progress.Scrap);
+                knowledgeDigits.Show(Progress.Scrap);
         }
 
         void ShowHealthBar(bool showing)

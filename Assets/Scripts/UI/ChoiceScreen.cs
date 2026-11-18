@@ -17,7 +17,7 @@ namespace FallingWizard.UI
         [Tooltip("Hidden when a question has no blurb.")]
         public TextMeshProUGUI blurb;
 
-        [Tooltip("An extra line under the blurb, for example how much Magical Scrap would be lost.")]
+        [Tooltip("An extra line under the blurb, for example how much Knowledge would be lost.")]
         public TextMeshProUGUI status;
 
         [Tooltip("One answer button, copied once per answer and placed where this one sits. It " +
