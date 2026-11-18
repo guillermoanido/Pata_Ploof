@@ -169,6 +169,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FallingWizard.World.WaxCandle
   dropPrefab: {fileID: 3486608745890500851, guid: 7fce278284da1924d86799d9d41b6408, type: 3}
-  secondsBetweenDrops: 2.5
+  secondsBetweenDrops: 1.2
   phase: 0
   spoutOffset: {x: 0, y: -0.27}
