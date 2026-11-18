@@ -24,6 +24,9 @@ MonoBehaviour:
   - cost: 3
     title: Stronger hand
     description: Your magical hand gets stronger.
+  - cost: 4
+    title: Helping hand
+    description: Your hand catches you mid-tumble, fling yourself even in the air.
   chargesOnHold: 1
   pressBuffer: 0
   activeDuration: 0
@@ -42,4 +45,8 @@ MonoBehaviour:
   lookAhead: 16
   tiers:
   - speed: 9
+    canFlingWhileTumbling: 0
   - speed: 11
+    canFlingWhileTumbling: 0
+  - speed: 11
+    canFlingWhileTumbling: 1

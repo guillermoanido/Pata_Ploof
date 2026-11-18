@@ -283,7 +283,7 @@ MonoBehaviour:
   everyStep: 1
   damage: 1
   ignoresWalking: 1
-  canSleep: 1
+  canSleep: 0
   asleepLook: {fileID: 1800000103}
 --- !u!1 &7709955237234191799
 GameObject:

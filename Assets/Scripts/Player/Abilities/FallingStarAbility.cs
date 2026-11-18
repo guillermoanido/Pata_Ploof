@@ -22,6 +22,13 @@ namespace FallingWizard.Player
                  "Faster is harder to land and hurts more when it misses.")]
         [Min(SlowestDive)] public float diveSpeed = 12f;
 
+        [Tooltip("How far down the dive reaches, in boxes. This IS the window: the ground has to " +
+                 "be within this many tiles below you when you cast, or the dive gives up there " +
+                 "and you go on tumbling, and the landing hurts as normal. Smaller is a tighter, " +
+                 "harder save. It is the same at every rank: upgrades add charges instead, set " +
+                 "with Uses Per Level and Uses Added Per Rank.")]
+        [Min(ShallowestDepth)] public float diveDepth = 1.25f;
+
         [Header("Bounce")]
         [Tooltip("How high a dive that reaches the ground throws the wizard back up, in boxes. " +
                  "The fall is counted again from the top of the bounce, so keep this at or under " +
@@ -32,10 +39,6 @@ namespace FallingWizard.Player
         [Tooltip("Sideways speed the bounce carries on with, in boxes per second, the way the " +
                  "dive was going.")]
         [Min(0f)] public float bounceOnward = 2f;
-
-        [Header("Ranks")]
-        [Tooltip("One block per rank. Element 0 is what learning it gives you.")]
-        public Tier[] tiers = { new Tier() };
 
         public override bool CanCast(PlayerLogic wizard) =>
             wizard.State == PlayerState.Ragdoll && !wizard.IsDiving;
@@ -55,7 +58,7 @@ namespace FallingWizard.Player
             int way = PickTheWay(wizard);
             var bounce = new PlayerLogic.Ragdoll.Bounce(bounceHeight, way * bounceOnward);
 
-            if (!wizard.TryDive(FindDiveVelocity(way), PickTier(tiers, wizard).diveDepth, bounce))
+            if (!wizard.TryDive(FindDiveVelocity(way), diveDepth, bounce))
                 return false;
 
             ShowTrail(wizard, true);
@@ -72,7 +75,7 @@ namespace FallingWizard.Player
 
         public override void OnEquipped(PlayerLogic wizard) => ShowTrail(wizard, false);
 
-        protected override void Validate() => ValidateTiers(tiers);
+        protected override void Validate() => diveDepth = Mathf.Max(ShallowestDepth, diveDepth);
 
         protected override void CleanUp(PlayerLogic wizard) => ShowTrail(wizard, false);
 
@@ -98,18 +101,6 @@ namespace FallingWizard.Player
 
         void ShowTrail(PlayerLogic wizard, bool isShown) =>
             wizard.spellbook.StateOf<Trail>(this).effect.Show(wizard, this, isShown);
-
-        [System.Serializable]
-        public class Tier : ITier
-        {
-            [Tooltip("How far down the dive reaches at this rank, in boxes. This IS the window: " +
-                     "the ground has to be within this many tiles below you when you cast, or the " +
-                     "dive gives up there and you go on tumbling, and the landing hurts as normal. " +
-                     "Smaller is a tighter, harder save.")]
-            [Min(ShallowestDepth)] public float diveDepth = 1.25f;
-
-            public void Validate() => diveDepth = Mathf.Max(ShallowestDepth, diveDepth);
-        }
 
         class Trail
         {

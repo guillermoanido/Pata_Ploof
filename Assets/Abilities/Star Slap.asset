@@ -28,8 +28,11 @@ MonoBehaviour:
   usesAddedPerRank: 0
   upgrades:
   - cost: 2
+    title: Steady hand
+    description: Slapping while you tumble slows you down.
+  - cost: 3
     title: Longer arm
-    description: Your star hand reaches further.
+    description: Your star hand reaches further and slows your tumble even more.
   sidewaysShove: 9
   downwardShove: 6
   steeringLockout: 0.2
@@ -38,4 +41,8 @@ MonoBehaviour:
   handSeconds: 0.35
   tiers:
   - reach: 2
-  - reach: 3
+    tumbleSlowdown: 0
+  - reach: 2
+    tumbleSlowdown: 0.25
+  - reach: 4
+    tumbleSlowdown: 0.5

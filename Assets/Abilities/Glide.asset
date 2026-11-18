@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: glide
   displayName: Glide
-  description: Open your magical hat like a wing to glide, ride the wind to survive bigger falls.
+  description: Open your magical hat to steer your fall, catch the wind to start your fall over.
   icon: {fileID: 21300000, guid: 6206b3ccbb5f4fd9ab18a25083064092, type: 3}
   cost: 2
   locked: 0
@@ -29,20 +29,15 @@ MonoBehaviour:
   upgrades:
   - cost: 2
     title: Wider hat
-    description: Your hat grows wider and glides better.
-  fallSpeed: 0.5
+    description: Your hat catches more air, so you fall slower.
+  - cost: 3
+    title: Feather hat
+    description: You float down at a slow, steady pace.
   airSpeed: 1.9
   airControl: 1.6
   drag: 0.45
-  canopyArt: {fileID: 0}
-  tint: {r: 0.95, g: 0.78, b: 0.42, a: 0.85}
-  canopy: {x: 2.2, y: 0.5, z: 0.9}
-  sortingOrder: 1
   foldsOnLanding: 1
   tiers:
-  - fallSpeed: 0.5
-    airSpeed: 1.9
-    airControl: 1.6
-  - fallSpeed: 0.4
-    airSpeed: 2.4
-    airControl: 2
+  - fallSpeed: 1
+  - fallSpeed: 0.6
+  - fallSpeed: 0.2

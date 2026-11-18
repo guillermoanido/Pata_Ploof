@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: hand
   displayName: Telekinesis
-  description: A wave of magic that opens magic doors and puts nearby hazards to sleep.
+  description: A wave of magic that opens magic doors and holds still the moving things around you.
   icon: {fileID: 21300000, guid: ae67407472fa4d799f3eb49095585cb3, type: 3}
   cost: 4
   locked: 0
@@ -29,9 +29,8 @@ MonoBehaviour:
   upgrades:
   - cost: 2
     title: Deeper sleep
-    description: Wider reach and longer sleep.
+    description: Things stay still for longer.
+  reach: 4
   tiers:
-  - reach: 4
-    sleepSeconds: 3
-  - reach: 5.5
-    sleepSeconds: 5
+  - sleepSeconds: 3
+  - sleepSeconds: 5

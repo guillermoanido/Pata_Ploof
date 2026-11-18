@@ -113,7 +113,11 @@ namespace FallingWizard.World
 
         void Update()
         {
-            clock += Time.deltaTime;
+            if (IsAsleep)
+                HoldQuiet();
+            else
+                clock += Time.deltaTime;
+
             ShowTheRightLook();
         }
 
@@ -132,6 +136,8 @@ namespace FallingWizard.World
             float now = TimeIntoCycle;
             return now >= start && now < end;
         }
+
+        void HoldQuiet() => clock = CycleLength * (1f - phase);
 
         void ShowTheRightLook()
         {

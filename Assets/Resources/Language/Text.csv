@@ -43,14 +43,20 @@ ability.fling.name,Fling,Impulso
 ability.fling.desc,"Summon a trusty hand to fling you into the air, hold the button to aim.","Invoca una mano fiel que te lanza por los aires, mantén presionado el botón para apuntar."
 ability.fling.upgrade.0.title,Stronger hand,Mano más fuerte
 ability.fling.upgrade.0.desc,Your magical hand gets stronger.,Tu mano mágica se hace más fuerte.
+ability.fling.upgrade.1.title,Helping hand,Mano amiga
+ability.fling.upgrade.1.desc,"Your hand catches you mid-tumble, fling yourself even in the air.","Tu mano te atrapa mientras caes dando vueltas, lánzate incluso en el aire."
 ability.glide.name,Glide,Planeo
-ability.glide.desc,"Open your magical hat like a wing to glide, ride the wind to survive bigger falls.","Abre tu sombrero mágico como un ala para planear, usa el viento para aguantar caídas más altas."
+ability.glide.desc,"Open your magical hat to steer your fall, catch the wind to start your fall over.","Abre tu sombrero mágico para guiar tu caída, atrapa el viento para empezar la caída de nuevo."
 ability.glide.upgrade.0.title,Wider hat,Sombrero más ancho
-ability.glide.upgrade.0.desc,Your hat grows wider and glides better.,Tu sombrero crece y planea mejor.
+ability.glide.upgrade.0.desc,"Your hat catches more air, so you fall slower.","Tu sombrero atrapa más aire, así caes más despacio."
+ability.glide.upgrade.1.title,Feather hat,Sombrero de pluma
+ability.glide.upgrade.1.desc,"You float down at a slow, steady pace.",Bajas flotando a un ritmo lento y constante.
 ability.star.name,Falling Star,Estrella fugaz
 ability.star.desc,"While tumbling, dive into the ground like a falling star and bounce back up. Once per level.","Si caes dando vueltas, lánzate al suelo como estrella fugaz y rebota. Una vez por nivel."
-ability.star.upgrade.0.title,Longer dive,Picada más larga
-ability.star.upgrade.0.desc,Your dive goes two tiles deep.,Tu picada llega a dos casillas.
+ability.star.upgrade.0.title,Second star,Segunda estrella
+ability.star.upgrade.0.desc,Dive twice per level.,Lánzate dos veces por nivel.
+ability.star.upgrade.1.title,Third star,Tercera estrella
+ability.star.upgrade.1.desc,Dive three times per level.,Lánzate tres veces por nivel.
 ability.vine.name,Mage Hand,Mano de mago
 ability.vine.desc,"Call down a spectral hand to swing on, press the button again to let go.","Haz bajar una mano espectral para columpiarte, presiona otra vez el botón para soltarte."
 ability.vine.upgrade.0.title,Wider swing,Vaivén más amplio
@@ -61,14 +67,18 @@ ability.staff.name,Staff,Bastón
 ability.staff.desc,A magical wooden staff that allows you to climb up or climb down surfaces.,Un bastón mágico de madera que te permite trepar o descender por las superficies.
 ability.staff.upgrade.0.title,Longer staff,Bastón más largo
 ability.staff.upgrade.0.desc,Get a longer staff.,Consigue un bastón más largo.
+ability.staff.upgrade.1.title,Longest staff,El bastón más largo
+ability.staff.upgrade.1.desc,"An even longer staff, to climb further up and down.","Un bastón aún más largo, para trepar y descender más lejos."
 ability.hand.name,Telekinesis,Telequinesis
-ability.hand.desc,A wave of magic that opens magic doors and puts nearby hazards to sleep.,Una onda de magia que abre las puertas mágicas y adormece a los peligros cercanos.
+ability.hand.desc,A wave of magic that opens magic doors and holds still the moving things around you.,Una onda de magia que abre las puertas mágicas y detiene las cosas que se mueven a tu alrededor.
 ability.hand.upgrade.0.title,Deeper sleep,Sueño profundo
-ability.hand.upgrade.0.desc,Wider reach and longer sleep.,Más alcance y sueño más largo.
+ability.hand.upgrade.0.desc,Things stay still for longer.,Las cosas se quedan quietas más tiempo.
 ability.slap.name,Star Slap,Manotazo estelar
 ability.slap.desc,"A magical star hand that slaps walls to push you away, it can also shove furniture around.","Una mano estelar que golpea las paredes para empujarte, también puede mover muebles."
-ability.slap.upgrade.0.title,Longer arm,Brazo más largo
-ability.slap.upgrade.0.desc,Your star hand reaches further.,Tu mano estelar llega más lejos.
+ability.slap.upgrade.0.title,Steady hand,Mano firme
+ability.slap.upgrade.0.desc,Slapping while you tumble slows you down.,Golpear mientras caes dando vueltas te frena.
+ability.slap.upgrade.1.title,Longer arm,Brazo más largo
+ability.slap.upgrade.1.desc,Your star hand reaches further and slows your tumble even more.,Tu mano estelar llega más lejos y te frena aún más.
 settings.controls,Controls,Controles
 controls.title,Controls,Controles
 controls.keyboard,Keyboard,Teclado

@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace FallingWizard.World
 {
-    public class Hazard : Zone
+    public class Hazard : Zone, ISleepable
     {
         protected const float RunningOnly = 3f;
 
@@ -67,8 +67,10 @@ namespace FallingWizard.World
 
         [Header("Telekinesis")]
         [Tooltip("Telekinesis can put this hazard to sleep for a few seconds, and while it sleeps " +
-                 "it does nothing to the wizard. Untick for a hazard the level needs to always " +
-                 "work, like a Bouncy Trash that is the only way across a gap.")]
+                 "it does nothing to the wizard. Telekinesis is the wizard holding still the " +
+                 "things around them that move or act, so untick it on things that just lie " +
+                 "there - a wet floor sign, stairs, broken glass - and on a hazard the level " +
+                 "needs to always work, like a Bouncy Trash that is the only way across a gap.")]
         public bool canSleep = true;
 
         [Tooltip("A child object shown while Telekinesis holds this asleep, on top of the hazard's " +
@@ -81,6 +83,8 @@ namespace FallingWizard.World
         [NonSerialized] float asleepUntil;
 
         public bool IsAsleep => Time.time < asleepUntil;
+
+        public bool CanSleepNow => canSleep && !IsAsleep;
 
         protected virtual bool IsDangerousNow => true;
 

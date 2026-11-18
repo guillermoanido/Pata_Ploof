@@ -30,6 +30,6 @@ MonoBehaviour:
   - cost: 1
     title: Longer staff
     description: Get a longer staff.
-  lengthByRank:
-  - 1
-  - 1.5
+  - cost: 2
+    title: Longest staff
+    description: An even longer staff, to climb further up and down.

@@ -25,16 +25,17 @@ MonoBehaviour:
   activeDuration: 1
   cooldown: 0
   usesPerLevel: 1
-  usesAddedPerRank: 0
+  usesAddedPerRank: 1
   collectedEffect: {fileID: 0}
   upgrades:
   - cost: 3
-    title: Longer dive
-    description: Your dive goes two tiles deep.
+    title: Second star
+    description: Dive twice per level.
+  - cost: 4
+    title: Third star
+    description: Dive three times per level.
   diveAngle: 45
   diveSpeed: 12
+  diveDepth: 1.25
   bounceHeight: 2
   bounceOnward: 2
-  tiers:
-  - diveDepth: 1.25
-  - diveDepth: 2

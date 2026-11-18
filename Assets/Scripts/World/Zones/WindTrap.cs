@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace FallingWizard.World
 {
-    public class WindTrap : WindZone2D
+    public class WindTrap : WindZone2D, ISleepable
     {
         const float ShortestCycle = 0.1f;
 
@@ -104,12 +104,28 @@ namespace FallingWizard.World
                  "Travel. Leave it empty and nothing shows.")]
         public GameObject blowingLook;
 
+        [Header("Telekinesis")]
+        [Tooltip("Telekinesis can hold this trap shut for a few seconds. It stays shut and calm " +
+                 "while it sleeps, and when it wakes it starts winding up again from shut, so the " +
+                 "warning always comes first. Untick for a trap the level needs to always blow.")]
+        public bool canSleep = true;
+
+        [Tooltip("A child object shown while Telekinesis holds the trap shut, on top of its own " +
+                 "art. A copy of the Star Sparkles prefab fits here. Leave it empty and the trap " +
+                 "looks the same asleep or awake.")]
+        public GameObject asleepLook;
+
         [NonSerialized] float clock;
         [NonSerialized] float armedUntil = NotArmed;
         [NonSerialized] bool wasOpen;
+        [NonSerialized] float asleepUntil;
 
         [NonSerialized] bool isShowingWarning;
         [NonSerialized] bool isShowingBlowing;
+
+        public bool IsAsleep => Time.time < asleepUntil;
+
+        public bool CanSleepNow => canSleep && !IsAsleep;
 
         float CycleLength =>
             Mathf.Max(ShortestCycle, Mathf.Max(0f, shutSeconds) + Mathf.Max(0f, openSeconds));
@@ -196,12 +212,26 @@ namespace FallingWizard.World
             base.Awake();
             Validate();
             SwitchLooks(IsWindingUp, IsOpen);
+            ShowLook(asleepLook, false);
         }
 
         void Update()
         {
             AdvanceTheCycle();
             ShowTheRightLook();
+        }
+
+        public bool TrySleep(float seconds)
+        {
+            if (!canSleep || seconds <= 0f)
+                return false;
+
+            asleepUntil = Time.time + seconds;
+
+            ShowLook(asleepLook, true);
+            CancelInvoke(nameof(WakeUp));
+            Invoke(nameof(WakeUp), seconds);
+            return true;
         }
 
         protected override void OnPlayerInside(PlayerCharacter wizard, float fixedDeltaTime)
@@ -290,7 +320,10 @@ namespace FallingWizard.World
 
         void AdvanceTheCycle()
         {
-            clock += Time.deltaTime;
+            if (IsAsleep)
+                HoldShut();
+            else
+                clock += Time.deltaTime;
 
             bool isOpenNow = IsOpen;
 
@@ -299,6 +332,8 @@ namespace FallingWizard.World
 
             wasOpen = isOpenNow;
         }
+
+        void HoldShut() => clock = Travel + CycleLength * (1f - phase);
 
         void ShowTheRightLook()
         {
@@ -329,5 +364,7 @@ namespace FallingWizard.World
 
             wizard.Shove(TurnWithThisObject(kick), kickLockout);
         }
+
+        void WakeUp() => ShowLook(asleepLook, false);
     }
 }

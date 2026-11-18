@@ -91,6 +91,9 @@ namespace FallingWizard.Player
 
         public bool CanBeHurt => health.IsAlive && !Invulnerable && !health.IsInvulnerable;
 
+        public bool CanBeFlung =>
+            health.IsAlive && (State == PlayerState.Normal || (State == PlayerState.Ragdoll && !ragdoll.IsDiving));
+
         public void Attach(Rigidbody2D body, Transform art, Collider2D hitbox, Staff[] staffSet)
         {
             movement.Attach(body, art, hitbox);
@@ -206,6 +209,14 @@ namespace FallingWizard.Player
                 movement.RiseAtLeast(Mathf.Max(0f, movement.Velocity.y) + upwardSpeed);
         }
 
+        public void RestartFall() => movement.RestartFall();
+
+        public void SlowTumble(float fraction)
+        {
+            if (fraction > 0f && State == PlayerState.Ragdoll && !ragdoll.IsDiving)
+                ragdoll.SlowDown(fraction);
+        }
+
         public void Hurt(int hearts, string cause)
         {
             if (hearts <= 0 || !CanBeHurt)
@@ -233,22 +244,22 @@ namespace FallingWizard.Player
             return true;
         }
 
-        public bool WouldFlingThroughHazard(Vector2 launch, Movement.ArcSettings look)
-        {
-            if (State != PlayerState.Normal || !health.IsAlive)
-                return false;
-
-            return movement.WouldTumbleThroughHazard(launch, look);
-        }
+        public bool WouldFlingThroughHazard(Vector2 launch, Movement.ArcSettings look) =>
+            CanBeFlung && movement.WouldTumbleThroughHazard(launch, look);
 
         public bool TryFling(Vector2 velocity)
         {
-            if (State != PlayerState.Normal || !health.IsAlive)
+            if (!CanBeFlung)
                 return false;
+
+            bool wasTumbling = State == PlayerState.Ragdoll;
 
             movement.Stop();
             movement.UseBaseGravity();
-            movement.BeginFallFrom(movement.Position.y);
+
+            if (!wasTumbling)
+                movement.BeginFallFrom(movement.Position.y);
+
             ragdoll.Throw(Movement.GetDirectionOf(velocity.x), velocity);
 
             State = PlayerState.Ragdoll;
@@ -928,6 +939,12 @@ namespace FallingWizard.Player
                 fallAllowance = safeDropBonus;
                 IsGrounded = false;
                 stepAssistTimer = 0f;
+            }
+
+            public void RestartFall()
+            {
+                highestPoint = body.position.y;
+                fallAllowance = 0f;
             }
 
             public void UseBaseGravity() => body.gravityScale = baseGravityScale;
@@ -1934,6 +1951,9 @@ namespace FallingWizard.Player
                 StartTumbling(direction);
                 body.linearVelocity = velocity;
             }
+
+            public void SlowDown(float fraction) =>
+                body.linearVelocity *= 1f - Mathf.Clamp01(fraction);
 
             public void BeginDive(Vector2 velocity, float depth, Bounce bounce)
             {

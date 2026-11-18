@@ -64,6 +64,8 @@ namespace FallingWizard.Player
 
         public override bool OnCast(PlayerLogic wizard)
         {
+            wizard.SlowTumble(PickTier(tiers, wizard).tumbleSlowdown);
+
             Swing swing = Aim(wizard);
 
             foreach (Furniture piece in InTheWay)
@@ -217,7 +219,18 @@ namespace FallingWizard.Player
                      "is out of reach: the hand swats the air at full stretch and nothing moves.")]
             [Min(ShortestReach)] public float reach = 2f;
 
-            public void Validate() => reach = Mathf.Max(ShortestReach, reach);
+            [Tooltip("How much of a TUMBLING wizard's speed each slap takes away at this rank, as " +
+                     "a fraction: 0.25 slows the tumble by a quarter, 0.5 by half, 0 not at all. " +
+                     "It applies to every slap made while tumbling, wall or no wall, before the " +
+                     "shove. It never touches how far they have fallen, so it calms a tumble " +
+                     "without saving them from a fall.")]
+            [Range(0f, 1f)] public float tumbleSlowdown = 0f;
+
+            public void Validate()
+            {
+                reach = Mathf.Max(ShortestReach, reach);
+                tumbleSlowdown = Mathf.Clamp01(tumbleSlowdown);
+            }
         }
 
         struct Swing

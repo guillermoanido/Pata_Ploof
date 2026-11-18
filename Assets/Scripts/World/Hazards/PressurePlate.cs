@@ -6,7 +6,7 @@ namespace FallingWizard.World
 {
     [RequireComponent(typeof(Collider2D))]
     [DefaultExecutionOrder(RunAfterTheWizard)]
-    public class PressurePlate : MonoBehaviour
+    public class PressurePlate : MonoBehaviour, ISleepable
     {
         const int RunAfterTheWizard = 1;
 
@@ -64,10 +64,26 @@ namespace FallingWizard.World
                  "nothing shows while it re-arms.")]
         public GameObject launchedLook;
 
+        [Header("Telekinesis")]
+        [Tooltip("Telekinesis can jam this plate for a few seconds: it stays up and does not " +
+                 "count or throw while it sleeps, so the wizard can stand on it safely. Untick " +
+                 "for a plate the level needs to always throw.")]
+        public bool canSleep = true;
+
+        [Tooltip("A child object shown while Telekinesis holds the plate jammed, on top of its " +
+                 "own art. A copy of the Star Sparkles prefab fits here. Leave it empty and the " +
+                 "plate looks the same asleep or awake.")]
+        public GameObject asleepLook;
+
         [NonSerialized] Collider2D hitbox;
         [NonSerialized] float secondsStoodOn;
         [NonSerialized] float readyAt;
+        [NonSerialized] float asleepUntil;
         [NonSerialized] PlateLook shownLook = PlateLook.Idle;
+
+        public bool IsAsleep => Time.time < asleepUntil;
+
+        public bool CanSleepNow => canSleep && !IsAsleep;
 
         bool IsRearming => Time.time < readyAt;
 
@@ -93,10 +109,17 @@ namespace FallingWizard.World
         {
             hitbox = GetComponent<Collider2D>();
             SwitchTheLooks();
+            ShowLook(asleepLook, false);
         }
 
         void FixedUpdate()
         {
+            if (IsAsleep)
+            {
+                PopBackUp();
+                return;
+            }
+
             if (IsRearming)
                 return;
 
@@ -114,6 +137,19 @@ namespace FallingWizard.World
                 LaunchTheWizard(wizard.Logic);
             else
                 ShowTheRightLook(PlateLook.Pressed);
+        }
+
+        public bool TrySleep(float seconds)
+        {
+            if (!canSleep || seconds <= 0f)
+                return false;
+
+            asleepUntil = Time.time + seconds;
+
+            ShowLook(asleepLook, true);
+            CancelInvoke(nameof(WakeUp));
+            Invoke(nameof(WakeUp), seconds);
+            return true;
         }
 
         bool WouldSwitchThePlateOff(GameObject look) =>
@@ -172,6 +208,8 @@ namespace FallingWizard.World
             ShowLook(pressedLook, shownLook == PlateLook.Pressed);
             ShowLook(launchedLook, shownLook == PlateLook.Launched);
         }
+
+        void WakeUp() => ShowLook(asleepLook, false);
 
         static void ShowLook(GameObject look, bool isShown)
         {

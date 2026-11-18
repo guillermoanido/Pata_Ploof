@@ -104,7 +104,7 @@ MonoBehaviour:
   idleLook: {fileID: 0}
   hitLook: {fileID: 0}
   hitSeconds: 0.5
-  canSleep: 1
+  canSleep: 0
   asleepLook: {fileID: 1800000103}
   aim: 0
   extraKick: 3.5

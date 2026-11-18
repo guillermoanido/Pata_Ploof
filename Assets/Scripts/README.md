@@ -209,13 +209,13 @@ The Staff is yours from the start and welded to E; everything else fights over t
 
 | Spell | What it is | Rank 2 / 3 |
 | --- | --- | --- |
-| **Staff** | Plant it at a ledge and climb down, or raise it against a wall and climb up. | longer staff |
+| **Staff** | Plant it at a ledge and climb down, or raise it against a wall and climb up. | longer staff / longest staff |
 | **Mage Hand** | A spectral hand you swing from. | wider swing / climb it |
-| **Star Slap** | A magical star hand slaps a wall to shove you away from it, or knocks furniture flying. As often as you like. | a longer arm |
-| **Glide** | A canopy. It barely slows the drop - it carries you. | wider wing |
-| **Telekinesis** | A push of magic all round you: Magic Doors open, hazards fall asleep for a few seconds. | further, longer sleep |
-| **Falling Star** | While tumbling, dive into the ground and bounce back up on your feet. Once per level. | a two tile dive |
-| **Fling** | Hold to aim up or down (never more than 45° up), let go to be thrown into a tumble. | harder throw |
+| **Star Slap** | A magical star hand slaps a wall to shove you away from it, or knocks furniture flying. As often as you like. | slaps slow your tumble / a longer arm, slowing it more |
+| **Glide** | A canopy for steering your fall. A wind catching it starts the fall over from there. | falls slower / a slow, steady sink |
+| **Telekinesis** | A push of magic all round you: Magic Doors open, and the moving things around you stop for a few seconds. | longer sleep |
+| **Falling Star** | While tumbling, dive into the ground and bounce back up on your feet. Once per level. | a second dive / a third dive |
+| **Fling** | Hold to aim up or down (never more than 45° up), let go to be thrown into a tumble. | harder throw / fling while tumbling |
 
 Each spell's picture is its asset's **Icon**, from `Assets/Art/Sprites/Icons/Spells`: 10 x 10
 pixel art in the HUD's palette, which the HUD draws at 4x inside the ring. Redraw one there, or
@@ -229,18 +229,21 @@ level line under it, and has room for about two lines plus that one, so keep a d
 90 characters. Anything longer shrinks to the smallest size and then spills. For more room, raise
 **Cell Size Y** on `Cards` and the `Blurb`'s **Preferred Height** by the same amount.
 
-Two of them want level content: Mage Hand needs a `Vine`, and Telekinesis wants a `Magic Door` or
-any hazard nearby. Every hazard can already be put to sleep, so it works in every level as it is.
+Two of them want level content: Mage Hand needs a `Vine`, and Telekinesis wants a `Magic Door`, a
+moving platform, a trap, a rake or a Bouncy Trash nearby.
 
-**Glide does not forgive fall damage, and that is the design.** Feather Fall — the spell that
-used to live in this slot — did, and that forgiveness was the only reason it was worth a button.
-Glide earns its slot a different way: it roughly **doubles how far a run off a ledge carries you**
-before you land. Giving one spell both would make it two spells over three contested buttons.
+**Glide only forgives a fall through wind, and that is the design.** Every rank gives the same
+steering (`airSpeed`, `airControl`, `drag`). While the canopy is out, any wind that catches the
+wizard calls `PlayerLogic.RestartFall`, which moves the fall's highest point down to where they
+are, every step they stay in it. The drop is measured from where they **leave the wind**, so an
+updraft or a gust is a fresh start. It works in any wind, a downward one too, so keep downdrafts
+short where a Glide player could ride one all the way down.
 
-Note what `fallSpeed` does *not* buy. Fall damage counts **boxes fallen**, not how fast
-(`SenseGround` bills `highestPoint - position.y`), so dropping the canopy's fall speed to
-0.8 lowers the terminal speed and bills you exactly the same. That is worth letting a player
-discover once. You survive under a canopy by **going somewhere else**, not by falling softer.
+The ranks only change `fallSpeed`: 1 (no slowing) when learned, 0.6 at rank 2, and 0.2, a slow
+steady sink, at rank 3. Note what that does *not* buy. Fall damage counts **boxes fallen**, not
+how fast (`SenseGround` bills `highestPoint - position.y`), so a slower canopy lowers the speed
+and bills you exactly the same. That is worth letting a player discover once. Away from wind, you
+survive under a canopy by **going somewhere else**, not by falling softer.
 
 `AirSpeedMultiplier`, `AirControlMultiplier` and `AirDragMultiplier` are air-only for a reason:
 `MoveSpeedMultiplier` would make the wizard sprint along the floor with a wing out. They are
@@ -469,10 +472,11 @@ dim, through each Button's **Disabled Color**. Change those tints on the Button 
 
 ## Falling Star: dive out of a tumble
 
-**It only casts while the wizard is tumbling** (`PlayerState.Ragdoll`), once per level. The press
+**It only casts while the wizard is tumbling** (`PlayerState.Ragdoll`), once per level, plus one
+more cast per rank (`usesPerLevel` 1 and `usesAddedPerRank` 1: one, two, then three). The press
 throws them head first along a diagonal: `diveAngle` (45°) below level, at `diveSpeed` (12 boxes a
 second), towards the stick if it is held, otherwise the way they were already going. The dive
-lasts until they have dropped `diveDepth` boxes (1.25, then 2 at rank 2). That depth **is** the window: the ground has to be within it when they cast. Tighten or loosen it per rank on the Falling Star asset.
+lasts until they have dropped `diveDepth` boxes (1.25 at every rank). That depth **is** the window: the ground has to be within it when they cast. Tighten or loosen it on the Falling Star asset.
 
 - **Ground inside the dive: saved.** `UpdateRagdoll` checks for ground *before* `CheckLanding`, so
   the landing is thrown away (`Movement.ForgetLanding`) instead of billed. The tumble ends on the
@@ -496,13 +500,17 @@ is the `Falling Star Trail` child of PLAYER, a copy of Star Sparkles that stream
 The spell's id is `slap`; its script is `StarSlapAbility` and its asset `Abilities/Star Slap`.
 
 **Falling Star saves you; Star Slap moves you.** It has no charges, only a 0.75 s `cooldown`, so it
-can never be what stops a fall: it never pushes the wizard up, never changes how fast they are
-falling, and never restarts the fall count. What it can do is put them somewhere better, such as
-onto the ledge they are falling past.
+can never be what stops a fall: it never pushes the wizard up and never restarts the fall count.
+What it can do is put them somewhere better, such as onto the ledge they are falling past.
+
+**From rank 2 it calms a tumble.** Every slap made while tumbling first takes `tumbleSlowdown` of
+the wizard's speed away (`PlayerLogic.SlowTumble`): none when learned, a quarter at rank 2, half at
+rank 3, which also reaches 4 boxes instead of 2. It slows the tumble, up and down included, but
+the fall is still billed by height, so it never saves them from a drop.
 
 The press slaps the way the stick points, snapped to the nearest of eight directions, or the way
 the wizard faces with no stick held. `Aim` sweeps the wizard's own hitbox that way, up to `reach`
-boxes from their edge (2, then 3 at rank 2):
+boxes from their edge (2, 2, then 4 at rank 3):
 
 | The hand meets | What happens |
 | --- | --- |
@@ -566,6 +574,12 @@ Nothing about furniture is saved: a level reload puts every piece back where you
 **Holding the button aims; letting go throws.** There is no wind-up: how hard you are thrown is
 set per rank (`Tier.speed`, 9 and then 11 boxes a second), and holding only turns the arrow.
 
+**At rank 3 it works while tumbling** (`Tier.canFlingWhileTumbling`), even in mid-air: aim while
+you tumble, let go, and the tumble starts over along the new throw. That redirects a tumble but
+never saves it. `TryFling` only restarts the fall count when the wizard was standing; from a
+tumble the fall is still counted from the highest point before it, so a long drop still hurts.
+Below rank 3 the HUD slot greys out while tumbling.
+
 - **Aiming.** The arrow starts at `startAngle` (20°), and holding up or down turns it at
   `aimSpeed` (90° a second) between `lowestAngle` (−45°) and `highestAngle` (45°). The sliders stop
   at 45° on purpose, so a fling is a throw across rather than a jump. Set Lowest Angle to 0 if you
@@ -594,27 +608,42 @@ tenth of a second you spend aiming.
 
 ## Telekinesis: doors and sleeping hazards
 
-One press pushes magic out in a circle of `reach` boxes round the wizard (4, then 5.5 at rank 2),
-and everything inside answers:
+Telekinesis is the wizard holding still the space around them, so it helps exploring more than
+surviving. One press pushes magic out in a circle of `reach` boxes round the wizard (4 at every
+rank; the upgrade only makes things stay stopped longer), and everything inside answers:
 
 - **A `MagicDoor` opens for good.** Every collider on it and on its shown children switches off,
   its Closed Look hides and its Open Look shows. The Closed Look slot must hold the object that
   holds all of the shut art, or part of the shut door stays on screen. The level
   reloads on death, so there is nothing to close it again.
-- **A `Hazard` falls asleep** for `sleepSeconds` (3, then 5). It cannot catch the wizard until it
-  wakes, and its `Asleep Look` shows on top of its own art: every hazard prefab ships with a copy of
-  Star Sparkles there, sized to the hazard, so stars hang around it while it sleeps. Stairs, rakes,
-  wet floor signs, steam vents, wax and broken glass are all `Hazard`s, so all of them can be
-  slept. Untick **Can Sleep** on one the level needs awake, like a Bouncy Trash that is the only
-  way across a gap.
+- **Anything `ISleepable` with Can Sleep ticked falls asleep** for `sleepSeconds` (3, then 5 at
+  rank 2), and its `Asleep Look` shows on top of its own art: each of these prefabs ships with a
+  copy of Star Sparkles there, so stars hang around it while it sleeps.
 
-The press does nothing, and greys out on the HUD, when there is no shut door or awake hazard in
+| Sleeps | While asleep |
+| --- | --- |
+| `MovingPlatform` | Stops where it is, then carries on along its path. |
+| Rakes, Bouncy Trash (`Hazard`s) | Cannot catch the wizard. |
+| `SteamVent` | Held quiet. It wakes at the start of its quiet time, so the warning always comes first. |
+| `WindTrap` | Held shut. It wakes shut and winds up again, so the warning always comes first. |
+| `PressurePlate` | Jammed up: it does not count or throw, so the wizard can stand on it. |
+
+Things that just lie there have **Can Sleep** unticked, because stopping them makes no sense: the
+wet floor sign, stairs, broken glass and wax drops. Untick it as well on anything the level needs
+to keep working, like a Bouncy Trash that is the only way across a gap.
+
+**A new thing that should sleep** implements `ISleepable` (`World/ISleepable.cs`): `CanSleepNow`
+and `TrySleep(seconds)`. Telekinesis finds it on the collider it touches or any parent of it, so
+it needs no other change. Every `Hazard` already does.
+
+The press does nothing, and greys out on the HUD, when there is no shut door or awake sleeper in
 reach, so the 5 second `cooldown` is never spent on nothing.
 
 `Hazard.TrySleep` pushes the hazard's own re-arm timer out to the end of the sleep and never pulls
 it in, so a steam vent that has just burned the wizard keeps its own wait if that is longer.
 
-**Wind is not a hazard and does not sleep.** It is a `Zone`, and Glide wants it.
+**Plain wind does not sleep.** A `WindZone2D` is a `Zone`, and Glide wants it. Only a `WindTrap`,
+a wind on a timer, can be held shut.
 
 ## The grid line is not the floor
 
