@@ -8,7 +8,7 @@ namespace FallingWizard.Player
         [Header("Controls")]
         [Tooltip("A press shorter than this locks the staff looking down, or unlocks it. While " +
                  "it is locked, the wizard climbs down it at the next ledge they reach - or, " +
-                 "stood on a Wooden Platform, at the nearest edge of the planks under them, " +
+                 "stood on a Wooden Platform, straight down through the planks where they stand, " +
                  "exactly like a ledge. Hold it longer and the staff raises instead.")]
         [Min(0.01f)] public float tapSeconds = 0.2f;
 

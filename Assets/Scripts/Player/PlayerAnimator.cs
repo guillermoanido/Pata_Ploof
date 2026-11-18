@@ -77,10 +77,9 @@ namespace FallingWizard.Player
 
             PlayerLogic wizard = character.Logic;
 
-            WatchForAHit(wizard.health);
-
             int mode = ChooseMode(wizard);
 
+            WatchForAHit(wizard.health, mode);
             SetAnimatorParameters(wizard, mode);
             WatchForAClimbStarting(wizard, mode);
             WatchForATumble(mode, wizard.movement);
@@ -92,13 +91,13 @@ namespace FallingWizard.Player
                 character.Logic.Impacted -= PlayImpactStars;
         }
 
-        void WatchForAHit(PlayerLogic.Health health)
+        void WatchForAHit(PlayerLogic.Health health, int mode)
         {
             bool tookAHit = health.Current < lastHealth && health.IsInvulnerable && health.IsAlive;
 
             lastHealth = health.Current;
 
-            if (tookAHit)
+            if (tookAHit && mode == ModeGround)
                 animator.SetTrigger(HurtId);
         }
 

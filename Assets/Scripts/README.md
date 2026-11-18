@@ -825,8 +825,8 @@ go through `SkillScreen.OpenInLevel`.
 ## Prefabs
 
 **Wooden Platform** (`Assets/Prefabs/Wooden Platform.prefab`) is solid planks on the Ground layer
-with a `StaffPlatform` on them. **Both ends of the planks work exactly like the edge of a
-ledge.**
+with a `StaffPlatform` on them. **You walk on it, and the staff takes you straight down through it
+from wherever you stand.**
 
 ```
 Wooden Platform     Box Collider 2D (the planks, solid, on Ground) and StaffPlatform
@@ -834,30 +834,24 @@ Wooden Platform     Box Collider 2D (the planks, solid, on Ground) and StaffPlat
 ```
 
 A tap of the staff button locks the staff looking down, as it does before a ledge. While it is
-locked and the wizard stands on a wooden platform, the staff is planted straight down at the
-**nearest end** of the planks under their feet, and the wizard climbs down it as they would off a
-ledge: they swing over onto the pole, push down to slide, hold down at the bottom to let go, push
-up at the top to step back onto the planks. Lock it first and walk onto a platform, or lock it
-while stood on one: it goes the moment both are true, and going down unlocks the staff again.
-
-A longer platform is several one-box pieces side by side, so it has an edge every box: where two
-pieces meet, their edges are in the same place, and whichever edge is closest to the wizard wins.
-Stood anywhere on a platform, the nearest edge is never more than half a box away.
+locked and the wizard stands on a wooden platform, the staff is planted straight down through the
+planks **right where the wizard stands**, and they climb down it as they would off a ledge: push
+down to slide, hold down at the bottom to let go, push up at the top to step back onto the planks.
+Lock it first and walk onto a platform, or lock it while stood on one: it goes the moment both are
+true, and going down unlocks the staff again. There is no spot to find - anywhere on the planks
+works, on one piece or a long row.
 
 **How it is wired.** Each physics step `PlayerLogic.GoDownWhileLookingDown` checks the lock and
-tries `TryGoDownPlatformEdge` first, then `TryTakeLedge` (the ordinary ledge climb-down).
-`Movement.TryFindPlatformEdge` looks at what is under the wizard's feet with the same probe the
-ground check uses, takes every `StaffPlatform` there, and keeps the edge nearest the wizard.
-`Staff.Pole.TryPlantThroughFloor` plants the pole at that edge with its top flush with the planks,
-and measures the reach from **under** the planks so they never cut it short. Nothing checks
-whether the wizard fits: like a ledge, another platform or floor below only stops the climb just
-above it. The wizard is kinematic on the pole and slides through the solid planks, and stepping off
-at the top puts them back on solid wood.
-
-**One safety rule.** An edge that sits flush against a wall (anything solid on the Ground layer
-just past the end of the planks that is not another wooden platform) would slide the wizard down
-inside the wall. `StepAwayFromWall` moves the pole half the wizard's width back onto the planks
-there, so they go down beside the wall instead of into it.
+tries `TryGoDownThroughPlatform` first, then `TryTakeLedge` (the ordinary ledge climb-down).
+`Movement.TryFindPlatformUnderFeet` looks at what is under the wizard's feet with the same probe the
+ground check uses and takes every `StaffPlatform` there. `Movement.FitOverThePlanks` keeps the
+wizard where they stand, only nudging them in until their whole body is over those planks - so a
+wizard hanging half off the end, or stood against a wall at the end of the planks, goes down beside
+the wall instead of inside it. `Staff.Pole.TryPlantThroughFloor` plants the pole there with its top
+flush with the planks, and measures the reach from **under** the planks so they never cut it short.
+Nothing checks whether the wizard fits: like a ledge, another platform or floor below only stops
+the climb just above it. The wizard is kinematic on the pole and slides through the solid planks,
+and stepping off at the top puts them back on solid wood.
 
 **The planks have rounded corners**, for the same reason as `Stone Wall` (see *The grid line is
 not the floor*): the collider is **0.9 × 0.0875 with a 0.05 edge radius**, which still comes to one

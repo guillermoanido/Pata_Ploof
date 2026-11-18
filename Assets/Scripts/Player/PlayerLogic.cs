@@ -78,7 +78,7 @@ namespace FallingWizard.Player
         public bool IsInWind { get; private set; }
         public bool IsDiving => State == PlayerState.Ragdoll && ragdoll.IsDiving;
         public bool IsStaffLookingDown { get; private set; }
-        public bool IsOnStaffPlatform => movement.TryFindPlatformEdge(out _, out _);
+        public bool IsOnStaffPlatform => movement.TryFindPlatformUnderFeet(out _, out _);
 
         public bool CanClimbHere =>
             IsStaffFree && pole.HasHook &&
@@ -425,20 +425,18 @@ namespace FallingWizard.Player
             if (!IsStaffLookingDown || !IsStaffFree)
                 return;
 
-            bool hasGoneDown = TryGoDownPlatformEdge() || TryTakeLedge();
+            bool hasGoneDown = TryGoDownThroughPlatform() || TryTakeLedge();
 
             if (hasGoneDown)
                 AimStaffDown(false);
         }
 
-        bool TryGoDownPlatformEdge()
+        bool TryGoDownThroughPlatform()
         {
-            if (!movement.TryFindPlatformEdge(out float edgeX, out float floorBottomY))
+            if (!movement.TryFindPlatformUnderFeet(out float descentX, out float floorBottomY))
                 return false;
 
-            int towardEdge = Movement.GetDirectionOf(edgeX - movement.Position.x);
-
-            if (!pole.TryPlantThroughFloor(towardEdge, edgeX, floorBottomY))
+            if (!pole.TryPlantThroughFloor(movement.Facing, descentX, floorBottomY))
                 return false;
 
             State = PlayerState.OnStaff;
@@ -630,9 +628,6 @@ namespace FallingWizard.Player
 
             const float Half = 0.5f;
             const float BothSides = 2f;
-
-            const float PastTheEdge = 0.05f;
-            const float WallGap = 0.02f;
 
             static readonly Vector2 MinGroundCheck =
                 new Vector2(MinGroundCheckWidth, MinGroundCheckThickness);
@@ -949,28 +944,28 @@ namespace FallingWizard.Player
 
             public void UseBaseGravity() => body.gravityScale = baseGravityScale;
 
-            public bool TryFindPlatformEdge(out float edgeX, out float floorBottomY)
+            public bool TryFindPlatformUnderFeet(out float descentX, out float floorBottomY)
             {
-                edgeX = Position.x;
+                descentX = Position.x;
                 floorBottomY = Position.y;
-                StaffPlatform nearest = null;
 
-                foreach (StaffPlatform platform in FindPlatformsUnderFeet())
-                {
-                    float edge = platform.EdgeOn(platform.NearestSideTo(Position.x));
+                List<StaffPlatform> platforms = FindPlatformsUnderFeet();
 
-                    if (nearest == null || Mathf.Abs(edge - Position.x) < Mathf.Abs(edgeX - Position.x))
-                    {
-                        nearest = platform;
-                        edgeX = edge;
-                    }
-                }
-
-                if (nearest == null)
+                if (platforms.Count == 0)
                     return false;
 
-                edgeX = StepAwayFromWall(nearest, edgeX);
-                floorBottomY = nearest.Bottom;
+                float left = platforms[0].Left;
+                float right = platforms[0].Right;
+                floorBottomY = platforms[0].Bottom;
+
+                foreach (StaffPlatform platform in platforms)
+                {
+                    left = Mathf.Min(left, platform.Left);
+                    right = Mathf.Max(right, platform.Right);
+                    floorBottomY = Mathf.Min(floorBottomY, platform.Bottom);
+                }
+
+                descentX = FitOverThePlanks(left, right);
                 return true;
             }
 
@@ -994,16 +989,14 @@ namespace FallingWizard.Player
                 return PlatformsUnderFeet;
             }
 
-            float StepAwayFromWall(StaffPlatform platform, float edgeX)
+            float FitOverThePlanks(float left, float right)
             {
-                int outward = platform.NearestSideTo(edgeX);
-                var justPast = new Vector2(edgeX + outward * PastTheEdge, platform.Middle);
-                Collider2D beyond = Physics2D.OverlapPoint(justPast, groundLayers);
+                float halfWidth = hull.bounds.extents.x;
 
-                if (beyond == null || beyond.GetComponent<StaffPlatform>() != null)
-                    return edgeX;
+                if (right - left <= halfWidth * BothSides)
+                    return (left + right) * Half;
 
-                return edgeX - outward * (hull.bounds.extents.x + WallGap);
+                return Mathf.Clamp(Position.x, left + halfWidth, right - halfWidth);
             }
 
             public void ApplyWind(Vector2 target, float rampup, float groundScale, float fixedDeltaTime)
