@@ -11,6 +11,8 @@ namespace FallingWizard.World
 
         public float Right => planks.bounds.max.x;
 
+        public float Top => planks.bounds.max.y;
+
         public float Bottom => planks.bounds.min.y;
 
         void Awake() => planks = GetComponent<Collider2D>();

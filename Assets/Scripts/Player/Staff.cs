@@ -133,7 +133,7 @@ namespace FallingWizard.Player
 
             const float CarrierProbe = 0.05f;
 
-            const float UnderFloorGap = 0.02f;
+            const float PlankClearance = 0.05f;
 
             const float Half = 0.5f;
 
@@ -272,6 +272,8 @@ namespace FallingWizard.Player
                     ? wielder.position.y - wielderHitbox.bounds.min.y
                     : 0f;
 
+            float WielderHeight => wielderHitbox != null ? wielderHitbox.bounds.size.y : 0f;
+
             float HangBelowTip => WielderFeetOffset + gripHeight;
 
             ContactFilter2D GroundFilter => Layers.MakeSolidOnlyFilter(groundLayers);
@@ -369,17 +371,20 @@ namespace FallingWizard.Player
                 return true;
             }
 
-            public bool TryPlantThroughFloor(int wielderFacing, float poleX, float floorBottomY)
+            public bool TryPlantThroughFloor(int wielderFacing, float poleX, float plankBottomY,
+                float floorBelowY)
             {
                 if (!HasPole || !HasWielder)
                     return false;
 
                 Face(wielderFacing);
+                StartHangingAt(poleX);
 
-                float surfaceY = wielder.position.y - WielderFeetOffset;
+                float surfaceY = anchor.y - WielderFeetOffset;
+                reach = Mathf.Min(MeasureReach() + HangBelowTip, surfaceY - floorBelowY);
 
-                return TryHangLadder(poleX, floorBottomY - UnderFloorGap,
-                    new Vector2(poleX, surfaceY - CarrierProbe), Epsilon);
+                float clearOfThePlanks = surfaceY - plankBottomY + WielderHeight + PlankClearance;
+                return TryFinishHanging(new Vector2(poleX, surfaceY - CarrierProbe), clearOfThePlanks);
             }
 
             public StaffHold Slide(float lean, float fixedDeltaTime)
@@ -609,6 +614,13 @@ namespace FallingWizard.Player
 
             bool TryHangLadder(float poleX, float clearBelowY, Vector2 groundPoint, float leastReach)
             {
+                StartHangingAt(poleX);
+                reach = FindReachThatFits(MeasureReach() + HangBelowTip, clearBelowY);
+                return TryFinishHanging(groundPoint, leastReach);
+            }
+
+            void StartHangingAt(float poleX)
+            {
                 anchor = wielder.position;
                 depth = 0f;
                 dropTimer = 0f;
@@ -616,9 +628,10 @@ namespace FallingWizard.Player
                 float surfaceY = anchor.y - WielderFeetOffset;
 
                 PlantPoleAt(poleX, surfaceY - MeasureTopAboveOrigin(), Quaternion.identity);
+            }
 
-                reach = FindReachThatFits(MeasureReach() + HangBelowTip, clearBelowY);
-
+            bool TryFinishHanging(Vector2 groundPoint, float leastReach)
+            {
                 if (reach <= leastReach)
                 {
                     ShoulderPole();

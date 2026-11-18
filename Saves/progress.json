@@ -1,19 +1,39 @@
 {
     "version": 2,
-    "scrap": 0,
+    "scrap": 1,
     "bonusHearts": 0,
     "loadout": [
         "staff",
-        "",
-        "",
-        ""
+        "fling",
+        "star",
+        "glide"
     ],
     "ranks": [
         {
+            "key": "fling",
+            "rank": 3
+        },
+        {
+            "key": "glide",
+            "rank": 3
+        },
+        {
+            "key": "slap",
+            "rank": 3
+        },
+        {
             "key": "staff",
             "rank": 1
+        },
+        {
+            "key": "star",
+            "rank": 3
         }
     ],
-    "taken": [],
-    "completedLevels": []
+    "taken": [
+        "scrap1-3:-24,-244"
+    ],
+    "completedLevels": [
+        "1-3"
+    ]
 }

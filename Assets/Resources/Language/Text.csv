@@ -15,15 +15,15 @@ settings.language,Language,Idioma
 settings.back,Back,Volver
 settings.resetSave,Reset Save,Borrar partida
 settings.resetSave.title,Reset save?,¿Borrar la partida?
-settings.resetSave.blurb,"Every spell, all the Magical Scrap and every heart you have earned is erased, and the run starts again from the beginning. This cannot be undone.","Se borran todos los hechizos, Basura Mágica y corazones que has ganado, y la bajada empieza otra vez desde el principio. Esto no se puede deshacer."
-settings.resetSave.status,You have {0} Magical Scrap.,Tienes {0} Basura Mágica.
+settings.resetSave.blurb,"Every spell, all the Knowledge and every heart you have earned is erased, and the run starts again from the beginning. This cannot be undone.","Se borran todos los hechizos, todo el Conocimiento y todos los corazones que has ganado, y la bajada empieza otra vez desde el principio. Esto no se puede deshacer."
+settings.resetSave.status,You have {0} Knowledge.,Tienes {0} de Conocimiento.
 settings.resetSave.confirm,Erase everything,Borrarlo todo
 settings.resetSave.cancel,Keep my save,Conservar mi partida
 language.english,English,English
 language.spanish,Español,Español
 skill.title,What you carry down,Lo que te llevas abajo
-skill.purse,{0} Magical Scrap,{0} Basura Mágica
-skill.price,{0} Magical Scrap,{0} Basura Mágica
+skill.purse,{0} Knowledge,{0} de Conocimiento
+skill.price,{0} Knowledge,{0} de Conocimiento
 skill.noBook,No spellbook found at Assets/Resources/Spellbook.asset.,No hay grimorio en Assets/Resources/Spellbook.asset.
 skill.dive,Descend,Bajar
 skill.back,Back to the tower,De vuelta a la torre
@@ -34,9 +34,8 @@ skill.next,Next level: {0},Siguiente nivel: {0}
 skill.learn,Learn - {0},Aprender - {0}
 skill.mastered,Mastered,Dominado
 skill.learned,Learned,Aprendido
-hud.scrap,{0} Magical Scrap,{0} Basura Mágica
 death.title,You fell,Te caíste
-death.blurb,"Everything you carried down is gone: your Magical Scrap, your spells and your hearts.","Todo lo que llevabas se perdió: tu Basura Mágica, tus hechizos y tus corazones."
+death.blurb,"Everything you carried down is gone: your Knowledge, your spells and your hearts.","Todo lo que llevabas se perdió: tu Conocimiento, tus hechizos y tus corazones."
 death.startAgain,Start again,Empezar de nuevo
 death.mainMenu,Main menu,Menú principal
 ability.fling.name,Fling,Impulso

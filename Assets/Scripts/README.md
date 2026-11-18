@@ -847,11 +847,19 @@ tries `TryGoDownThroughPlatform` first, then `TryTakeLedge` (the ordinary ledge 
 ground check uses and takes every `StaffPlatform` there. `Movement.FitOverThePlanks` keeps the
 wizard where they stand, only nudging them in until their whole body is over those planks - so a
 wizard hanging half off the end, or stood against a wall at the end of the planks, goes down beside
-the wall instead of inside it. `Staff.Pole.TryPlantThroughFloor` plants the pole there with its top
-flush with the planks, and measures the reach from **under** the planks so they never cut it short.
-Nothing checks whether the wizard fits: like a ledge, another platform or floor below only stops
-the climb just above it. The wizard is kinematic on the pole and slides through the solid planks,
-and stepping off at the top puts them back on solid wood.
+the wall instead of inside it. `Movement.FindFloorBelowPlanks` then sweeps a box the size of the
+wizard straight down from where they stand, **skipping the planks they are stood on**, to find the
+first real floor underneath. `Staff.Pole.TryPlantThroughFloor` plants the pole with its top flush
+with the planks and lets the wizard slide as far as the staff reaches or that floor, whichever comes
+first. The wizard is kinematic on the pole and slides through the solid planks, and stepping off at
+the top puts them back on solid wood.
+
+**It never leaves the wizard stuck.** The pole is only planted if the wizard can slide far enough to
+be completely under the planks. If there is not that much room (less than about a box of open space
+under the platform), the staff stops looking down and the Console says how much room there was. The
+old version measured from the bottom of the plank collider's bounds; with the rounded corners that
+could start the measurement inside the wood, which planted the staff with almost no reach and left
+the wizard hanging on top of the planks until they climbed back up.
 
 **The planks have rounded corners**, for the same reason as `Stone Wall` (see *The grid line is
 not the floor*): the collider is **0.9 × 0.0875 with a 0.05 edge radius**, which still comes to one

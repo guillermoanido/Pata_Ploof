@@ -21,6 +21,8 @@ namespace FallingWizard.World
         const float TurbineRampup = 60f;
         const float TurbineGroundScale = 0.6f;
 
+        const float StreaksAlivePerSquareBox = 1.5f;
+
         static readonly Vector2 TurbinePush = new Vector2(12f, 0f);
 
         [Header("Turbine")]
@@ -258,6 +260,9 @@ namespace FallingWizard.World
             Blast(logic);
         }
 
+        protected override float CountStreaksPerSecond(float squareBoxes, float lifetime) =>
+            squareBoxes * StreaksAlivePerSquareBox / lifetime;
+
         void Validate()
         {
             shutSeconds = Mathf.Max(0f, shutSeconds);
@@ -352,6 +357,18 @@ namespace FallingWizard.World
             ShowLook(shutLook, !warning && !blowing);
             ShowLook(warningLook, warning);
             ShowLook(blowingLook, blowing);
+            ShowStreaks(blowing);
+        }
+
+        void ShowStreaks(bool blowing)
+        {
+            if (streaks == null)
+                return;
+
+            if (blowing)
+                streaks.Play();
+            else
+                streaks.Stop(true, ParticleSystemStopBehavior.StopEmitting);
         }
 
         void Blast(PlayerLogic wizard)

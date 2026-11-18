@@ -43,7 +43,7 @@ namespace FallingWizard.World
                  "zone. Its look is yours - sprite, colour, fade - but when the level starts this " +
                  "zone aims it along Push, sets its speed to Push's strength, and fills the " +
                  "trigger collider with it, so the streaks always tell the truth about the wind. " +
-                 "Leave it empty for no streaks.")]
+                 "A Wind Trap only plays them while it blows. Leave it empty for no streaks.")]
         public ParticleSystem streaks;
 
         [Header("Editor")]
@@ -74,6 +74,9 @@ namespace FallingWizard.World
         protected Vector2 TurnWithThisObject(Vector2 direction) =>
             transform.rotation * direction;
 
+        protected virtual float CountStreaksPerSecond(float squareBoxes, float lifetime) =>
+            squareBoxes * StreaksPerSquareBox;
+
         void AimTheStreaks()
         {
             var area = GetComponent<BoxCollider2D>();
@@ -82,9 +85,10 @@ namespace FallingWizard.World
                 return;
 
             Vector2 way = WorldPush;
+            float lifetime = StreakTravel / way.magnitude;
 
             ParticleSystem.MainModule main = streaks.main;
-            main.startLifetime = StreakTravel / way.magnitude;
+            main.startLifetime = lifetime;
             main.startRotation = -Mathf.Atan2(way.y, way.x);
 
             ParticleSystem.VelocityOverLifetimeModule velocity = streaks.velocityOverLifetime;
@@ -92,18 +96,18 @@ namespace FallingWizard.World
             velocity.y = way.y;
             velocity.z = 0f;
 
-            FillTheZone(area);
+            FillTheZone(area, lifetime);
             streaks.Play();
         }
 
-        void FillTheZone(BoxCollider2D area)
+        void FillTheZone(BoxCollider2D area, float lifetime)
         {
             ParticleSystem.ShapeModule shape = streaks.shape;
             shape.position = area.offset;
             shape.scale = new Vector3(area.size.x, area.size.y, 0f);
 
             ParticleSystem.EmissionModule emission = streaks.emission;
-            emission.rateOverTime = area.size.x * area.size.y * StreaksPerSquareBox;
+            emission.rateOverTime = CountStreaksPerSecond(area.size.x * area.size.y, lifetime);
         }
 
         void OnDrawGizmos()

@@ -433,14 +433,31 @@ namespace FallingWizard.Player
 
         bool TryGoDownThroughPlatform()
         {
-            if (!movement.TryFindPlatformUnderFeet(out float descentX, out float floorBottomY))
+            if (!movement.TryFindPlatformUnderFeet(out float descentX, out float plankBottomY))
                 return false;
 
-            if (!pole.TryPlantThroughFloor(movement.Facing, descentX, floorBottomY))
+            float floorBelowY = movement.FindFloorBelowPlanks(descentX);
+
+            if (!pole.TryPlantThroughFloor(movement.Facing, descentX, plankBottomY, floorBelowY))
+            {
+                GiveUpOnThePlanks(plankBottomY - floorBelowY);
                 return false;
+            }
 
             State = PlayerState.OnStaff;
             return true;
+        }
+
+        void GiveUpOnThePlanks(float roomUnderPlanks)
+        {
+            AimStaffDown(false);
+
+#if UNITY_EDITOR
+            Debug.LogWarning("The staff could not take the wizard down through this wooden " +
+                             $"platform: there are only {roomUnderPlanks:0.00} boxes of open " +
+                             "space under the planks, and the wizard has to fit underneath " +
+                             "them. Leave at least one box of open space under a wooden platform.");
+#endif
         }
 
         bool TryTakeLedge() => movement.IsAtEdge && TryPlantStaff(StaffMode.Ladder);
@@ -628,6 +645,9 @@ namespace FallingWizard.Player
 
             const float Half = 0.5f;
             const float BothSides = 2f;
+
+            const float FarthestFloorUnderPlanks = 20f;
+            const float PlankSkin = 0.1f;
 
             static readonly Vector2 MinGroundCheck =
                 new Vector2(MinGroundCheckWidth, MinGroundCheckThickness);
@@ -944,10 +964,10 @@ namespace FallingWizard.Player
 
             public void UseBaseGravity() => body.gravityScale = baseGravityScale;
 
-            public bool TryFindPlatformUnderFeet(out float descentX, out float floorBottomY)
+            public bool TryFindPlatformUnderFeet(out float descentX, out float plankBottomY)
             {
                 descentX = Position.x;
-                floorBottomY = Position.y;
+                plankBottomY = Position.y;
 
                 List<StaffPlatform> platforms = FindPlatformsUnderFeet();
 
@@ -956,17 +976,37 @@ namespace FallingWizard.Player
 
                 float left = platforms[0].Left;
                 float right = platforms[0].Right;
-                floorBottomY = platforms[0].Bottom;
+                plankBottomY = platforms[0].Bottom;
 
                 foreach (StaffPlatform platform in platforms)
                 {
                     left = Mathf.Min(left, platform.Left);
                     right = Mathf.Max(right, platform.Right);
-                    floorBottomY = Mathf.Min(floorBottomY, platform.Bottom);
+                    plankBottomY = Mathf.Min(plankBottomY, platform.Bottom);
                 }
 
                 descentX = FitOverThePlanks(left, right);
                 return true;
+            }
+
+            public float FindFloorBelowPlanks(float descentX)
+            {
+                Bounds box = hull.bounds;
+                float feetY = box.min.y;
+                float floorY = feetY - FarthestFloorUnderPlanks;
+
+                var from = new Vector2(descentX, box.center.y);
+                var size = new Vector2(box.size.x - StepClearance * BothSides, box.size.y);
+                int hits = Physics2D.BoxCast(from, size, 0f, Vector2.down, GroundFilter, Rays,
+                    FarthestFloorUnderPlanks);
+
+                for (int i = 0; i < hits; i++)
+                {
+                    if (!IsPlankUnderFeet(Rays[i].collider, feetY))
+                        floorY = Mathf.Max(floorY, feetY - Rays[i].distance);
+                }
+
+                return floorY;
             }
 
             List<StaffPlatform> FindPlatformsUnderFeet()
@@ -997,6 +1037,12 @@ namespace FallingWizard.Player
                     return (left + right) * Half;
 
                 return Mathf.Clamp(Position.x, left + halfWidth, right - halfWidth);
+            }
+
+            static bool IsPlankUnderFeet(Collider2D other, float feetY)
+            {
+                var platform = other.GetComponent<StaffPlatform>();
+                return platform != null && platform.Top >= feetY - PlankSkin;
             }
 
             public void ApplyWind(Vector2 target, float rampup, float groundScale, float fixedDeltaTime)

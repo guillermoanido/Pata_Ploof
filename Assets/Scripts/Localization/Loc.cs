@@ -167,8 +167,6 @@ namespace FallingWizard.Localization
             public const string SkillMastered = "skill.mastered";
             public const string SkillLearned = "skill.learned";
 
-            public const string HudScrap = "hud.scrap";
-
             public const string DeathTitle = "death.title";
             public const string DeathBlurb = "death.blurb";
             public const string DeathStartAgain = "death.startAgain";
