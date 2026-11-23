@@ -1,11 +1,11 @@
 {
     "version": 2,
-    "scrap": 0,
+    "scrap": 1,
     "bonusHearts": 1,
     "loadout": [
         "staff",
         "glide",
-        "",
+        "slap",
         ""
     ],
     "ranks": [
@@ -14,12 +14,17 @@
             "rank": 2
         },
         {
+            "key": "slap",
+            "rank": 2
+        },
+        {
             "key": "staff",
             "rank": 1
         }
     ],
     "taken": [
-        "heart2-2:11,-1530"
+        "heart2-2:11,-1530",
+        "scrap1-1:69,-122"
     ],
     "completedLevels": [
         "2-2"

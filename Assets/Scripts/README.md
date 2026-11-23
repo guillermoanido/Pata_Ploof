@@ -885,7 +885,6 @@ flat colour, so each one is visible the moment it lands and is waiting for a spr
 | `Rake`, `Rake 1` | `TripHazard` aimed Left or Right: trips you BACKWARDS, the way you came. | Hazard |
 | `Ice` | Ground that does not hold you. Nothing else changes. | Hazard |
 | `Stairs` | `TripHazard`: lay it over a staircase. Take them fast and you tumble down them. | Hazard |
-| `Stair Slope` | A staircase in one piece: a solid 45 degree `Slope` child to walk on, plus the `Stairs` trip band over it. Walk it smoothly, run it and you tumble. See *Stairs*. | Hazard, `Slope` on **Ground** |
 | `Bouncy Trash` | `BouncyTrash`: bounces you three boxes and sends you tumbling. | Hazard |
 | `Wind` | Pushes you the way its arrows point. Rotate it to aim it. | Hazard |
 | `Wind Trap` | The same push, on a timer: a wall mouth that opens and blows left. Shut, Warning and Blowing Looks. It shoves, it never hurts. | Hazard |
@@ -1301,20 +1300,6 @@ is a staircase*, and all it does is `TryTrip()` above `minimumSpeed`. Its shape 
 hump (rise then fall) plus half a box above the treads, where the wizard's body is. Put its root at
 the bottom of the hump, on the line between the two tiles. For a longer flight, edit the collider's
 points to follow it.
-
-The `Stair Slope` prefab is a staircase in one piece, for stairs that are not tiles:
-- **`Slope`** (child, **Ground** layer) is the solid part, a clean 45 degree wedge two boxes wide
-  and two tall. Because it is one straight face, the ramp handling carries the wizard up and down
-  it smoothly, the same as the stair tiles.
-- **The root** (Hazard layer) is the trip: a `TripHazard` trigger band following the slope, half a
-  box deep, where the wizard's Hurtbox is. A solid collider cannot do this job alone, because only
-  the Hurtbox counts for hazards and it never touches the floor.
-- **`Art`** holds a stand-in (`Art/Placeholders/Stair Slope.png`); put your sprite there.
-
-Its root sits on the lower floor at the foot's middle, and the slope rises to the right. Flip X on
-the root's scale for one that rises to the left. To change its size, edit both colliders' points
-together: the band is the slope line plus 0.5 straight up. Put the top corner flush with the upper
-floor, and keep the steep back face against a wall, or a runner who bumps it trips there too.
 
 Walk mode (`ignoresWalking`) is always safe on stairs. So is a staircase Telekinesis has put to
 sleep: run it while the stars are still out.
