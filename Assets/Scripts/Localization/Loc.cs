@@ -171,6 +171,10 @@ namespace FallingWizard.Localization
             public const string DeathBlurb = "death.blurb";
             public const string DeathStartAgain = "death.startAgain";
             public const string DeathMainMenu = "death.mainMenu";
+
+            public const string EndTitle = "end.title";
+            public const string EndBlurb = "end.blurb";
+            public const string EndMainMenu = "end.mainMenu";
         }
     }
 }
