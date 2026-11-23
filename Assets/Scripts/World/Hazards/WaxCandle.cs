@@ -34,6 +34,12 @@ namespace FallingWizard.World
                  "have to time.")]
         [Range(0f, 1f)] public float phase = 0f;
 
+        [Tooltip("Seconds it holds its rhythm back after the level begins, so every drop comes " +
+                 "this much later. Give matching candles different numbers and they drip one " +
+                 "after another instead of together. It adds to Phase, so you can use both. " +
+                 "0 starts at once.")]
+        [Min(0f)] public float startDelaySeconds = 0f;
+
         [Tooltip("Where drops form, relative to the candle - under the lip of the candle or its " +
                  "holder. For a candle standing on a ledge, move it out past the edge: a drop " +
                  "that forms inside the floor splashes the moment it lets go. Select the candle " +
@@ -48,7 +54,7 @@ namespace FallingWizard.World
 
         void Awake()
         {
-            clock = phase * Interval;
+            clock = phase * Interval - startDelaySeconds;
 
             if (dropPrefab == null)
                 Debug.LogWarning($"{name}: WaxCandle has no Drop Prefab, so it never drips. " +

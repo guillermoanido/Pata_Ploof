@@ -1,0 +1,831 @@
+fileFormatVersion: 2
+guid: 71d68792abeb70449a3c3aeed0eeafe3
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -8406588904189512364
+    second: DECOR-Tutorial-W1-2_0
+  - first:
+      213: 5780768178153782071
+    second: DECOR-Tutorial-W1-2_1
+  - first:
+      213: -187716773852683096
+    second: DECOR-Tutorial-W1-2_2
+  - first:
+      213: -5771276730604181701
+    second: DECOR-Tutorial-W1-2_3
+  - first:
+      213: -8948734537184364438
+    second: DECOR-Tutorial-W1-2_4
+  - first:
+      213: 4472902924869881872
+    second: DECOR-Tutorial-W1-2_5
+  - first:
+      213: -2828433033463020502
+    second: DECOR-Tutorial-W1-2_6
+  - first:
+      213: -8323705441604624699
+    second: DECOR-Tutorial-W1-2_7
+  - first:
+      213: 7723117452024451780
+    second: DECOR-Tutorial-W1-2_8
+  - first:
+      213: -7260921332239892780
+    second: DECOR-Tutorial-W1-2_9
+  - first:
+      213: 1651256462488010448
+    second: DECOR-Tutorial-W1-2_10
+  - first:
+      213: -4146695450745791527
+    second: DECOR-Tutorial-W1-2_11
+  - first:
+      213: -771849367528397757
+    second: DECOR-Tutorial-W1-2_12
+  - first:
+      213: 8617893442544936270
+    second: DECOR-Tutorial-W1-2_13
+  - first:
+      213: 8425773200703013468
+    second: DECOR-Tutorial-W1-2_14
+  - first:
+      213: -7513974720097238566
+    second: DECOR-Tutorial-W1-2_15
+  - first:
+      213: 6208913989583360139
+    second: DECOR-Tutorial-W1-2_16
+  - first:
+      213: 4372742134495672024
+    second: DECOR-Tutorial-W1-2_17
+  - first:
+      213: 9091062148169233736
+    second: DECOR-Tutorial-W1-2_18
+  - first:
+      213: 9059215910478624798
+    second: DECOR-Tutorial-W1-2_19
+  - first:
+      213: -4879098085817221485
+    second: DECOR-Tutorial-W1-2_20
+  - first:
+      213: -471128386885340905
+    second: DECOR-Tutorial-W1-2_21
+  - first:
+      213: 653314101869961433
+    second: DECOR-Tutorial-W1-2_22
+  - first:
+      213: 633288906789284919
+    second: DECOR-Tutorial-W1-2_23
+  - first:
+      213: -5591657787649967787
+    second: DECOR-Tutorial-W1-2_24
+  - first:
+      213: 9019208997902619124
+    second: DECOR-Tutorial-W1-2_25
+  - first:
+      213: -6825890026089268648
+    second: DECOR-Tutorial-W1-2_26
+  - first:
+      213: 4128757180293638979
+    second: DECOR-Tutorial-W1-2_27
+  - first:
+      213: -592576206784624954
+    second: DECOR-Tutorial-W1-2_28
+  - first:
+      213: -502989968165174825
+    second: DECOR-Tutorial-W1-2_29
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 32
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: DECOR-Tutorial-W1-2_0
+      rect:
+        serializedVersion: 2
+        x: 191
+        y: 269
+        width: 34
+        height: 41
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4553b018eebc55b80800000000000000
+      internalID: -8406588904189512364
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DECOR-Tutorial-W1-2_1
+      rect:
+        serializedVersion: 2
+        x: 233
+        y: 269
+        width: 24
+        height: 41
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 73bfcbbb70a693050800000000000000
+      internalID: 5780768178153782071
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DECOR-Tutorial-W1-2_2
+      rect:
+        serializedVersion: 2
+        x: 287
+        y: 244
+        width: 32
+        height: 66
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8a4e028b698156df0800000000000000
+      internalID: -187716773852683096
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DECOR-Tutorial-W1-2_3
+      rect:
+        serializedVersion: 2
+        x: 351
+        y: 292
+        width: 28
+        height: 18
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b372cdb146e48efa0800000000000000
+      internalID: -5771276730604181701
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DECOR-Tutorial-W1-2_4
+      rect:
+        serializedVersion: 2
+        x: 391
+        y: 292
+        width: 26
+        height: 18
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a683bd1d955bfc380800000000000000
+      internalID: -8948734537184364438
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DECOR-Tutorial-W1-2_5
+      rect:
+        serializedVersion: 2
+        x: 459
+        y: 293
+        width: 22
+        height: 13
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 010dcaff281f21e30800000000000000
+      internalID: 4472902924869881872
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DECOR-Tutorial-W1-2_6
+      rect:
+        serializedVersion: 2
+        x: 511
+        y: 293
+        width: 22
+        height: 13
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a24c47944236fb8d0800000000000000
+      internalID: -2828433033463020502
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DECOR-Tutorial-W1-2_7
+      rect:
+        serializedVersion: 2
+        x: 575
+        y: 276
+        width: 28
+        height: 34
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5ce9b2270024c7c80800000000000000
+      internalID: -8323705441604624699
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DECOR-Tutorial-W1-2_9
+      rect:
+        serializedVersion: 2
+        x: 32
+        y: 244
+        width: 47
+        height: 33
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4def8c1b4860c3b90800000000000000
+      internalID: -7260921332239892780
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DECOR-Tutorial-W1-2_10
+      rect:
+        serializedVersion: 2
+        x: 95
+        y: 244
+        width: 48
+        height: 46
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0de7aaff0017ae610800000000000000
+      internalID: 1651256462488010448
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DECOR-Tutorial-W1-2_12
+      rect:
+        serializedVersion: 2
+        x: 450
+        y: 244
+        width: 31
+        height: 47
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3442c54f617d945f0800000000000000
+      internalID: -771849367528397757
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DECOR-Tutorial-W1-2_13
+      rect:
+        serializedVersion: 2
+        x: 511
+        y: 245
+        width: 31
+        height: 46
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e452f0b2d68e89770800000000000000
+      internalID: 8617893442544936270
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DECOR-Tutorial-W1-2_15
+      rect:
+        serializedVersion: 2
+        x: 205
+        y: 244
+        width: 22
+        height: 10
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ad1c6558dcff8b790800000000000000
+      internalID: -7513974720097238566
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DECOR-Tutorial-W1-2_16
+      rect:
+        serializedVersion: 2
+        x: 247
+        y: 244
+        width: 10
+        height: 6
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b80d116906e7a2650800000000000000
+      internalID: 6208913989583360139
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DECOR-Tutorial-W1-2_17
+      rect:
+        serializedVersion: 2
+        x: 358
+        y: 244
+        width: 53
+        height: 17
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8d67ff4bdc91fac30800000000000000
+      internalID: 4372742134495672024
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DECOR-Tutorial-W1-2_18
+      rect:
+        serializedVersion: 2
+        x: 63
+        y: 100
+        width: 66
+        height: 50
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 84570a47bd0f92e70800000000000000
+      internalID: 9091062148169233736
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DECOR-Tutorial-W1-2_19
+      rect:
+        serializedVersion: 2
+        x: 173
+        y: 53
+        width: 84
+        height: 128
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e1835af6fdcc8bd70800000000000000
+      internalID: 9059215910478624798
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DECOR-Tutorial-W1-2_20
+      rect:
+        serializedVersion: 2
+        x: 287
+        y: 150
+        width: 66
+        height: 32
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 39e739a3426f94cb0800000000000000
+      internalID: -4879098085817221485
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DECOR-Tutorial-W1-2_21
+      rect:
+        serializedVersion: 2
+        x: 391
+        y: 149
+        width: 26
+        height: 33
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 711b8107a373679f0800000000000000
+      internalID: -471128386885340905
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DECOR-Tutorial-W1-2_22
+      rect:
+        serializedVersion: 2
+        x: 447
+        y: 149
+        width: 25
+        height: 33
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9d066b8d6b9011900800000000000000
+      internalID: 653314101869961433
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DECOR-Tutorial-W1-2_23
+      rect:
+        serializedVersion: 2
+        x: 570
+        y: 52
+        width: 84
+        height: 128
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 73cee59c7e4e9c800800000000000000
+      internalID: 633288906789284919
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DECOR-Tutorial-W1-2_24
+      rect:
+        serializedVersion: 2
+        x: 287
+        y: 116
+        width: 66
+        height: 23
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 559b3953ed07662b0800000000000000
+      internalID: -5591657787649967787
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DECOR-Tutorial-W1-2_25
+      rect:
+        serializedVersion: 2
+        x: 401
+        y: 133
+        width: 16
+        height: 9
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4f11efa3ccaaa2d70800000000000000
+      internalID: 9019208997902619124
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DECOR-Tutorial-W1-2_26
+      rect:
+        serializedVersion: 2
+        x: 447
+        y: 133
+        width: 16
+        height: 9
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 85a3117bf219541a0800000000000000
+      internalID: -6825890026089268648
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DECOR-Tutorial-W1-2_27
+      rect:
+        serializedVersion: 2
+        x: 287
+        y: 54
+        width: 30
+        height: 32
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 34bee37c7ca4c4930800000000000000
+      internalID: 4128757180293638979
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DECOR-Tutorial-W1-2_28
+      rect:
+        serializedVersion: 2
+        x: 353
+        y: 61
+        width: 32
+        height: 14
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6c6014c541fb6c7f0800000000000000
+      internalID: -592576206784624954
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: DECOR-Tutorial-W1-2_29
+      rect:
+        serializedVersion: 2
+        x: 397
+        y: 57
+        width: 39
+        height: 24
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7d10ee5f9450509f0800000000000000
+      internalID: -502989968165174825
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: bad264b2fa568454b96b984f30392d95
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      DECOR-Tutorial-W1-2_0: -8406588904189512364
+      DECOR-Tutorial-W1-2_1: 5780768178153782071
+      DECOR-Tutorial-W1-2_10: 1651256462488010448
+      DECOR-Tutorial-W1-2_11: -4146695450745791527
+      DECOR-Tutorial-W1-2_12: -771849367528397757
+      DECOR-Tutorial-W1-2_13: 8617893442544936270
+      DECOR-Tutorial-W1-2_14: 8425773200703013468
+      DECOR-Tutorial-W1-2_15: -7513974720097238566
+      DECOR-Tutorial-W1-2_16: 6208913989583360139
+      DECOR-Tutorial-W1-2_17: 4372742134495672024
+      DECOR-Tutorial-W1-2_18: 9091062148169233736
+      DECOR-Tutorial-W1-2_19: 9059215910478624798
+      DECOR-Tutorial-W1-2_2: -187716773852683096
+      DECOR-Tutorial-W1-2_20: -4879098085817221485
+      DECOR-Tutorial-W1-2_21: -471128386885340905
+      DECOR-Tutorial-W1-2_22: 653314101869961433
+      DECOR-Tutorial-W1-2_23: 633288906789284919
+      DECOR-Tutorial-W1-2_24: -5591657787649967787
+      DECOR-Tutorial-W1-2_25: 9019208997902619124
+      DECOR-Tutorial-W1-2_26: -6825890026089268648
+      DECOR-Tutorial-W1-2_27: 4128757180293638979
+      DECOR-Tutorial-W1-2_28: -592576206784624954
+      DECOR-Tutorial-W1-2_29: -502989968165174825
+      DECOR-Tutorial-W1-2_3: -5771276730604181701
+      DECOR-Tutorial-W1-2_4: -8948734537184364438
+      DECOR-Tutorial-W1-2_5: 4472902924869881872
+      DECOR-Tutorial-W1-2_6: -2828433033463020502
+      DECOR-Tutorial-W1-2_7: -8323705441604624699
+      DECOR-Tutorial-W1-2_8: 7723117452024451780
+      DECOR-Tutorial-W1-2_9: -7260921332239892780
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

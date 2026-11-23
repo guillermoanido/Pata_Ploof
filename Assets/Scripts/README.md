@@ -885,6 +885,7 @@ flat colour, so each one is visible the moment it lands and is waiting for a spr
 | `Rake`, `Rake 1` | `TripHazard` aimed Left or Right: trips you BACKWARDS, the way you came. | Hazard |
 | `Ice` | Ground that does not hold you. Nothing else changes. | Hazard |
 | `Stairs` | `TripHazard`: lay it over a staircase. Take them fast and you tumble down them. | Hazard |
+| `Stair Slope` | A staircase in one piece: a solid 45 degree `Slope` child to walk on, plus the `Stairs` trip band over it. Walk it smoothly, run it and you tumble. See *Stairs*. | Hazard, `Slope` on **Ground** |
 | `Bouncy Trash` | `BouncyTrash`: bounces you three boxes and sends you tumbling. | Hazard |
 | `Wind` | Pushes you the way its arrows point. Rotate it to aim it. | Hazard |
 | `Wind Trap` | The same push, on a timer: a wall mouth that opens and blows left. Shut, Warning and Blowing Looks. It shoves, it never hurts. | Hazard |
@@ -894,7 +895,7 @@ flat colour, so each one is visible the moment it lands and is waiting for a spr
 | `Star Slap Hand` | The hand Star Slap shows where it lands. Already wired into the spell; not for placing by hand. | Default |
 | `Furniture/…` | Decoration a Star Slap knocks flying: the wizard walks through it. See *Star Slap > Furniture*. | Default |
 | `Star Sparkles` | Stars hanging around whatever it sits on. The stand-in for any effect without art yet; scale it to fit. | Default |
-| `Level Exit` | The bottom. Marks the level completed and opens the Level Select. | Default |
+| `Level Exit` | The bottom. Marks the level completed and opens the Level Select, or the ending screen when **Is Final Exit** is ticked. | Default |
 
 The steampunk set for the second world lives in `Assets/Prefabs/Mid Level Hazards`, and is set up
 by hand like every other prefab. `Steam Vent`, `Pressure Plate` and `Wind Trap` already carry your
@@ -916,7 +917,10 @@ check only looks at that layer. The ones on **Hazard** are triggers you pass str
 ice are triggers in their prefabs.
 
 `Level Exit` marks the level completed (`Progress.CompleteLevel`) and loads the `Level Select`
-scene.
+scene. With **Is Final Exit** ticked it opens the ending instead: a `ChoiceScreen` saying the wizard
+made it down the tower (`end.title`, `end.blurb`) with one button back to the main menu
+(`end.mainMenu`). Only `2-3`'s exit has it ticked. When world 3 is built, untick it there and tick
+it on `3-3`'s.
 
 ## Level Select
 
@@ -1298,6 +1302,20 @@ hump (rise then fall) plus half a box above the treads, where the wizard's body 
 the bottom of the hump, on the line between the two tiles. For a longer flight, edit the collider's
 points to follow it.
 
+The `Stair Slope` prefab is a staircase in one piece, for stairs that are not tiles:
+- **`Slope`** (child, **Ground** layer) is the solid part, a clean 45 degree wedge two boxes wide
+  and two tall. Because it is one straight face, the ramp handling carries the wizard up and down
+  it smoothly, the same as the stair tiles.
+- **The root** (Hazard layer) is the trip: a `TripHazard` trigger band following the slope, half a
+  box deep, where the wizard's Hurtbox is. A solid collider cannot do this job alone, because only
+  the Hurtbox counts for hazards and it never touches the floor.
+- **`Art`** holds a stand-in (`Art/Placeholders/Stair Slope.png`); put your sprite there.
+
+Its root sits on the lower floor at the foot's middle, and the slope rises to the right. Flip X on
+the root's scale for one that rises to the left. To change its size, edit both colliders' points
+together: the band is the slope line plus 0.5 straight up. Put the top corner flush with the upper
+floor, and keep the steep back face against a wall, or a runner who bumps it trips there too.
+
 Walk mode (`ignoresWalking`) is always safe on stairs. So is a staircase Telekinesis has put to
 sleep: run it while the stars are still out.
 
@@ -1419,14 +1437,16 @@ can open up and restyle:
 ```
 HUD              Canvas (Overlay, order 10) + CanvasScaler + PlayerHud
 ├── Spell Bar    bottom-left, HorizontalLayoutGroup + ContentSizeFitter
-│   └── Spell Slot   TEMPLATE, inactive - Image + HudSlot
-│       ├── Icon         the spell's own icon, 40 x 40: a 10 pixel icon at 4x, like the ring
-│       ├── Charge       Image, Filled/Radial360 - the running and cooling wipe
-│       ├── Ring         your ring art
-│       ├── Button       ButtonPrompt; its text is only the fallback
-│       │   └── Icon         the button's picture
-│       └── Charges      one blip per cast left this level, above the ring
-│           └── Charge Blip  TEMPLATE: the empty blip, with its Full child on top
+│   ├── Left End     switched off: the old wooden shelf's end
+│   ├── Spell Slot   TEMPLATE, inactive - Image (Skill Tab_0, one 16 px box at 4x) + HudSlot
+│   │   ├── Icon         the spell's own icon, 40 x 40, centred in the box
+│   │   ├── Charge       Image, Filled/Radial360 - the running and cooling wipe
+│   │   ├── Ring         switched off: the old ring art
+│   │   ├── Button       ButtonPrompt, under the box; its text is only the fallback
+│   │   │   └── Icon         the button's picture
+│   │   └── Charges      one blip per cast left this level, above the box
+│   │       └── Charge Blip  TEMPLATE: the empty blip, with its Full child on top
+│   └── Right End    switched off: the old wooden shelf's other end
 └── Knowledge    top-right, HorizontalLayoutGroup + ContentSizeFitter
     ├── Icon         the Knowledge pickup's book (Upgrade.png), 128 x 128: 32 pixels at 4x
     └── Digit        TEMPLATE: children 0 to 9, the Timer Digits sprites at 4x (32 x 44)

@@ -42,6 +42,12 @@ namespace FallingWizard.World
                  "always heads in opposite directions.")]
         [Range(0f, 1f)] public float startAlong = 0f;
 
+        [Tooltip("Seconds it waits where it starts before moving for the first time, after the " +
+                 "level begins. Give matching platforms different numbers and they set off one " +
+                 "after another, so they never move together. After that first wait it keeps its " +
+                 "usual rhythm. 0 sets off at once.")]
+        [Min(0f)] public float startDelaySeconds = 0f;
+
         [Header("Telekinesis")]
         [Tooltip("Telekinesis can hold this platform still for a few seconds, wherever it is on " +
                  "its path, and it carries on from there when it wakes. Untick for a platform " +
@@ -88,6 +94,7 @@ namespace FallingWizard.World
 
             along = startAlong;
             isHeadingOut = along < 1f;
+            pauseLeft = startDelaySeconds;
 
             PlaceAt(PointAlong(along));
             ShowLook(asleepLook, false);
