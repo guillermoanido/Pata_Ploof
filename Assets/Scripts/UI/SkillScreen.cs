@@ -24,16 +24,8 @@ namespace FallingWizard.UI
 
         public Button diveButton;
 
-        [Tooltip("One spell button slot, copied once per button and placed where it sits. It " +
-                 "stays switched off itself, so restyle it and every slot follows.")]
-        public SlotParts slotTemplate = new SlotParts();
-
-        [Tooltip("One spell card, copied once per spell in the catalogue and placed where it " +
-                 "sits. It stays switched off itself, so restyle it and every card follows.")]
-        public CardParts cardTemplate = new CardParts();
-
-        readonly List<SlotParts> slots = new List<SlotParts>();
-        readonly List<CardParts> cards = new List<CardParts>();
+        readonly List<SpellSlot> slots = new List<SpellSlot>();
+        readonly List<SpellCard> cards = new List<SpellCard>();
 
         AbilityBook book;
         Action onDive;
@@ -48,12 +40,6 @@ namespace FallingWizard.UI
 
         void Awake()
         {
-            if (slotTemplate.root != null)
-                slotTemplate.root.SetActive(false);
-
-            if (cardTemplate.root != null)
-                cardTemplate.root.SetActive(false);
-
             if (diveButton != null)
                 diveButton.onClick.AddListener(Leave);
         }
@@ -111,8 +97,9 @@ namespace FallingWizard.UI
             if (book != null)
                 PlayerLogic.Spellbook.Seed(book);
 
-            BuildSlots();
-            BuildCards();
+            FindSlots();
+            FindCards();
+            WarnAboutSpellsWithoutCards();
 
             Core.Controls.SchemeChanged += Refresh;
             Loc.Changed += Refresh;
@@ -121,33 +108,56 @@ namespace FallingWizard.UI
             FocusCard();
         }
 
-        void BuildSlots()
+        void FindSlots()
         {
-            for (int i = 0; i < PlayerLogic.Spellbook.SlotCount; i++)
+            GetComponentsInChildren(true, slots);
+
+            while (slots.Count > PlayerLogic.Spellbook.SlotCount)
             {
-                SlotParts slot = slotTemplate.Copy();
+                slots[slots.Count - 1].gameObject.SetActive(false);
+                slots.RemoveAt(slots.Count - 1);
+            }
+
+            for (int i = 0; i < slots.Count; i++)
+            {
                 int index = i;
-                slot.plate.onClick.AddListener(() => Assign(FindFocusedSpell(), index));
-                slots.Add(slot);
+                slots[i].plate.onClick.AddListener(() => Assign(FindFocusedSpell(), index));
             }
         }
 
-        void BuildCards()
+        void FindCards()
+        {
+            GetComponentsInChildren(true, cards);
+            cards.RemoveAll(HideIfItHasNoSpell);
+
+            foreach (SpellCard card in cards)
+            {
+                Ability spell = card.spell;
+                card.button.onClick.AddListener(() => Focus(spell));
+                card.action.onClick.AddListener(() => Act(spell));
+            }
+        }
+
+        static bool HideIfItHasNoSpell(SpellCard card)
+        {
+            if (card.spell != null)
+                return false;
+
+            card.gameObject.SetActive(false);
+            return true;
+        }
+
+        void WarnAboutSpellsWithoutCards()
         {
             if (book == null)
                 return;
 
             foreach (Ability spell in book.spells)
             {
-                if (spell == null)
-                    continue;
-
-                CardParts card = cardTemplate.Copy();
-                card.spell = spell;
-                card.root.name = spell.displayName;
-                card.button.onClick.AddListener(() => Focus(spell));
-                card.action.onClick.AddListener(() => Act(spell));
-                cards.Add(card);
+                if (spell != null && !cards.Exists(card => card.spell == spell))
+                    Debug.LogWarning($"{spell.displayName} is in the Spellbook but has no card on " +
+                                     "the Skill Screen, so it cannot be bought. Drag a Spell Card " +
+                                     "prefab into Cards and set its Spell.", this);
             }
         }
 
@@ -193,11 +203,11 @@ namespace FallingWizard.UI
             for (int i = 0; i < slots.Count; i++)
                 ShowSlot(slots[i], i);
 
-            foreach (CardParts card in cards)
+            foreach (SpellCard card in cards)
                 ShowCard(card);
         }
 
-        void ShowSlot(SlotParts slot, int index)
+        void ShowSlot(SpellSlot slot, int index)
         {
             Ability held = FindSpellInSlot(index);
             bool hasIcon = held != null && held.icon != null;
@@ -213,7 +223,7 @@ namespace FallingWizard.UI
             slot.caption.text = held != null ? held.Name : string.Empty;
         }
 
-        void ShowCard(CardParts card)
+        void ShowCard(SpellCard card)
         {
             Ability spell = card.spell;
             bool owned = Progress.Owns(spell.Key);
@@ -221,8 +231,7 @@ namespace FallingWizard.UI
 
             card.button.interactable = owned;
 
-            card.icon.sprite = spell.icon;
-            card.icon.enabled = spell.icon != null;
+            ShowIcon(card);
             ShowLook(card.lockedLook, !owned);
             ShowEquipped(card, Progress.SlotHolding(spell.Key));
 
@@ -233,7 +242,15 @@ namespace FallingWizard.UI
             ShowAction(card, spell, owned, rank);
         }
 
-        void ShowEquipped(CardParts card, int slot)
+        static void ShowIcon(SpellCard card)
+        {
+            if (card.icon.sprite == null)
+                card.icon.sprite = card.spell.icon;
+
+            card.icon.enabled = card.icon.sprite != null;
+        }
+
+        void ShowEquipped(SpellCard card, int slot)
         {
             bool isEquipped = slot >= 0;
 
@@ -243,7 +260,7 @@ namespace FallingWizard.UI
                 card.equippedPrompt.Show(FindSlotAction(slot));
         }
 
-        void ShowAction(CardParts card, Ability spell, bool owned, int rank)
+        void ShowAction(SpellCard card, Ability spell, bool owned, int rank)
         {
             Ability.Upgrade nextUpgrade = owned ? spell.NextUpgrade(rank) : null;
             bool isFinished = owned && nextUpgrade == null;
@@ -347,7 +364,7 @@ namespace FallingWizard.UI
                 ? EventSystem.current.currentSelectedGameObject
                 : null;
 
-            foreach (CardParts card in cards)
+            foreach (SpellCard card in cards)
             {
                 if (card.button.gameObject == selected)
                 {
@@ -374,9 +391,9 @@ namespace FallingWizard.UI
 
         void FocusCard()
         {
-            CardParts toFocus = null;
+            SpellCard toFocus = null;
 
-            foreach (CardParts card in cards)
+            foreach (SpellCard card in cards)
             {
                 if (toFocus == null || card.spell.Key == focusKey)
                     toFocus = card;
@@ -403,102 +420,6 @@ namespace FallingWizard.UI
         {
             if (look != null)
                 look.SetActive(isShown);
-        }
-
-        [Serializable]
-        public class SlotParts
-        {
-            public GameObject root;
-            public Button plate;
-
-            [Tooltip("The spell in the slot. Hidden while the slot is empty.")]
-            public Image icon;
-
-            [Tooltip("Which button this slot is, as a picture.")]
-            public ButtonPrompt prompt;
-
-            [Tooltip("The name of the spell in the slot.")]
-            public TextMeshProUGUI caption;
-
-            public SlotParts Copy()
-            {
-                GameObject copy = Ui.CopyOf(root);
-
-                return new SlotParts
-                {
-                    root = copy,
-                    plate = Ui.SameChildIn(copy, root, plate),
-                    icon = Ui.SameChildIn(copy, root, icon),
-                    prompt = Ui.SameChildIn(copy, root, prompt),
-                    caption = Ui.SameChildIn(copy, root, caption),
-                };
-            }
-        }
-
-        [Serializable]
-        public class CardParts
-        {
-            public GameObject root;
-
-            [Tooltip("The card itself. Selecting it picks the spell to move between slots.")]
-            public Button button;
-
-            public Image icon;
-
-            [Tooltip("Shown while the spell is not learned yet, for example a padlock over the " +
-                     "icon. A child object, switched on and off.")]
-            public GameObject lockedLook;
-
-            [Tooltip("Shown while the spell sits in one of the slots. A child object, switched on " +
-                     "and off.")]
-            public GameObject equippedLook;
-
-            [Tooltip("Inside the Equipped Look: which button the spell is on, as a picture.")]
-            public ButtonPrompt equippedPrompt;
-
-            public TextMeshProUGUI nameLabel;
-
-            [Tooltip("One pip per rank the spell can reach, filled up to the rank it has.")]
-            public BlipRow pips = new BlipRow();
-
-            public TextMeshProUGUI blurb;
-
-            [Tooltip("Learn or upgrade button.")]
-            public Button action;
-
-            [Tooltip("Shown instead of the button once there is nothing left to buy.")]
-            public TextMeshProUGUI status;
-
-            [NonSerialized] public Ability spell;
-
-            public CardParts Copy()
-            {
-                GameObject copy = Ui.CopyOf(root);
-
-                return new CardParts
-                {
-                    root = copy,
-                    button = Ui.SameChildIn(copy, root, button),
-                    icon = Ui.SameChildIn(copy, root, icon),
-                    lockedLook = SameObjectIn(copy, lockedLook),
-                    equippedLook = SameObjectIn(copy, equippedLook),
-                    equippedPrompt = Ui.SameChildIn(copy, root, equippedPrompt),
-                    nameLabel = Ui.SameChildIn(copy, root, nameLabel),
-                    pips = pips.CopyInto(copy, root),
-                    blurb = Ui.SameChildIn(copy, root, blurb),
-                    action = Ui.SameChildIn(copy, root, action),
-                    status = Ui.SameChildIn(copy, root, status),
-                };
-            }
-
-            GameObject SameObjectIn(GameObject copy, GameObject part)
-            {
-                if (part == null)
-                    return null;
-
-                Transform match = Ui.SameChildIn(copy, root, part.transform);
-                return match != null ? match.gameObject : null;
-            }
         }
 
         class Door : MonoBehaviour

@@ -15,7 +15,7 @@ MonoBehaviour:
   id: star
   displayName: Falling Star
   description: While tumbling, dive into the ground like a falling star and bounce back up. Once per level.
-  icon: {fileID: 21300000, guid: d216fb6b3cd541788779539dff138b52, type: 3}
+  icon: {fileID: -5505784301242206033, guid: a6eef8dc9ca01b04891d8738ca935b7b, type: 3}
   cost: 4
   locked: 0
   fixedSlot: -1

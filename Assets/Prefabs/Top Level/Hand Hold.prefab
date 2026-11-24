@@ -53,6 +53,7 @@ MonoBehaviour:
   maxSwing: 70
   grabRange: 2.5
   glowLook: {fileID: 1800000103}
+  shownOnceLearned: {fileID: 11400000, guid: 31b9fdde0c515f66baed76d98608061c, type: 2}
   rope: {fileID: 1400390127}
   unrollTime: 0.25
   staysDown: 1

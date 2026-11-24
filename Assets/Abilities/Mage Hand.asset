@@ -15,7 +15,7 @@ MonoBehaviour:
   id: vine
   displayName: Mage Hand
   description: Call down a spectral hand to swing on, press the button again to let go.
-  icon: {fileID: 21300000, guid: beb965d0ef1742728fd31f650ddcfbf3, type: 3}
+  icon: {fileID: 1752313724658198474, guid: a6eef8dc9ca01b04891d8738ca935b7b, type: 3}
   cost: 1
   locked: 0
   fixedSlot: -1

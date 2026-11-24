@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using FallingWizard.Core;
 using FallingWizard.Player;
 using UnityEngine;
 
@@ -41,6 +42,12 @@ namespace FallingWizard.World
                  "animation. Never put the vine itself here, or it switches itself off. Leave it " +
                  "empty and nothing shows.")]
         public GameObject glowLook;
+
+        [Tooltip("The spell the player has to buy before the Glow Look ever shows - Mage Hand, " +
+                 "for a vine the hand calls down. Until it is bought the vine gives no tell at " +
+                 "all, so the glow never teaches a spell the player cannot use yet. Leave it " +
+                 "empty and the glow shows from the start.")]
+        public Ability shownOnceLearned;
 
         [Tooltip("The knot as it looks before anyone has called the vine down - usually the first " +
                  "frame of its animation. A child object, switched off once the vine is called.")]
@@ -90,6 +97,9 @@ namespace FallingWizard.World
                        IsWithinReach(wizard.Logic.movement.Position);
             }
         }
+
+        bool HasLearnedTheSpell =>
+            shownOnceLearned == null || Progress.Owns(shownOnceLearned.Key);
 
         bool IsBeingRidden
         {
@@ -166,7 +176,7 @@ namespace FallingWizard.World
 
         void ShowGlowLookWhenNear()
         {
-            bool near = IsWizardNear;
+            bool near = IsWizardNear && HasLearnedTheSpell;
 
             if (near != isShowingGlow)
                 ShowGlowLook(near);

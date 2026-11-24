@@ -15,7 +15,7 @@ MonoBehaviour:
   id: staff
   displayName: Staff
   description: A magical wooden staff that allows you to climb up or climb down surfaces.
-  icon: {fileID: 21300000, guid: b181ae12415d4e3a8ea097b676c98d89, type: 3}
+  icon: {fileID: -1388515766092869844, guid: a6eef8dc9ca01b04891d8738ca935b7b, type: 3}
   cost: 0
   locked: 1
   fixedSlot: 0

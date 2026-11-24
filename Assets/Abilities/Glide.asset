@@ -15,7 +15,7 @@ MonoBehaviour:
   id: glide
   displayName: Glide
   description: Open your magical hat to steer your fall, catch the wind to start your fall over.
-  icon: {fileID: 21300000, guid: 6206b3ccbb5f4fd9ab18a25083064092, type: 3}
+  icon: {fileID: 7119002349883303594, guid: a6eef8dc9ca01b04891d8738ca935b7b, type: 3}
   cost: 2
   locked: 0
   fixedSlot: -1

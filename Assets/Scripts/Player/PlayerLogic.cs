@@ -35,6 +35,12 @@ namespace FallingWizard.Player
                  "full health dies on the eighth.")]
         [Min(0f)] public float damagePerBox = 1f;
 
+        [Tooltip("Seconds the wizard lies flat on the floor after a fall that costs hearts. They " +
+                 "cannot move or cast while the Fall Damage animation plays, so the player sees " +
+                 "the fall hurt. A hurtful landing ends a tumble the same way. 0 lets them get " +
+                 "straight back up.")]
+        [Min(0f)] public float fallStunSeconds = 1f;
+
         [Header("Hits")]
         [Tooltip("Print a line to the console every time the wizard loses hearts, saying what " +
                  "hurt them and how many are left. Editor only. Health only shows on the hat, so " +
@@ -56,6 +62,8 @@ namespace FallingWizard.Player
         [NonSerialized] float pendingGrip = 1f;
 
         [NonSerialized] Vector2 pendingPlatformVelocity;
+
+        [NonSerialized] float stunLeft;
 
         [NonSerialized] public bool Invulnerable;
 
@@ -86,6 +94,8 @@ namespace FallingWizard.Player
 
         public bool IsOnVine => State == PlayerState.OnVine;
 
+        public bool IsStunned => stunLeft > 0f;
+
         public bool CanGrabVine =>
             health.IsAlive && State == PlayerState.Normal && vine.CanGrab;
 
@@ -114,7 +124,7 @@ namespace FallingWizard.Player
 
         public void Observe(Intent frame, float deltaTime)
         {
-            input = frame;
+            input = IsStunned ? StandStill(frame) : frame;
 
             if (!health.IsAlive)
                 return;
@@ -129,6 +139,8 @@ namespace FallingWizard.Player
         {
             if (!health.IsAlive)
                 return;
+
+            stunLeft = Mathf.Max(0f, stunLeft - fixedDeltaTime);
 
             spellbook.TryCast(fixedDeltaTime);
             spellbook.Rebuild();
@@ -149,6 +161,7 @@ namespace FallingWizard.Player
 
             safeFallDistance = Mathf.Max(0f, safeFallDistance);
             damagePerBox = Mathf.Max(0f, damagePerBox);
+            fallStunSeconds = Mathf.Max(0f, fallStunSeconds);
         }
 
         public void DrawGizmos(Vector2 origin)
@@ -518,6 +531,9 @@ namespace FallingWizard.Player
 
             CheckLanding();
 
+            if (State != PlayerState.Ragdoll)
+                return;
+
             float steer = Mathf.Abs(input.Move.x) > movement.steerDeadzone ? input.Move.x : 0f;
 
             if (ragdoll.Tick(fixedDeltaTime, movement.IsGrounded, movement.HorizontalSpeed, steer))
@@ -549,8 +565,29 @@ namespace FallingWizard.Player
             if (excess <= 0f)
                 return;
 
+            int heartsBefore = health.Current;
             Hurt(Mathf.RoundToInt(excess * damagePerBox), $"A fall of {fallDistance:0.0} boxes");
+
+            if (health.IsAlive && health.Current < heartsBefore)
+                KnockFlat();
         }
+
+        void KnockFlat()
+        {
+            if (fallStunSeconds <= 0f)
+                return;
+
+            if (State == PlayerState.Ragdoll)
+            {
+                ragdoll.Cancel();
+                State = PlayerState.Normal;
+            }
+
+            movement.Stop();
+            stunLeft = fallStunSeconds;
+        }
+
+        static Intent StandStill(Intent frame) => new Intent { IsWalking = frame.IsWalking };
 
         void UpdateOnVine(float fixedDeltaTime)
         {
@@ -2693,13 +2730,13 @@ namespace FallingWizard.Player
 
             public void Observe(float deltaTime)
             {
-                bool paused = Game.IsPaused;
+                bool ignoresButtons = Game.IsPaused || owner.IsStunned;
 
                 for (int i = 0; i < slots.Length; i++)
                 {
                     Slot slot = slots[i];
 
-                    if (paused || slot.Action == null)
+                    if (ignoresButtons || slot.Action == null)
                         ForgetInput(slot);
                     else if (slot.Ability == null)
                         RefuseEmptySlot(i, slot);

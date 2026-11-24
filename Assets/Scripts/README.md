@@ -18,6 +18,7 @@ Every number in the game is expressed in boxes or boxes per second:
 | Staff climb | walls of two tiles and up, to 2 boxes - there is no jump |
 | Free fall | 3 boxes |
 | Fall damage | 1 heart per box past that — so 8 boxes kills a full-health wizard |
+| Fall stun | 1 second flat on the floor after a fall that costs hearts (`fallStunSeconds`) |
 | Staff reach | 2 boxes above the feet, authored on the staff - the pole is stretched to match |
 
 The climb being under the damage floor is deliberate: going up something the staff can reach and
@@ -32,7 +33,7 @@ coming back down it can never hurt you.
 | `Player/Abilities/` | `Ability` and the spells, `AbilityBook` |
 | `Localization/` | `Loc`, `TextBook`, `LocalizedText` |
 | `World/` | `Item` (the base of everything the wizard touches), with subfolders: `Hazards/` (`Hazard`, `TripHazard`, `BouncyTrash`, `SteamVent`, `WaxDrop`, `WaxCandle`, `PressurePlate`), `Zones/` (`Zone`, `WindZone2D`, `WindTrap`, `SlipperyFloor`), `Pickups/` (`Pickup`, `TimedReward`), `Level/` (`ShopStop`, `LevelExit`, `MovingPlatform`, `VineAnchor`, `StaffPlatform`, `MagicDoor`, `Furniture`), `Camera/` (`FollowCamera`) |
-| `UI/` | `PlayerHud`, `HudSlot`, `FlingArrow`, `SelectedLook`, `ButtonPrompt`, `ButtonIcons`, `Ui` (with `BlipRow`) and the screens (`ChoiceScreen`, `SkillScreen`, `ControlsScreen`) |
+| `UI/` | `PlayerHud`, `HudSlot`, `FlingArrow`, `SelectedLook`, `ButtonPrompt`, `ButtonIcons`, `Ui` (with `BlipRow`) and the screens (`ChoiceScreen`, `SkillScreen` with its `SpellCard` and `SpellSlot`, `ControlsScreen`) |
 | `Menus/` | `MenuScreen`, `SettingsPanel` and the three menus |
 | `Editor/` | `PixelArtImporter` (import settings for everything in `Assets/Art/Sprites`; editor only, never in the build) |
 
@@ -217,9 +218,11 @@ The Staff is yours from the start and welded to E; everything else fights over t
 | **Falling Star** | While tumbling, dive into the ground and bounce back up on your feet. Once per level. | a second dive / a third dive |
 | **Fling** | Hold to aim up or down (never more than 45° up), let go to be thrown into a tumble. | harder throw / fling while tumbling |
 
-Each spell's picture is its asset's **Icon**, from `Assets/Art/Sprites/Icons/Spells`: 10 x 10
-pixel art in the HUD's palette, which the HUD draws at 4x inside the ring. Redraw one there, or
-drag a different sprite into the asset's Icon, and the HUD and the skill screen both follow.
+Each spell's picture is its asset's **Icon**, a slice of `Assets/Art/Sprites/Skills.png`: seven
+32 x 32 icons (Falling Star, Glide, Star Slap, Telekinesis, Fling, Mage Hand, Staff, left to right).
+The HUD, the skill screen's slots and its cards all draw them at 64 x 64, exactly 2x, so the pixels
+stay square. Redraw one in that sheet, or drag a different sprite into the asset's Icon, and every
+screen follows. A new icon at another size wants its boxes resized to a whole multiple of it.
 
 Each spell's words live in `Resources/Language/Text.csv`, English and Spanish side by side:
 `ability.<id>.name`, `.desc`, and per upgrade `.upgrade.<n>.title` (the upgrade button, "Longer
@@ -454,14 +457,27 @@ menu underneath does not eat Escape.
 the Main Menu scene each hold a copy of it, so edit the prefab and both follow. Its `Page` child is
 the parchment; the rows, dropdowns, toggle, slider and buttons are inside it.
 
-The parts that repeat - an answer button, a spell slot, a spell card, an upgrade pip - are
-**templates**: one switched-off copy in the prefab, copied once per answer, slot, spell or rank and
-placed where the template sits. Restyle the template and every copy follows. The Skill Screen
-lists each template's parts (icon, name, button...) under **Slot Template** and **Card
-Template**; keep those filled in if you rearrange a card.
+The parts that repeat in the other screens - an answer button, an upgrade pip - are **templates**:
+one switched-off copy in the prefab, copied once per answer or rank and placed where the template
+sits. Restyle the template and every copy follows.
 
-The Skill Screen lays its cards out **two to a row** (`Cards`, a Grid Layout Group: change Cell Size
-to resize every card). A card shows its states with Look objects you can redraw:
+**The Skill Screen is laid out for real.** Open `Skill Screen` and you see the screen as the game
+shows it: four `Spell Slot`s under `Slots` and seven `Spell Card`s under `Cards`, one per spell,
+each with its icon, name and description. Both are prefabs of their own in `Assets/Prefabs`:
+
+- **Restyle every card at once** by opening `Spell Card` (fonts, colours, sizes, where the icon
+  sits). The same goes for `Spell Slot`.
+- **Change one spell's card** on that card inside the Skill Screen. Its `Icon` sprite is the one the
+  card shows, so a card can have its own art; empty the sprite and it uses the spell's Icon.
+- **The words come from `Resources/Language/Text.csv`** (English and Spanish), so the name and
+  description typed on a card are only a preview: style them on the card, change the words in the
+  CSV.
+- **A new spell** needs a card: drag `Spell Card` into `Cards` and set its **Spell**. A spell in the
+  Spellbook with no card says so in the console, and a card with no Spell is hidden.
+- The slots are numbered in the order they sit under `Slots`: the first is button 1.
+
+The cards sit **two to a row** (`Cards`, a Grid Layout Group: change Cell Size to resize every
+card). A card shows its states with Look objects you can redraw:
 
 - **Locked Look** (a padlock on the icon) while the spell is not learned yet.
 - **Equipped Look** (the button's own picture, top right) while the spell sits in a slot.
@@ -551,6 +567,9 @@ stays on top. Keep its sorting order above the wizard's (6); the placeholder use
 Armchair, Side Table, Bookcase, Chest, Crystal Ball, Sofa, Gramophone and Lantern. **Furniture is
 decoration**: the wizard walks straight through it, and nothing stands on it. A Star Slap is the only
 thing that moves it.
+
+**The Lantern is the exception: it sits still.** It has no Rigidbody 2D, collider or `Furniture`,
+only its `Art`, so it hangs wherever you place it, even in mid-air, and a slap passes through it.
 
 ```
 Armchair        Rigidbody 2D, Box Collider 2D, Furniture    root on the floor
@@ -744,6 +763,10 @@ That means a vine costs the player nothing to walk past and everything to notice
 the glow look matters more than any number here. If a player never learns what a glowing knot
 means, no vine in the game ever gets used.
 
+**The glow waits for the spell.** `Shown Once Learned` holds the spell the player has to buy first;
+the `Hand Hold` prefab has Mage Hand there, so no knot glows until Mage Hand is bought, and the
+glow never teaches a spell the player cannot use yet. Empty it and the glow shows from the start.
+
 `staysDown` (on by default) leaves a called vine hanging for the rest of the level: finding it was
 the achievement, not re-finding it. Turn it off and it rolls back up — and it rolls itself up by
 **asking** whether the wizard is still on it rather than waiting to be told, because letting go
@@ -818,7 +841,8 @@ overwrote the target, so dropping one spell onto another lost the second one sil
 screen, both of which ended the run first. Now **Play** opens it from the main menu, **Start
 again** on the death message opens it the same way, and walking into a **shop stop** opens it
 mid-level. The **Spellbook** button (`UI/Loadout`, Tab) also opens it mid-level from anywhere, but
-that one is a **debug tool** for testing loadouts, not part of the game. The button's door is the
+that one is a **debug tool** for testing loadouts, not part of the game, so like the other cheat
+keys it is left off the controls sheet. The button's door is the
 nested `SkillScreen.Door`, installed once when the game starts; the shop stop and the button both
 go through `SkillScreen.OpenInLevel`.
 
@@ -888,7 +912,8 @@ flat colour, so each one is visible the moment it lands and is waiting for a spr
 | `Bouncy Trash` | `BouncyTrash`: bounces you three boxes and sends you tumbling. | Hazard |
 | `Wind` | Pushes you the way its arrows point. Rotate it to aim it. | Hazard |
 | `Wind Trap` | The same push, on a timer: a wall mouth that opens and blows left. Shut, Warning and Blowing Looks. It shoves, it never hurts. | Hazard |
-| `Hand Hold` | The knot Mage Hand catches. | Default |
+| `Hand Hold` | The knot Mage Hand catches. It only glows once Mage Hand is bought. | Default |
+| `Button Prompt` | A button's picture floating in the level, to teach it. Set to Walk/Run; change its **Action** for any other button. See *Button prompts are pictures*. | Default |
 | `Magic Door` | `MagicDoor`: a solid door, one box wide and two tall, that Telekinesis opens for good. Put your art in its Closed Look and Open Look children. | **Ground** |
 | `Stone Wall` | A one-box stone block to stand on. It was the old Wall Growth spell's block; now it is a plain level piece. | **Ground** |
 | `Star Slap Hand` | The hand Star Slap shows where it lands. Already wired into the spell; not for placing by hand. | Default |
@@ -1370,11 +1395,19 @@ the old Health Look system, one look per health level, is gone.
 Glass took 1 heart(s) from the wizard - 2 left."* `PlayerLogic.Hurt` takes that cause as its second
 argument: a hazard passes its own name, a fall passes how far it was.
 
-**The `Any State → Take Damage` transition is muted until its clip has frames.** An empty clip still
-lasts a second, and nothing changes the sprite during it, so the wizard would freeze on whatever
-frame was showing. Once `TakeDamage.anim` has frames, open `Player.controller`, select its
-transition from Any State and untick **Mute**. The `Hat Change` state is left over from the old
-system and nothing triggers it any more, so it can be deleted.
+**Two hurt animations.** A hit on the ground plays `Take Damage` (`TakeDamage.anim`, frame 1 of
+`Damage and Death.png`) once, and the wizard carries on. **A fall that costs hearts knocks the
+wizard flat** instead: for `fallStunSeconds` (1, under Fall Damage on PLAYER) they cannot move or
+cast, a landing mid-tumble ends the tumble, and `Player.controller` holds the `Fall Damage` state
+(`FallDamage.anim`, frame 0, the splat) for exactly that long, through its **Stunned** parameter.
+Change the pose by redrawing frame 0 or editing that clip; change how long it lasts on PLAYER. The
+`Hat Change` state is left over from the old system and nothing triggers it any more, so it can be
+deleted.
+
+**Walking Look** (on PLAYER's `PlayerAnimator`) is a child shown while walk mode is on and hidden
+while running, so the player always knows which one they are in. It starts as a small Star
+Sparkles above the hat; replace it with your own sign, keeping it on the PLAYER root so it neither
+flips nor tumbles with the wizard.
 
 ## Animations
 
@@ -1424,7 +1457,7 @@ HUD              Canvas (Overlay, order 10) + CanvasScaler + PlayerHud
 ├── Spell Bar    bottom-left, HorizontalLayoutGroup + ContentSizeFitter
 │   ├── Left End     switched off: the old wooden shelf's end
 │   ├── Spell Slot   TEMPLATE, inactive - Image (Skill Tab_0, one 16 px box at 4x) + HudSlot
-│   │   ├── Icon         the spell's own icon, 40 x 40, centred in the box
+│   │   ├── Icon         the spell's own icon, 64 x 64 (a 32 px icon at 2x), filling the box
 │   │   ├── Charge       Image, Filled/Radial360 - the running and cooling wipe
 │   │   ├── Ring         switched off: the old ring art
 │   │   ├── Button       ButtonPrompt, under the box; its text is only the fallback
@@ -1480,9 +1513,16 @@ sprite there and every prompt in the game follows.** The starter pictures are in
 - A button with no row shows its name as text instead (the prompt's `Fallback` label), so a new
   binding never shows a blank. Add a row to give it a picture.
 
-To put a prompt anywhere else, for example a "press this to open the spellbook" sign in a level:
-add a `ButtonPrompt` to a UI object, give it an `Image` for `Icon`, and type the action in
-`Action` (`UI/Loadout`). `Device` picks the keyboard, the controller, or whichever is in use.
+**To teach a button in a level, drag in `Assets/Prefabs/Button Prompt.prefab`.** It is a tiny World
+Space canvas (one box wide, half a box tall, scale 1/32 so the icons are crisp at 2x) with a
+`ButtonPrompt` on it, set to `Player/Walk`. With **Device** on Current it shows Shift on a keyboard
+and LT on a pad, swapping the moment the player switches; set it to Keyboard or Controller and
+place two side by side to show both at once. Type another action in **Action** (`Player/Spell1`,
+`UI/Pause`...) to teach that button instead. It draws at Order in Layer 4, under the wizard, and
+the Shift picture you see in the editor is only a preview.
+
+To put a prompt on a menu, add a `ButtonPrompt` to a UI object, give it an `Image` for `Icon`, and
+type the action in `Action`. `Device` picks the keyboard, the controller, or whichever is in use.
 
 The face buttons are drawn as the four-dot diamond with one dot lit, so the same picture is right on
 an Xbox, PlayStation or Switch pad. The shoulders and triggers say LB, RB, LT and RT.

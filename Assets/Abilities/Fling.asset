@@ -15,7 +15,7 @@ MonoBehaviour:
   id: fling
   displayName: Fling
   description: Summon a trusty hand to fling you into the air, hold the button to aim.
-  icon: {fileID: 21300000, guid: f3f1ba6106b84e0c857fcdac2aaab96f, type: 3}
+  icon: {fileID: -1140953881901911216, guid: a6eef8dc9ca01b04891d8738ca935b7b, type: 3}
   cost: 2
   locked: 0
   fixedSlot: -1
