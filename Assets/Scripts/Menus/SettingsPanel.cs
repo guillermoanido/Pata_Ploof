@@ -35,6 +35,11 @@ namespace FallingWizard.Menus
                  "while the second copy is still being wired up.")]
         [SerializeField] TMP_Dropdown languageDropdown;
 
+        [Tooltip("The Pixel Font row's toggle: ticked shows every text in the pixel font, " +
+                 "unticked in the plain one. The two fonts are set in Resources/Game Fonts. " +
+                 "Leave it empty and the panel simply has no font row.")]
+        [SerializeField] Toggle pixelFontToggle;
+
         [Tooltip("Rows that only make sense on desktop. Hidden on consoles, which pick their own " +
                  "output mode. The language row does NOT belong in here - a console player picks " +
                  "their language too.")]
@@ -60,6 +65,9 @@ namespace FallingWizard.Menus
 
             if (languageDropdown != null)
                 languageDropdown.onValueChanged.AddListener(OnLanguageChanged);
+
+            if (pixelFontToggle != null)
+                pixelFontToggle.onValueChanged.AddListener(OnPixelFontChanged);
 
             foreach (GameObject row in desktopOnlyRows)
                 row.SetActive(GameSettings.DisplaySettingsSupported);
@@ -105,6 +113,8 @@ namespace FallingWizard.Menus
 
         static void OnFullscreenChanged(bool isOn) => GameSettings.IsFullscreen = isOn;
 
+        static void OnPixelFontChanged(bool isOn) => GameSettings.UsesPixelFont = isOn;
+
         void OnVolumeChanged(float value)
         {
             GameSettings.Volume = value;
@@ -121,28 +131,7 @@ namespace FallingWizard.Menus
 
         static void ShowControls() => UI.ControlsScreen.Open();
 
-        void AskToResetSave()
-        {
-            UI.ChoiceScreen screen = UI.ChoiceScreen.Open(
-                Loc.Get(Loc.Keys.SettingsResetSaveTitle),
-                Loc.Get(Loc.Keys.SettingsResetSaveBlurb));
-
-            if (screen == null)
-                return;
-
-            screen.Status(Loc.Format(Loc.Keys.SettingsResetSaveStatus, Progress.Scrap));
-
-            screen.Choice(Loc.Get(Loc.Keys.SettingsResetSaveConfirm),
-                () => screen.CloseThen(ResetSaveAndLoadMainMenu));
-
-            screen.Choice(Loc.Get(Loc.Keys.SettingsResetSaveCancel), screen.Close);
-        }
-
-        static void ResetSaveAndLoadMainMenu()
-        {
-            Progress.ResetSave();
-            Game.LoadMainMenu();
-        }
+        static void AskToResetSave() => UI.ResetSaveScreen.Open();
 
         static void OnLanguageChanged(int index)
         {
@@ -161,6 +150,9 @@ namespace FallingWizard.Menus
 
             if (languageDropdown != null)
                 languageDropdown.SetValueWithoutNotify(Array.IndexOf(Languages, Loc.Language));
+
+            if (pixelFontToggle != null)
+                pixelFontToggle.SetIsOnWithoutNotify(GameSettings.UsesPixelFont);
         }
     }
 }

@@ -27,7 +27,10 @@ namespace FallingWizard.UI
             }
 
             EnsureEventSystem();
-            return Object.Instantiate(prefab);
+
+            T screen = Object.Instantiate(prefab);
+            FontSwitcher.Restyle(screen.gameObject);
+            return screen;
         }
 
         public static GameObject CopyOf(GameObject template)

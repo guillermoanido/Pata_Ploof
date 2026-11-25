@@ -14,9 +14,8 @@ namespace FallingWizard.UI
         [Tooltip("The card itself. Selecting it picks the spell to move between slots.")]
         public Button button;
 
-        [Tooltip("The spell's picture. The sprite you put on this Image is the one the card " +
-                 "shows, so each card can have its own art. Leave the sprite empty and the " +
-                 "card shows the spell's own Icon instead.")]
+        [Tooltip("The spell's picture, exactly as placed: each card can have its own art. A " +
+                 "slot holding this spell shows the same picture.")]
         public Image icon;
 
         [Tooltip("Shown while the spell is not learned yet, for example a padlock over the " +
@@ -30,16 +29,18 @@ namespace FallingWizard.UI
         [Tooltip("Inside the Equipped Look: which button the spell is on, as a picture.")]
         public ButtonPrompt equippedPrompt;
 
-        [Tooltip("The spell's name. The words come from Resources/Language/Text.csv, so the " +
-                 "text typed here is only a preview: style it here, change the words there.")]
+        [Tooltip("The spell's name. Its Localized Text names the line in Game Text and shows " +
+                 "the English and Spanish to edit. The slots show this name too while the spell " +
+                 "sits in one.")]
         public TextMeshProUGUI nameLabel;
 
         [Tooltip("One pip per rank the spell can reach, filled up to the rank it has.")]
         public BlipRow pips = new BlipRow();
 
-        [Tooltip("What the spell does and what its next upgrade gives. The words come from " +
-                 "Text.csv, like the name.")]
-        public TextMeshProUGUI blurb;
+        [Tooltip("The one line the game writes on the card: what the next upgrade gives. It is " +
+                 "hidden while there is no upgrade to buy. Everything else on the card - the " +
+                 "name and the description - shows exactly what you typed.")]
+        public TextMeshProUGUI nextUpgrade;
 
         [Tooltip("Learn or upgrade button.")]
         public Button action;

@@ -210,17 +210,17 @@ namespace FallingWizard.UI
         void ShowSlot(SpellSlot slot, int index)
         {
             Ability held = FindSpellInSlot(index);
-            bool hasIcon = held != null && held.icon != null;
+            Sprite picture = held != null ? IconOf(held) : null;
 
             slot.plate.interactable = held == null || !held.locked;
 
-            slot.icon.gameObject.SetActive(hasIcon);
-            slot.icon.sprite = hasIcon ? held.icon : null;
+            slot.icon.gameObject.SetActive(picture != null);
+            slot.icon.sprite = picture;
 
             if (slot.prompt != null)
                 slot.prompt.Show(FindSlotAction(index));
 
-            slot.caption.text = held != null ? held.Name : string.Empty;
+            slot.caption.text = held != null ? NameOf(held) : string.Empty;
         }
 
         void ShowCard(SpellCard card)
@@ -231,23 +231,26 @@ namespace FallingWizard.UI
 
             card.button.interactable = owned;
 
-            ShowIcon(card);
             ShowLook(card.lockedLook, !owned);
             ShowEquipped(card, Progress.SlotHolding(spell.Key));
 
-            card.nameLabel.text = spell.Name;
             card.pips.Show(spell.HasUpgrades ? spell.MaxRank : 0, rank);
-            card.blurb.text = WriteBlurb(spell, owned, rank);
 
+            ShowNextUpgrade(card, spell, owned, rank);
             ShowAction(card, spell, owned, rank);
         }
 
-        static void ShowIcon(SpellCard card)
+        static void ShowNextUpgrade(SpellCard card, Ability spell, bool owned, int rank)
         {
-            if (card.icon.sprite == null)
-                card.icon.sprite = card.spell.icon;
+            if (card.nextUpgrade == null)
+                return;
 
-            card.icon.enabled = card.icon.sprite != null;
+            bool hasOne = owned && spell.NextUpgrade(rank) != null;
+
+            card.nextUpgrade.gameObject.SetActive(hasOne);
+
+            if (hasOne)
+                card.nextUpgrade.text = Loc.Format(Loc.Keys.SkillNext, spell.UpgradeDescription(rank));
         }
 
         void ShowEquipped(SpellCard card, int slot)
@@ -290,20 +293,24 @@ namespace FallingWizard.UI
                 return Loc.Get(Loc.Keys.SkillHintPick);
 
             if (Progress.Owns(picked.Key))
-                return Loc.Format(Loc.Keys.SkillHintMove, picked.Name);
+                return Loc.Format(Loc.Keys.SkillHintMove, NameOf(picked));
 
-            return Loc.Format(Loc.Keys.SkillHintLocked, picked.Name);
+            return Loc.Format(Loc.Keys.SkillHintLocked, NameOf(picked));
         }
 
-        static string WriteBlurb(Ability spell, bool owned, int rank)
+        string NameOf(Ability spell)
         {
-            Ability.Upgrade nextUpgrade = owned ? spell.NextUpgrade(rank) : null;
-
-            if (nextUpgrade == null)
-                return spell.Description;
-
-            return spell.Description + "\n" + Loc.Format(Loc.Keys.SkillNext, spell.UpgradeDescription(rank));
+            SpellCard card = CardFor(spell);
+            return card != null && card.nameLabel != null ? card.nameLabel.text : spell.Name;
         }
+
+        Sprite IconOf(Ability spell)
+        {
+            SpellCard card = CardFor(spell);
+            return card != null && card.icon != null && card.icon.sprite != null ? card.icon.sprite : spell.icon;
+        }
+
+        SpellCard CardFor(Ability spell) => cards.Find(card => card.spell == spell);
 
         void Focus(Ability spell)
         {

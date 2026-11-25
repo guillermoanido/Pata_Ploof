@@ -14,12 +14,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: fling
   displayName: Fling
-  description: Summon a trusty hand to fling you into the air, hold the button to aim.
+  description: Summon a trusty hand to fling you into the air, hold the button to
+    aim.
   icon: {fileID: -1140953881901911216, guid: a6eef8dc9ca01b04891d8738ca935b7b, type: 3}
-  cost: 2
+  cost: 4
   locked: 0
   fixedSlot: -1
   passive: 0
+  pressBuffer: 0
+  chargesOnHold: 1
+  activeDuration: 0
+  cooldown: 1.5
+  usesPerLevel: 0
+  usesAddedPerRank: 0
   upgrades:
   - cost: 3
     title: Stronger hand
@@ -27,12 +34,6 @@ MonoBehaviour:
   - cost: 4
     title: Helping hand
     description: Your hand catches you mid-tumble, fling yourself even in the air.
-  chargesOnHold: 1
-  pressBuffer: 0
-  activeDuration: 0
-  usesPerLevel: 0
-  cooldown: 1.5
-  collectedEffect: {fileID: 0}
   startAngle: 20
   lowestAngle: -45
   highestAngle: 45

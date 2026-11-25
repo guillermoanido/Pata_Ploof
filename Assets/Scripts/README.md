@@ -31,9 +31,9 @@ coming back down it can never hurt you.
 | `Core/` | `Game` (pause, scene flow, quit), `GameSettings`, `Controls` (every input lookup, plus which device is in use), `Progress` (the save: Knowledge, spells, loadout, hearts, finished levels, taken pickups), `SaveFile` |
 | `Player/` | `PlayerCharacter` (the Unity side), `PlayerLogic` (everything the wizard does), `Staff`, `PlayerAnimator`, `RagdollBumps` |
 | `Player/Abilities/` | `Ability` and the spells, `AbilityBook` |
-| `Localization/` | `Loc`, `TextBook`, `LocalizedText` |
+| `Localization/` | `Loc`, `TextBook`, `GameText` (the words), `LocalizedText` |
 | `World/` | `Item` (the base of everything the wizard touches), with subfolders: `Hazards/` (`Hazard`, `TripHazard`, `BouncyTrash`, `SteamVent`, `WaxDrop`, `WaxCandle`, `PressurePlate`), `Zones/` (`Zone`, `WindZone2D`, `WindTrap`, `SlipperyFloor`), `Pickups/` (`Pickup`, `TimedReward`), `Level/` (`ShopStop`, `LevelExit`, `MovingPlatform`, `VineAnchor`, `StaffPlatform`, `MagicDoor`, `Furniture`), `Camera/` (`FollowCamera`) |
-| `UI/` | `PlayerHud`, `HudSlot`, `FlingArrow`, `SelectedLook`, `ButtonPrompt`, `ButtonIcons`, `Ui` (with `BlipRow`) and the screens (`ChoiceScreen`, `SkillScreen` with its `SpellCard` and `SpellSlot`, `ControlsScreen`) |
+| `UI/` | `PlayerHud`, `HudSlot`, `FlingArrow`, `SelectedLook`, `ButtonPrompt`, `ButtonIcons`, `GameFonts` and `FontSwitcher`, `Ui` (with `BlipRow`) and the screens (`ChoiceScreen`, `SkillScreen` with its `SpellCard` and `SpellSlot`, `ControlsScreen`) |
 | `Menus/` | `MenuScreen`, `SettingsPanel` and the three menus |
 | `Editor/` | `PixelArtImporter` (import settings for everything in `Assets/Art/Sprites`; editor only, never in the build) |
 
@@ -224,13 +224,13 @@ The HUD, the skill screen's slots and its cards all draw them at 64 x 64, exactl
 stay square. Redraw one in that sheet, or drag a different sprite into the asset's Icon, and every
 screen follows. A new icon at another size wants its boxes resized to a whole multiple of it.
 
-Each spell's words live in `Resources/Language/Text.csv`, English and Spanish side by side:
-`ability.<id>.name`, `.desc`, and per upgrade `.upgrade.<n>.title` (the upgrade button, "Longer
-staff - 4") and `.upgrade.<n>.desc` (the card's "Next level" line). A line there wins over the text
-typed on the spell asset, which is only the fallback. The card shows the description with the Next
-level line under it, and has room for about two lines plus that one, so keep a description near
-90 characters. Anything longer shrinks to the smallest size and then spills. For more room, raise
-**Cell Size Y** on `Cards` and the `Blurb`'s **Preferred Height** by the same amount.
+Each spell's words live in **Game Text** (see *Words: English and Spanish*): `ability.<id>.name`,
+`.desc`, and per upgrade `.upgrade.<n>.title` (the upgrade button, "Longer staff - 4") and
+`.upgrade.<n>.desc` (the card's Next Upgrade line). A line there wins over the text typed on the
+spell asset, which is only the fallback. A card has room for about two lines of description plus
+the Next Upgrade line, so keep a description near 90 characters. Anything longer shrinks to the
+smallest size and then spills. For more room, raise **Cell Size Y** on `Cards` and the `Blurb`'s
+**Preferred Height** by the same amount.
 
 Two of them want level content: Mage Hand needs a `Vine`, and Telekinesis wants a `Magic Door`, a
 moving platform, a trap, a rake or a Bouncy Trash nearby.
@@ -453,6 +453,13 @@ prefab and change it like any other UI. They sit at sorting order 200, 220 and 2
 Menu's 100. All of them set `Ui.IsModalOpen`, and `MenuScreen.Update` checks it, so the pause
 menu underneath does not eat Escape.
 
+**The reset-save question has its own prefab, `Assets/Resources/Reset Save Screen`**, laid out for
+real: the title, the blurb, the Knowledge line and the two buttons (`Confirm Button` erases,
+`Cancel Button` keeps the save and is picked first). Open it and restyle anything. Each text shows
+its Game Text line through a `Localized Text`, so select one to edit its English and Spanish. The
+Knowledge line is the only one the game writes (`settings.resetSave.status`, `{0}` is the number).
+Escape or the controller's back button cancels.
+
 **Settings is one prefab too, `Assets/Prefabs/Settings Panel.prefab`.** The Pause Menu prefab and
 the Main Menu scene each hold a copy of it, so edit the prefab and both follow. Its `Page` child is
 the parchment; the rows, dropdowns, toggle, slider and buttons are inside it.
@@ -467,11 +474,13 @@ each with its icon, name and description. Both are prefabs of their own in `Asse
 
 - **Restyle every card at once** by opening `Spell Card` (fonts, colours, sizes, where the icon
   sits). The same goes for `Spell Slot`.
-- **Change one spell's card** on that card inside the Skill Screen. Its `Icon` sprite is the one the
-  card shows, so a card can have its own art; empty the sprite and it uses the spell's Icon.
-- **The words come from `Resources/Language/Text.csv`** (English and Spanish), so the name and
-  description typed on a card are only a preview: style them on the card, change the words in the
-  CSV.
+- **Change one spell's card** on that card inside the Skill Screen. The `Icon` sprite you place is
+  the one shown, and a slot holding the spell shows the card's icon and name too.
+- **The words**: select the card's `Name` or `Blurb` and its `Localized Text` shows that line's
+  English and Spanish - edit them right there (they are stored in Game Text).
+- **The line the game writes itself** is `Next Upgrade` (what buying the next rank gives, hidden
+  when there is none), plus the learn button's price and the Learned / Mastered status. Style them
+  on the card; their words are in Game Text too.
 - **A new spell** needs a card: drag `Spell Card` into `Cards` and set its **Spell**. A spell in the
   Spellbook with no card says so in the console, and a card with no Spell is hidden.
 - The slots are numbered in the order they sit under `Slots`: the first is button 1.
@@ -485,6 +494,39 @@ card). A card shows its states with Look objects you can redraw:
 
 The card itself goes dim while the spell is not learned, and a learn button you cannot afford goes
 dim, through each Button's **Disabled Color**. Change those tints on the Button components.
+
+### Words: English and Spanish
+
+**All the words in the game are in one file: `Assets/Resources/Language/Game Text`.** Select it and
+the Inspector lists every line by its key (`menu.play`, `ability.staff.desc`...), each with an
+English and a Spanish box. Change a box and the game shows the new words.
+
+Every label has one text object, never one per language. A label shows a line through a `Localized
+Text` beside its TextMeshPro text, which names the line by **Key**, and **its Inspector shows that
+line's English and Spanish so you can edit them right on the label**; the edit goes into Game Text,
+and the label's own text updates to the English so the prefab reads right. A key Game Text does not
+have yet shows an **Add this line** button. A label with no Key is left alone, which is right for one
+the game writes into itself (the volume percentage, a price).
+
+Words the game builds while playing - "Knowledge: 5", "Learn - 4", the hints - are lines in Game
+Text too, with `{0}` where the number or name goes; keep the `{0}` when you change them.
+
+`Assets/Spanish Text.txt` is a plain copy of every line, English and Spanish, for reading through or
+sending to someone. It is not read by the game, so it goes out of date as soon as Game Text changes.
+
+### Fonts
+
+**Every text is in the pixel font, BoldPixels**, and players can switch the whole game to a plain
+font with **Pixel Font** in Settings (saved with the other settings). The two fonts are named in
+`Assets/Resources/Game Fonts`; drag another TextMeshPro font asset in to change either everywhere.
+The plain one is LiberationSans, TextMesh Pro's own copy of Arial's shapes. Switching never touches
+your prefabs: `FontSwitcher` swaps the font while the game runs and scales each size so capital
+letters stand as tall as before (BoldPixels draws about a quarter smaller at the same size). Build
+new menus in BoldPixels and they look in the game exactly as in the editor.
+
+`BoldPixels SDF` is **Dynamic**: it only came with plain English letters, so it draws any other
+letter (á, ñ, ¿...) from `BoldPixels.ttf` the first time it is needed. That is why the asset changes
+by itself after playing in Spanish; commit those changes like any other.
 
 ## Falling Star: dive out of a tumble
 
@@ -906,7 +948,7 @@ flat colour, so each one is visible the moment it lands and is waiting for a spr
 | `Heart Upgrade` | +1 max HP. Taken until the wizard dies, like everything else. | Default |
 | `Timed Reward` | A Knowledge and a Heart Upgrade to grab within 60 seconds of the level starting, under a white timer counting up. At `1:00` the timer stops and turns red, and they fade. | Default |
 | `Wet Floor Sign` | `TripHazard`: trips a runner. `minimumSpeed` 3, so a walk is safe. | Hazard |
-| `Rake`, `Rake 1` | `TripHazard` aimed Left or Right: trips you BACKWARDS, the way you came. | Hazard |
+| `Rake`, `Rake 1` | `TripHazard` aimed Left or Right: trips you BACKWARDS, the way you came. **Breaks Falls**: drop onto one from any height and it catches you, with no fall damage. | Hazard |
 | `Ice` | Ground that does not hold you. Nothing else changes. | Hazard |
 | `Stairs` | `TripHazard`: lay it over a staircase. Take them fast and you tumble down them. | Hazard |
 | `Bouncy Trash` | `BouncyTrash`: bounces you three boxes and sends you tumbling. | Hazard |
@@ -969,6 +1011,14 @@ open, and every other level opens once the one before it is completed, so finish
 open across launches until the wizard dies or the save is reset. A level whose scene is missing
 from Build Settings stays locked and says so in the console. Selection starts on the deepest open
 level.
+
+**Only finished levels and the next one can be picked.** A locked level's button cannot be pressed,
+and its **Locked Look** (a child of the button, a dark cover to start with) is shown over it; swap
+in a padlock or your own art. **Cheats (M) open every level** - that is what the "CHEATS ON" label
+in the corner means - and make the wizard unable to die, so nothing is wiped while they are on.
+
+**Dying wipes the whole save**: Knowledge, spells and upgrades, bonus hearts, taken pickups and
+finished levels, back to a fresh start.
 
 **The dotted line** runs through the Worlds list in order: a world's name, its levels, then the next
 world's name. It is made of copies of `Dot`, a switched-off child of `Tower Map`, placed when the

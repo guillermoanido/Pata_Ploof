@@ -5,13 +5,12 @@ namespace FallingWizard.Localization
 {
     public class LocalizedText : MonoBehaviour
     {
-        [Tooltip("Which line of the translation this label shows. It is a key, not a sentence: " +
-                 "'menu.play', 'settings.volume', 'pause.title'. In English the label reads " +
-                 "exactly as it does today, so nothing looks any different until a language is " +
-                 "picked.\n\nLeave it empty and this does nothing at all, which is what you want " +
-                 "on a label the game writes into itself - the volume percentage, the current " +
-                 "choice in a dropdown, the button glyph under a spell. Putting a key on one of " +
-                 "those makes the two fight over the same words.")]
+        [Tooltip("Which line of Assets/Resources/Language/Game Text this label shows: " +
+                 "'menu.play', 'settings.volume', 'pause.title'. The words themselves live in " +
+                 "Game Text, and this component shows them right here in English and Spanish, " +
+                 "so you can change them without leaving the label.\n\nLeave it empty and this " +
+                 "does nothing, which is what you want on a label the game writes into itself - " +
+                 "the volume percentage, a price, a button glyph.")]
         public string key = "";
 
         TMP_Text label;

@@ -33,6 +33,12 @@ namespace FallingWizard.World
                  "tumbling wizard gets it too when Affects Ragdolled is on.")]
         [Min(0f)] public float extraLift = 0f;
 
+        [Tooltip("Land on it from any height and take no fall damage: the drop above it is " +
+                 "forgiven, and only what comes after it counts - here, the hop its lift gives. " +
+                 "Right for a rake, which catches a falling wizard and throws them. Leave it off " +
+                 "for a wet floor or stairs, which should save nobody from a long drop.")]
+        public bool breaksFalls = false;
+
         protected override void Reset()
         {
             base.Reset();
@@ -43,6 +49,9 @@ namespace FallingWizard.World
 
         protected override void Affect(PlayerLogic wizard)
         {
+            if (breaksFalls)
+                wizard.RestartFall();
+
             int way = ChooseTheWay(wizard);
 
             if (wizard.TryTrip(way))

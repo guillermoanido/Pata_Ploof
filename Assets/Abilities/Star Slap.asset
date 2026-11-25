@@ -11,12 +11,13 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 834a3dacfb21437cb154e6906fa03197, type: 3}
   m_Name: Star Slap
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   id: slap
   displayName: Star Slap
-  description: A magical star hand that slaps walls to push you away, it can also shove furniture around.
+  description: A magical star hand that slaps walls to push you away, it can also
+    shove furniture around.
   icon: {fileID: -6246062721824389004, guid: a6eef8dc9ca01b04891d8738ca935b7b, type: 3}
-  cost: 2
+  cost: 4
   locked: 0
   fixedSlot: -1
   passive: 0

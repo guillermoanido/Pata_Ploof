@@ -1,0 +1,424 @@
+﻿All the words in Pata Ploof, English and Spanish.
+This is a copy to read. To change a line, edit it in Unity: Assets/Resources/Language/Game Text,
+or select any label and edit it in its Localized Text.
+
+menu.title
+  EN: Pata Ploof
+  ES: Pata Ploof
+
+menu.play
+  EN: Play
+  ES: Jugar
+
+menu.settings
+  EN: Settings
+  ES: Opciones
+
+menu.exit
+  EN: Exit
+  ES: Salir
+
+pause.title
+  EN: Paused
+  ES: En pausa
+
+pause.resume
+  EN: Resume
+  ES: Continuar
+
+pause.mainMenu
+  EN: Main Menu
+  ES: Menú principal
+
+pause.quit
+  EN: Quit
+  ES: Salir
+
+settings.title
+  EN: Settings
+  ES: Opciones
+
+settings.resolution
+  EN: Resolution
+  ES: Resolución
+
+settings.fullscreen
+  EN: Fullscreen
+  ES: Pantalla completa
+
+settings.volume
+  EN: Volume
+  ES: Volumen
+
+settings.language
+  EN: Language
+  ES: Idioma
+
+settings.pixelFont
+  EN: Pixel font
+  ES: Fuente pixelada
+
+settings.back
+  EN: Back
+  ES: Volver
+
+settings.resetSave
+  EN: Reset Save
+  ES: Borrar partida
+
+settings.resetSave.title
+  EN: Reset save?
+  ES: ¿Borrar la partida?
+
+settings.resetSave.blurb
+  EN: Every spell, all the Knowledge and every heart you have earned is erased, and the run starts again from the beginning. This cannot be undone.
+  ES: Se borran todos los hechizos, todo el Conocimiento y todos los corazones que has ganado, y la bajada empieza otra vez desde el principio. Esto no se puede deshacer.
+
+settings.resetSave.status
+  EN: You have {0} Knowledge.
+  ES: Tienes {0} de Conocimiento.
+
+settings.resetSave.confirm
+  EN: Erase everything
+  ES: Borrarlo todo
+
+settings.resetSave.cancel
+  EN: Keep my save
+  ES: Conservar mi partida
+
+language.english
+  EN: English
+  ES: English
+
+language.spanish
+  EN: Español
+  ES: Español
+
+skill.title
+  EN: What you carry down
+  ES: Lo que te llevas abajo
+
+skill.purse
+  EN: {0} Knowledge
+  ES: {0} de Conocimiento
+
+skill.price
+  EN: {0} Knowledge
+  ES: {0} de Conocimiento
+
+skill.noBook
+  EN: No spellbook found at Assets/Resources/Spellbook.asset.
+  ES: No hay grimorio en Assets/Resources/Spellbook.asset.
+
+skill.dive
+  EN: Descend
+  ES: Bajar
+
+skill.back
+  EN: Back to the tower
+  ES: De vuelta a la torre
+
+skill.hint.pick
+  EN: Pick a spell, then press the button you want it on.
+  ES: Elige un hechizo y presiona el botón donde lo quieres.
+
+skill.hint.move
+  EN: {0}: press a spell button to put it there.
+  ES: {0}: presiona un botón de hechizo para ponerlo ahí.
+
+skill.hint.locked
+  EN: {0} is not learned yet.
+  ES: Aún no lo aprendiste {0}.
+
+skill.next
+  EN: Next level: {0}
+  ES: Siguiente nivel: {0}
+
+skill.learn
+  EN: Learn - {0}
+  ES: Aprender - {0}
+
+skill.mastered
+  EN: Mastered
+  ES: Dominado
+
+skill.learned
+  EN: Learned
+  ES: Aprendido
+
+death.title
+  EN: You fell
+  ES: Te caíste
+
+death.blurb
+  EN: Everything you carried down is gone: your Knowledge, your spells and your hearts.
+  ES: Todo lo que llevabas se perdió: tu Conocimiento, tus hechizos y tus corazones.
+
+death.startAgain
+  EN: Start again
+  ES: Empezar de nuevo
+
+death.mainMenu
+  EN: Main menu
+  ES: Menú principal
+
+ability.fling.name
+  EN: Fling
+  ES: Impulso
+
+ability.fling.desc
+  EN: Summon a hand to fling you into the air, hold the button to aim.
+  ES: Invoca una mano fiel que te lanza por los aires, mantén presionado el botón para apuntar.
+
+ability.fling.upgrade.0.title
+  EN: Stronger hand
+  ES: Mano más fuerte
+
+ability.fling.upgrade.0.desc
+  EN: Your magical hand gets stronger.
+  ES: Tu mano mágica se hace más fuerte.
+
+ability.fling.upgrade.1.title
+  EN: Helping hand
+  ES: Mano amiga
+
+ability.fling.upgrade.1.desc
+  EN: Your hand catches you mid-tumble, fling yourself even in the air.
+  ES: Tu mano te atrapa mientras caes dando vueltas, lánzate incluso en el aire.
+
+ability.glide.name
+  EN: Glide
+  ES: Planeo
+
+ability.glide.desc
+  EN: Use your magical hat to steer your fall, catch the wind to start your fall over.
+  ES: Abre tu sombrero mágico para guiar tu caída, atrapa el viento para empezar la caída de nuevo.
+
+ability.glide.upgrade.0.title
+  EN: Wider hat
+  ES: Sombrero más ancho
+
+ability.glide.upgrade.0.desc
+  EN: Your hat catches more air, so you fall slower.
+  ES: Tu sombrero atrapa más aire, así caes más despacio.
+
+ability.glide.upgrade.1.title
+  EN: Feather hat
+  ES: Sombrero de pluma
+
+ability.glide.upgrade.1.desc
+  EN: You float down at a slow, steady pace.
+  ES: Bajas flotando a un ritmo lento y constante.
+
+ability.star.name
+  EN: Falling Star
+  ES: Estrella fugaz
+
+ability.star.desc
+  EN: While tumbling, dive into the ground and bounce back up. Once per level.
+  ES: Si caes dando vueltas, lánzate al suelo como estrella fugaz y rebota. Una vez por nivel.
+
+ability.star.upgrade.0.title
+  EN: Second star
+  ES: Segunda estrella
+
+ability.star.upgrade.0.desc
+  EN: Dive twice per level.
+  ES: Lánzate dos veces por nivel.
+
+ability.star.upgrade.1.title
+  EN: Third star
+  ES: Tercera estrella
+
+ability.star.upgrade.1.desc
+  EN: Dive three times per level.
+  ES: Lánzate tres veces por nivel.
+
+ability.vine.name
+  EN: Mage Hand
+  ES: Mano de mago
+
+ability.vine.desc
+  EN: Call down a spectral hand to swing on, press the button again to let go.
+  ES: Haz bajar una mano espectral para columpiarte, presiona otra vez el botón para soltarte.
+
+ability.vine.upgrade.0.title
+  EN: Wider swing
+  ES: Vaivén más amplio
+
+ability.vine.upgrade.0.desc
+  EN: Your spectral hand swings wider.
+  ES: Tu mano espectral se balancea más.
+
+ability.vine.upgrade.1.title
+  EN: Climbing hand
+  ES: Mano trepadora
+
+ability.vine.upgrade.1.desc
+  EN: Climb up and down your spectral hand.
+  ES: Sube y baja por tu mano espectral.
+
+ability.staff.name
+  EN: Staff
+  ES: Bastón
+
+ability.staff.desc
+  EN: A magical wooden staff that allows you to climb up or down.
+  ES: Un bastón mágico de madera que te permite trepar o descender por las superficies.
+
+ability.staff.upgrade.0.title
+  EN: Longer staff
+  ES: Bastón más largo
+
+ability.staff.upgrade.0.desc
+  EN: Get a longer staff.
+  ES: Consigue un bastón más largo.
+
+ability.staff.upgrade.1.title
+  EN: Longest staff
+  ES: El bastón más largo
+
+ability.staff.upgrade.1.desc
+  EN: An even longer staff, to climb further up and down.
+  ES: Un bastón aún más largo, para trepar y descender más lejos.
+
+ability.hand.name
+  EN: Telekinesis
+  ES: Telequinesis
+
+ability.hand.desc
+  EN: A wave of magic that opens magic doors and holds still the moving things around you.
+  ES: Una onda de magia que abre las puertas mágicas y detiene las cosas que se mueven a tu alrededor.
+
+ability.hand.upgrade.0.title
+  EN: Deeper sleep
+  ES: Sueño profundo
+
+ability.hand.upgrade.0.desc
+  EN: Things stay still for longer.
+  ES: Las cosas se quedan quietas más tiempo.
+
+ability.slap.name
+  EN: Star Slap
+  ES: Manotazo estelar
+
+ability.slap.desc
+  EN: A magical hand that slaps walls and pushes you away.
+  ES: Una mano estelar que golpea las paredes para empujarte, también puede mover muebles.
+
+ability.slap.upgrade.0.title
+  EN: Steady hand
+  ES: Mano firme
+
+ability.slap.upgrade.0.desc
+  EN: Slapping while you tumble slows you down.
+  ES: Golpear mientras caes dando vueltas te frena.
+
+ability.slap.upgrade.1.title
+  EN: Longer arm
+  ES: Brazo más largo
+
+ability.slap.upgrade.1.desc
+  EN: Your star hand reaches further and slows your tumble even more.
+  ES: Tu mano estelar llega más lejos y te frena aún más.
+
+settings.controls
+  EN: Controls
+  ES: Controles
+
+controls.title
+  EN: Controls
+  ES: Controles
+
+controls.keyboard
+  EN: Keyboard
+  ES: Teclado
+
+controls.controller
+  EN: Controller
+  ES: Mando
+
+controls.playing
+  EN: Playing
+  ES: En el juego
+
+controls.menus
+  EN: Menus
+  ES: Menús
+
+controls.move
+  EN: Move
+  ES: Moverse
+
+controls.walk
+  EN: Walk (toggle)
+  ES: Caminar (alterna)
+
+controls.spell
+  EN: Spell {0}
+  ES: Hechizo {0}
+
+controls.loadout
+  EN: Spellbook
+  ES: Grimorio
+
+controls.pause
+  EN: Pause
+  ES: Pausa
+
+controls.skip
+  EN: Skip cutscene
+  ES: Saltar escena
+
+controls.menuMove
+  EN: Navigate
+  ES: Moverse
+
+controls.menuPick
+  EN: Select
+  ES: Elegir
+
+controls.menuBack
+  EN: Back
+  ES: Atrás
+
+controls.close
+  EN: Back
+  ES: Volver
+
+levels.top
+  EN: Top level
+  ES: Nivel superior
+
+levels.mid
+  EN: Mid section
+  ES: Sección media
+
+levels.bottom
+  EN: Bottom
+  ES: El fondo
+
+levels.level1
+  EN: Level 1
+  ES: Nivel 1
+
+levels.level2
+  EN: Level 2
+  ES: Nivel 2
+
+levels.level3
+  EN: Level 3
+  ES: Nivel 3
+
+end.title
+  EN: You managed to descend the tower!
+  ES: ¡Lograste descender la torre!
+
+end.blurb
+  EN: More to come...
+  ES: Pronto habrá más...
+
+end.mainMenu
+  EN: Main menu
+  ES: Menú principal
+

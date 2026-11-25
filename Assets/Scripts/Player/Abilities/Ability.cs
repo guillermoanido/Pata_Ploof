@@ -20,12 +20,12 @@ namespace FallingWizard.Player
         public string id = "";
 
         [Tooltip("Name shown to the player. The 'ability.<id>.name' line in " +
-                 "Resources/Language/Text.csv wins over this and holds the Spanish too.")]
+                 "Resources/Language/Game Text wins over this and holds the Spanish too.")]
         public string displayName = "Spell";
 
         [TextArea]
         [Tooltip("What it does, in the player's words, shown on its skill card. The " +
-                 "'ability.<id>.desc' line in Resources/Language/Text.csv wins over this and " +
+                 "'ability.<id>.desc' line in Resources/Language/Game Text wins over this and " +
                  "holds the Spanish too.")]
         public string description = "";
 
@@ -215,13 +215,13 @@ namespace FallingWizard.Player
 
             [Tooltip("Short name for the rank, shown on the upgrade button: 'Longer staff', " +
                      "'Wider swing'. The 'ability.<id>.upgrade.<n>.title' line in " +
-                     "Resources/Language/Text.csv wins over this.")]
+                     "Resources/Language/Game Text wins over this.")]
             public string title = "";
 
             [TextArea]
             [Tooltip("What it buys, in the player's words, shown on the skill card as the " +
                      "'Next level' line. One sentence. The 'ability.<id>.upgrade.<n>.desc' line " +
-                     "in Resources/Language/Text.csv wins over this.")]
+                     "in Resources/Language/Game Text wins over this.")]
             public string description = "";
 
             public void Validate() => cost = Mathf.Max(0, cost);
