@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace FallingWizard.World
 {
-    public class BouncyTrash : Hazard
+    public class BouncyHat : Hazard
     {
         const float BounceCooldown = 0.25f;
 
@@ -24,9 +24,10 @@ namespace FallingWizard.World
                  "real landing charges for the whole flight.")]
         public bool resetsFall = true;
 
-        [Tooltip("A wizard falling into this bounces at least as high as they fell from, so " +
-                 "bouncing from one into another never loses height - only Bounce Height is " +
-                 "added when they arrive slowly. Off bounces exactly Bounce Height every time.")]
+        [Tooltip("A wizard falling into this bounces back up to the height they fell from - " +
+                 "measured, never more - so bouncing from one into another neither loses nor " +
+                 "gains height. A short drop still gets at least Bounce Height. Off bounces " +
+                 "exactly Bounce Height every time.")]
         public bool keepsTheFall = true;
 
         protected override void Reset()

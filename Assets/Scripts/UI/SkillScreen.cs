@@ -450,7 +450,8 @@ namespace FallingWizard.UI
 
             void Update()
             {
-                if (openScreen != null || Ui.IsModalOpen || !Core.Controls.WasLoadoutPressed)
+                if (!Cheats.IsActive || openScreen != null || Ui.IsModalOpen ||
+                    !Core.Controls.WasLoadoutPressed)
                     return;
 
                 wasPaused = Game.IsPaused;

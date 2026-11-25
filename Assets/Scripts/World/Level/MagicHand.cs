@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace FallingWizard.World
 {
-    public class VineAnchor : MonoBehaviour
+    public class MagicHand : MonoBehaviour
     {
         const float Epsilon = 0.0001f;
 
@@ -15,7 +15,7 @@ namespace FallingWizard.World
         static readonly Color LineColour = new Color(0.42f, 0.75f, 0.38f);
         static readonly Color ReachColour = new Color(0.42f, 0.75f, 0.38f, 0.25f);
 
-        static readonly List<VineAnchor> Hanging = new List<VineAnchor>();
+        static readonly List<MagicHand> Hanging = new List<MagicHand>();
 
         [Header("Vine")]
         [Tooltip("Where the vine is tied, relative to this object. The wizard swings from here, " +
@@ -78,7 +78,7 @@ namespace FallingWizard.World
 
         [NonSerialized] float ropeThickness = 1f;
 
-        public static IReadOnlyList<VineAnchor> All => Hanging;
+        public static IReadOnlyList<MagicHand> All => Hanging;
 
         public Vector2 Knot => (Vector2)transform.position + knotOffset;
 
@@ -155,13 +155,16 @@ namespace FallingWizard.World
             unrolled = 0f;
         }
 
-        public static VineAnchor Nearest(Vector2 point)
+        public static MagicHand Nearest(Vector2 point, MagicHand skip = null)
         {
-            VineAnchor closest = null;
+            MagicHand closest = null;
             float closestGap = float.MaxValue;
 
-            foreach (VineAnchor vine in Hanging)
+            foreach (MagicHand vine in Hanging)
             {
+                if (vine == skip)
+                    continue;
+
                 float gap = vine.DistanceTo(point);
 
                 if (gap > vine.grabRange || gap >= closestGap)

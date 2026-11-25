@@ -904,14 +904,8 @@ namespace FallingWizard.Player
             public float HorizontalSpeed => body == null ? 0f : Mathf.Abs(body.linearVelocityX);
             public Vector2 Velocity => body == null ? Vector2.zero : body.linearVelocity;
 
-            public float HeightFallenFrom
-            {
-                get
-                {
-                    float fallSpeed = body == null ? 0f : Mathf.Max(0f, -body.linearVelocityY);
-                    return fallSpeed * fallSpeed / (KineticEnergyFactor * BaseGravity);
-                }
-            }
+            public float HeightFallenFrom =>
+                body == null || body.linearVelocityY >= 0f ? 0f : Mathf.Max(0f, highestPoint - body.position.y);
 
             float FeetY => Position.y + groundCheckOffset.y;
 

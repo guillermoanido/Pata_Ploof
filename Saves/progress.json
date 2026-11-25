@@ -1,21 +1,29 @@
 {
     "version": 2,
-    "scrap": 1,
-    "bonusHearts": 0,
+    "scrap": 0,
+    "bonusHearts": 1,
     "loadout": [
         "staff",
-        "",
+        "vine",
         "",
         ""
     ],
     "ranks": [
         {
             "key": "staff",
+            "rank": 2
+        },
+        {
+            "key": "vine",
             "rank": 1
         }
     ],
     "taken": [
-        "scrap1-1:-10,-90"
+        "heart1-1:-42,-226",
+        "scrap1-1:26,-150",
+        "scrap1-1:62,-318"
     ],
-    "completedLevels": []
+    "completedLevels": [
+        "1-1"
+    ]
 }

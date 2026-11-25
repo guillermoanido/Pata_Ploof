@@ -32,7 +32,7 @@ coming back down it can never hurt you.
 | `Player/` | `PlayerCharacter` (the Unity side), `PlayerLogic` (everything the wizard does), `Staff`, `PlayerAnimator`, `RagdollBumps` |
 | `Player/Abilities/` | `Ability` and the spells, `AbilityBook` |
 | `Localization/` | `Loc`, `TextBook`, `GameText` (the words), `LocalizedText` |
-| `World/` | `Item` (the base of everything the wizard touches), with subfolders: `Hazards/` (`Hazard`, `TripHazard`, `BouncyTrash`, `SteamVent`, `WaxDrop`, `WaxCandle`, `PressurePlate`), `Zones/` (`Zone`, `WindZone2D`, `WindTrap`, `SlipperyFloor`), `Pickups/` (`Pickup`, `TimedReward`), `Level/` (`ShopStop`, `LevelExit`, `MovingPlatform`, `VineAnchor`, `StaffPlatform`, `MagicDoor`, `Furniture`), `Camera/` (`FollowCamera`) |
+| `World/` | `Item` (the base of everything the wizard touches), with subfolders: `Hazards/` (`Hazard`, `TripHazard`, `BouncyHat`, `SteamVent`, `WaxDrop`, `WaxCandle`, `PressurePlate`), `Zones/` (`Zone`, `WindZone2D`, `WindTrap`, `SlipperyFloor`), `Pickups/` (`Pickup`, `TimedReward`), `Level/` (`ShopStop`, `LevelExit`, `MovingPlatform`, `MagicHand`, `StaffPlatform`, `MagicDoor`, `Furniture`), `Camera/` (`FollowCamera`) |
 | `UI/` | `PlayerHud`, `HudSlot`, `FlingArrow`, `SelectedLook`, `ButtonPrompt`, `ButtonIcons`, `GameFonts` and `FontSwitcher`, `Ui` (with `BlipRow`) and the screens (`ChoiceScreen`, `SkillScreen` with its `SpellCard` and `SpellSlot`, `ControlsScreen`) |
 | `Menus/` | `MenuScreen`, `SettingsPanel` and the three menus |
 | `Editor/` | `PixelArtImporter` (import settings for everything in `Assets/Art/Sprites`; editor only, never in the build) |
@@ -122,7 +122,7 @@ decides for itself whether it applies:
 
 ```csharp
 wizard.TryTrip();                                // rocks
-wizard.TryBounce(heightInBoxes, sideways, resetsFall);  // Bouncy Trash
+wizard.TryBounce(heightInBoxes, sideways, resetsFall);  // Bouncy Hat
 wizard.TryFling(velocity);                       // the Fling spell, straight into a tumble
 wizard.Push(boxesPerSecond, rampup, groundScale);    // wind, every step you are inside it
 wizard.Shove(velocity, controlLockout);          // one-off knock
@@ -233,7 +233,7 @@ smallest size and then spills. For more room, raise **Cell Size Y** on `Cards` a
 **Preferred Height** by the same amount.
 
 Two of them want level content: Mage Hand needs a `Vine`, and Telekinesis wants a `Magic Door`, a
-moving platform, a trap, a rake or a Bouncy Trash nearby.
+moving platform, a trap, a rake or a Bouncy Hat nearby.
 
 **Glide only forgives a fall through wind, and that is the design.** Every rank gives the same
 steering (`airSpeed`, `airControl`, `drag`). While the canopy is out, any wind that catches the
@@ -576,7 +576,7 @@ boxes from their edge (2, 2, then 4 at rank 3):
 | A ceiling | They are shoved down at `downwardShove` (6). |
 | The floor | Nothing upward. Slapped diagonally, it shoves them sideways; straight down, nothing. |
 | `Furniture` | Every piece in the way is knocked flying, at `furnitureKnock` for a Mass of 1. |
-| Anything else | Hazards, wind, Bouncy Trash and pickups are passed straight through. |
+| Anything else | Hazards, wind, Bouncy Hat and pickups are passed straight through. |
 | Nothing in reach | The hand swats the air at full stretch. Nothing moves. |
 
 The shove only ever **tops up** speed: a wizard already flying away from the wall faster than the
@@ -684,14 +684,14 @@ rank; the upgrade only makes things stay stopped longer), and everything inside 
 | Sleeps | While asleep |
 | --- | --- |
 | `MovingPlatform` | Stops where it is, then carries on along its path. |
-| Rakes, Bouncy Trash (`Hazard`s) | Cannot catch the wizard. |
+| Rakes, Bouncy Hat (`Hazard`s) | Cannot catch the wizard. |
 | `SteamVent` | Held quiet. It wakes at the start of its quiet time, so the warning always comes first. |
 | `WindTrap` | Held shut. It wakes shut and winds up again, so the warning always comes first. |
 | `PressurePlate` | Jammed up: it does not count or throw, so the wizard can stand on it. |
 
 Things that just lie there have **Can Sleep** unticked, because stopping them makes no sense: the
 wet floor sign, stairs, broken glass and wax drops. Untick it as well on anything the level needs
-to keep working, like a Bouncy Trash that is the only way across a gap.
+to keep working, like a Bouncy Hat that is the only way across a gap.
 
 **A new thing that should sleep** implements `ISleepable` (`World/ISleepable.cs`): `CanSleepNow`
 and `TrySleep(seconds)`. Telekinesis finds it on the collider it touches or any parent of it, so
@@ -806,7 +806,7 @@ the glow look matters more than any number here. If a player never learns what a
 means, no vine in the game ever gets used.
 
 **The glow waits for the spell.** `Shown Once Learned` holds the spell the player has to buy first;
-the `Hand Hold` prefab has Mage Hand there, so no knot glows until Mage Hand is bought, and the
+the `Magic Hand` prefab has Mage Hand there, so no knot glows until Mage Hand is bought, and the
 glow never teaches a spell the player cannot use yet. Empty it and the glow shows from the start.
 
 `staysDown` (on by default) leaves a called vine hanging for the rest of the level: finding it was
@@ -845,7 +845,7 @@ stretches the ring around whatever it sits on while the stars stay the same size
 nested prefab, so editing Star Sparkles itself changes them all; a copy can still override its own
 numbers (the slap and the trail do). It is used for:
 
-- **Hand Hold:** the `Glow Look`, stars around the knot while Mage Hand can reach it.
+- **Magic Hand:** the `Glow Look`, stars around the knot while Mage Hand can reach it.
 - **Every hazard:** the `Asleep Look`, stars around it while Telekinesis holds it asleep.
 - **Star Slap Hand:** the `Sparkles`, a small burst where the hand lands.
 - **PLAYER:** the `Falling Star Trail`, streaming behind the dive.
@@ -882,7 +882,7 @@ overwrote the target, so dropping one spell onto another lost the second one sil
 **And you could barely reach the screen.** It used to open only from a rest site or the death
 screen, both of which ended the run first. Now **Play** opens it from the main menu, **Start
 again** on the death message opens it the same way, and walking into a **shop stop** opens it
-mid-level. The **Spellbook** button (`UI/Loadout`, Tab) also opens it mid-level from anywhere, but
+mid-level. The **Spellbook** button (`UI/Loadout`, Tab) also opens it mid-level from anywhere, **only while cheats (M) are on**, but
 that one is a **debug tool** for testing loadouts, not part of the game, so like the other cheat
 keys it is left off the controls sheet. The button's door is the
 nested `SkillScreen.Door`, installed once when the game starts; the shop stop and the button both
@@ -951,10 +951,10 @@ flat colour, so each one is visible the moment it lands and is waiting for a spr
 | `Rake`, `Rake 1` | `TripHazard` aimed Left or Right: trips you BACKWARDS, the way you came. **Breaks Falls**: drop onto one from any height and it catches you, with no fall damage. | Hazard |
 | `Ice` | Ground that does not hold you. Nothing else changes. | Hazard |
 | `Stairs` | `TripHazard`: lay it over a staircase. Take them fast and you tumble down them. | Hazard |
-| `Bouncy Trash` | `BouncyTrash`: bounces you three boxes and sends you tumbling. | Hazard |
+| `Bouncy Hat` | `BouncyHat`: bounces you three boxes and sends you tumbling. | Hazard |
 | `Wind` | Pushes you the way its arrows point. Rotate it to aim it. | Hazard |
 | `Wind Trap` | The same push, on a timer: a wall mouth that opens and blows left. Shut, Warning and Blowing Looks. It shoves, it never hurts. | Hazard |
-| `Hand Hold` | The knot Mage Hand catches. It only glows once Mage Hand is bought. | Default |
+| `Magic Hand` | The knot Mage Hand catches. It only glows once Mage Hand is bought. | Default |
 | `Button Prompt` | A button's picture floating in the level, to teach it. Set to Walk/Run; change its **Action** for any other button. See *Button prompts are pictures*. | Default |
 | `Magic Door` | `MagicDoor`: a solid door, one box wide and two tall, that Telekinesis opens for good. Put your art in its Closed Look and Open Look children. | **Ground** |
 | `Stone Wall` | A one-box stone block to stand on. It was the old Wall Growth spell's block; now it is a plain level piece. | **Ground** |
@@ -1011,6 +1011,8 @@ open, and every other level opens once the one before it is completed, so finish
 open across launches until the wizard dies or the save is reset. A level whose scene is missing
 from Build Settings stays locked and says so in the console. Selection starts on the deepest open
 level.
+
+**Picking a level opens the skill screen first** (after the travel dots), to spend Knowledge before it starts; its Dive button, or Escape, starts the level.
 
 **Only finished levels and the next one can be picked.** A locked level's button cannot be pressed,
 and its **Locked Look** (a child of the button, a dark cover to start with) is shown over it; swap
@@ -1076,7 +1078,7 @@ executable, dropping to the OS save folder only when that is read-only.
 A trip **launches you onward** — your speed, plus `launchForward`, never below `minimumLaunch`, and
 `launchUp` of lift so you actually leave the floor. Landing back down, the skid bleeds at
 `slideFriction` boxes per second squared. All of it on `PlayerLogic ▸ Ragdoll`, and all of it the
-same every time: a wet floor sign, a Bouncy Trash and a bad staircase throw you identically, because none of
+same every time: a wet floor sign, a Bouncy Hat and a bad staircase throw you identically, because none of
 them supply their own knock — they just call `TryTrip()`.
 
 The one exception is the **rake**, which calls `TryTrip(int)` to throw you *back the way you came*. That
@@ -1144,7 +1146,7 @@ Two things follow from using speed, and both are handled:
   `Run` carries them forward on its own.
 - The leftover speed is **taken back** the moment the lip runs out, or the assist would read as a
   small hop. `steppedLastStep` is what remembers, and the guard only takes back speed the assist
-  could plausibly have produced, so a Bouncy Trash or a fling is left alone. It is the identical
+  could plausibly have produced, so a Bouncy Hat or a fling is left alone. It is the identical
   tidy-up `TryRunAlongRamp` does when a ramp ends.
 
 `stepHeight` stays far below a whole box on purpose. This is for tile seams and the pixel-high
@@ -1314,7 +1316,7 @@ Item                      finds the wizard in its trigger; shared Look helpers
 ├── Zone                  something you are INSIDE: Affects On Staff, Affects Ragdolled
 │   ├── Hazard            catches you: speed gate, re-arm, damage, walking (a plain Hazard just hurts)
 │   │   ├── TripHazard    trips you - wet floor sign, stairs, rakes
-│   │   ├── BouncyTrash   bounces you
+│   │   ├── BouncyHat   bounces you
 │   │   ├── SteamVent     burns on a timer
 │   │   └── WaxDrop       falls and burns
 │   ├── WindZone2D        pushes you (WindTrap: on a timer)
@@ -1326,7 +1328,7 @@ Item                      finds the wizard in its trigger; shared Look helpers
 
 **Lift beats a fall.** A hazard that throws the wizard upward never lets a fall eat the throw.
 `PlayerLogic.Lift` (rakes, through `TripHazard.extraLift`) drops any downward speed before
-adding the lift, and still works on a wizard who is already tumbling. `BouncyTrash` with **Keeps
+adding the lift, and still works on a wizard who is already tumbling. `BouncyHat` with **Keeps
 The Fall** on bounces the wizard at least as high as they fell from, so going from one bouncy hat
 into another never loses height.
 
@@ -1338,7 +1340,7 @@ rakes are all `TripHazard`, and broken glass is a plain `Hazard`.
 | --- | --- | --- |
 | `TripHazard` | Something you clip at a run | `minimumSpeed` 3 means a run trips and a walk does not. **Aim** sets the way you go down: the way you were running (wet floor, stairs), Left or Right (the rakes, which throw you back the way you came), or the way its art faces. **Extra Kick** and **Extra Lift** add a shove on top. |
 | `SlipperyFloor` | Ground that does not hold you | Calls `Slicken` every step you are in it; nothing to leave, because not calling IS leaving. |
-| `BouncyTrash` | Fall into it, get thrown back up | Launches you on the way past. The `Bouncy Trash` prefab. |
+| `BouncyHat` | Fall into it, get thrown back up | Launches you on the way past. The `Bouncy Hat` prefab. |
 | `WindZone2D` | A volume that pushes you | One `Vector2` covers left, right, up and down. `groundScale` decides how much you feel with both feet down. |
 | `WindTrap` | A `WindZone2D` on a timer | Shuts, warns, then blows. `Blast` is a one-off `Shove`; the rest is the base class's steady `Push`. No damage: it is a `Zone`, not a `Hazard`. |
 
@@ -1354,7 +1356,7 @@ who is on their staff or already tumbling. **A new hazard that only hurts needs 
 use a plain `Hazard`. One that does something new is one subclass with one `Affect` method.
 
 **`Hazard.everyStep` is the difference between a thing and a place.** Off — the default — it fires
-once, on the way in, which is right for anything you HIT: a Bouncy Trash, a rake, a sign. On, it is asked
+once, on the way in, which is right for anything you HIT: a Bouncy Hat, a rake, a sign. On, it is asked
 every physics step you are inside it, which is right for a stretch of floor, where breaking into a
 run half way along has to count for as much as arriving at a run. `rearmDelay` is what stops it
 firing fifty times a second. `SlipperyFloor` and `WindZone2D` are `Zone`s, not hazards: they act
@@ -1385,7 +1387,7 @@ tumble is `Ragdoll`'s, shared with every other trip in the game, so all of them 
 
 ### Seeing the wind
 
-A rock and a Bouncy Trash are objects — you can see them coming. Wind is a volume, so it is the one
+A rock and a Bouncy Hat are objects — you can see them coming. Wind is a volume, so it is the one
 hazard a player can only learn by being caught out unless the level shows it: put your own wind art
 (an animated sprite, particles) inside the zone. The script draws nothing in the game.
 
@@ -1399,7 +1401,7 @@ tall.
 the wizard is standing; up and down is always felt in full, so an updraft lifts a wizard who is
 standing in it.
 
-**Hazards push you onward, never back.** Rocks, Bouncy Trash and tumbles all send you the way you were
+**Hazards push you onward, never back.** Rocks, Bouncy Hat and tumbles all send you the way you were
 already travelling — `Movement.TravelDirection`, which is the direction you *arrived* in, not the
 direction you happen to be facing and not away from the hazard's own centre. Being thrown back the
 way you came is the least predictable thing a hazard can do: you lose the ground you covered and

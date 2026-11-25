@@ -220,7 +220,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1400390113, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_Name
-      value: Hand Hold (17)
+      value: Magic Hand (17)
       objectReference: {fileID: 0}
     - target: {fileID: 1400390115, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_LocalPosition.x
@@ -277,7 +277,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2678838225, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_Name
-      value: Bouncy Trash (2)
+      value: Bouncy Hat (2)
       objectReference: {fileID: 0}
     - target: {fileID: 2678838227, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_LocalPosition.x
@@ -334,7 +334,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2678838225, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_Name
-      value: Bouncy Trash (8)
+      value: Bouncy Hat (8)
       objectReference: {fileID: 0}
     - target: {fileID: 2678838227, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_LocalPosition.x
@@ -448,7 +448,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1400390113, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_Name
-      value: Hand Hold (8)
+      value: Magic Hand (8)
       objectReference: {fileID: 0}
     - target: {fileID: 1400390115, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_LocalPosition.x
@@ -505,7 +505,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2678838225, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_Name
-      value: Bouncy Trash (7)
+      value: Bouncy Hat (7)
       objectReference: {fileID: 0}
     - target: {fileID: 2678838227, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_LocalPosition.x
@@ -562,7 +562,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1400390113, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_Name
-      value: Hand Hold (12)
+      value: Magic Hand (12)
       objectReference: {fileID: 0}
     - target: {fileID: 1400390115, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_LocalPosition.x
@@ -619,7 +619,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1400390113, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_Name
-      value: Hand Hold (10)
+      value: Magic Hand (10)
       objectReference: {fileID: 0}
     - target: {fileID: 1400390115, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_LocalPosition.x
@@ -676,7 +676,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1400390113, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_Name
-      value: Hand Hold (9)
+      value: Magic Hand (9)
       objectReference: {fileID: 0}
     - target: {fileID: 1400390115, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1103,7 +1103,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1400390113, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_Name
-      value: Hand Hold (19)
+      value: Magic Hand (19)
       objectReference: {fileID: 0}
     - target: {fileID: 1400390115, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_LocalPosition.x
@@ -15737,7 +15737,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1400390113, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_Name
-      value: Hand Hold (5)
+      value: Magic Hand (5)
       objectReference: {fileID: 0}
     - target: {fileID: 1400390115, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_LocalPosition.x
@@ -15873,7 +15873,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1400390113, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_Name
-      value: Hand Hold (15)
+      value: Magic Hand (15)
       objectReference: {fileID: 0}
     - target: {fileID: 1400390115, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_LocalPosition.x
@@ -16258,7 +16258,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1400390113, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_Name
-      value: Hand Hold (18)
+      value: Magic Hand (18)
       objectReference: {fileID: 0}
     - target: {fileID: 1400390115, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_LocalPosition.x
@@ -16315,7 +16315,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1400390113, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_Name
-      value: Hand Hold (4)
+      value: Magic Hand (4)
       objectReference: {fileID: 0}
     - target: {fileID: 1400390115, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_LocalPosition.x
@@ -16456,7 +16456,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2678838225, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_Name
-      value: Bouncy Trash (14)
+      value: Bouncy Hat (14)
       objectReference: {fileID: 0}
     - target: {fileID: 2678838227, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_LocalPosition.x
@@ -16700,7 +16700,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1400390113, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_Name
-      value: Hand Hold (13)
+      value: Magic Hand (13)
       objectReference: {fileID: 0}
     - target: {fileID: 1400390115, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_LocalPosition.x
@@ -16814,7 +16814,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1400390113, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_Name
-      value: Hand Hold (7)
+      value: Magic Hand (7)
       objectReference: {fileID: 0}
     - target: {fileID: 1400390115, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_LocalPosition.x
@@ -16997,7 +16997,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1400390113, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_Name
-      value: Hand Hold (2)
+      value: Magic Hand (2)
       objectReference: {fileID: 0}
     - target: {fileID: 1400390115, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_LocalPosition.x
@@ -17054,7 +17054,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2678838225, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_Name
-      value: Bouncy Trash (11)
+      value: Bouncy Hat (11)
       objectReference: {fileID: 0}
     - target: {fileID: 2678838227, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_LocalPosition.x
@@ -17111,7 +17111,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1400390113, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_Name
-      value: Hand Hold (20)
+      value: Magic Hand (20)
       objectReference: {fileID: 0}
     - target: {fileID: 1400390115, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_LocalPosition.x
@@ -17168,7 +17168,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2678838225, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_Name
-      value: Bouncy Trash (6)
+      value: Bouncy Hat (6)
       objectReference: {fileID: 0}
     - target: {fileID: 2678838227, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_LocalPosition.x
@@ -17396,7 +17396,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2678838225, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_Name
-      value: Bouncy Trash (3)
+      value: Bouncy Hat (3)
       objectReference: {fileID: 0}
     - target: {fileID: 2678838227, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_LocalPosition.x
@@ -17453,7 +17453,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1400390113, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_Name
-      value: Hand Hold
+      value: Magic Hand
       objectReference: {fileID: 0}
     - target: {fileID: 1400390115, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_LocalPosition.x
@@ -17624,7 +17624,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2678838225, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_Name
-      value: Bouncy Trash (10)
+      value: Bouncy Hat (10)
       objectReference: {fileID: 0}
     - target: {fileID: 2678838227, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_LocalPosition.x
@@ -17681,7 +17681,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2678838225, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_Name
-      value: Bouncy Trash (9)
+      value: Bouncy Hat (9)
       objectReference: {fileID: 0}
     - target: {fileID: 2678838227, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_LocalPosition.x
@@ -17738,7 +17738,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2678838225, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_Name
-      value: Bouncy Trash (12)
+      value: Bouncy Hat (12)
       objectReference: {fileID: 0}
     - target: {fileID: 2678838227, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_LocalPosition.x
@@ -17978,7 +17978,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2678838225, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_Name
-      value: Bouncy Trash (13)
+      value: Bouncy Hat (13)
       objectReference: {fileID: 0}
     - target: {fileID: 2678838227, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_LocalPosition.x
@@ -18035,7 +18035,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2678838225, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_Name
-      value: Bouncy Trash
+      value: Bouncy Hat
       objectReference: {fileID: 0}
     - target: {fileID: 2678838227, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_LocalPosition.x
@@ -18092,7 +18092,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1400390113, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_Name
-      value: Hand Hold (16)
+      value: Magic Hand (16)
       objectReference: {fileID: 0}
     - target: {fileID: 1400390115, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_LocalPosition.x
@@ -41216,7 +41216,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2678838225, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_Name
-      value: Bouncy Trash (1)
+      value: Bouncy Hat (1)
       objectReference: {fileID: 0}
     - target: {fileID: 2678838227, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_LocalPosition.x
@@ -41506,7 +41506,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1400390113, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_Name
-      value: Hand Hold (11)
+      value: Magic Hand (11)
       objectReference: {fileID: 0}
     - target: {fileID: 1400390115, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_LocalPosition.x
@@ -41677,7 +41677,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1400390113, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_Name
-      value: Hand Hold (14)
+      value: Magic Hand (14)
       objectReference: {fileID: 0}
     - target: {fileID: 1400390115, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_LocalPosition.x
@@ -41905,7 +41905,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1400390113, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_Name
-      value: Hand Hold (3)
+      value: Magic Hand (3)
       objectReference: {fileID: 0}
     - target: {fileID: 1400390115, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_LocalPosition.x
@@ -42081,7 +42081,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2678838225, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_Name
-      value: Bouncy Trash (4)
+      value: Bouncy Hat (4)
       objectReference: {fileID: 0}
     - target: {fileID: 2678838227, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_LocalPosition.x
@@ -42366,7 +42366,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1400390113, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_Name
-      value: Hand Hold (1)
+      value: Magic Hand (1)
       objectReference: {fileID: 0}
     - target: {fileID: 1400390115, guid: 1fb311f709ed57b3ac9de30bd6aedcba, type: 3}
       propertyPath: m_LocalPosition.x
@@ -42537,7 +42537,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2678838225, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_Name
-      value: Bouncy Trash (5)
+      value: Bouncy Hat (5)
       objectReference: {fileID: 0}
     - target: {fileID: 2678838227, guid: cb048dfded425f57b1f2452eb6ed9667, type: 3}
       propertyPath: m_LocalPosition.x

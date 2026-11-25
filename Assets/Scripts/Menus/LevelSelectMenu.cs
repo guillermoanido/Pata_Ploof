@@ -126,9 +126,17 @@ namespace FallingWizard.Menus
             isTravelling = true;
 
             if (travelDot == null)
-                Game.LoadLevel(level.sceneName);
+                ShopThenPlay(level);
             else
                 StartCoroutine(TravelTo(level));
+        }
+
+        static void ShopThenPlay(Level level)
+        {
+            string scene = level.sceneName;
+
+            if (SkillScreen.Open(() => Game.LoadLevel(scene)) == null)
+                Game.LoadLevel(scene);
         }
 
         IEnumerator TravelTo(Level level)
@@ -145,7 +153,7 @@ namespace FallingWizard.Menus
                 }
             }
 
-            Game.LoadLevel(level.sceneName);
+            ShopThenPlay(level);
         }
 
         void OpenTheLevels()

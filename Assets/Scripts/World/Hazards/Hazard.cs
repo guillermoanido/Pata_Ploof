@@ -34,7 +34,7 @@ namespace FallingWizard.World
         [Min(0f)] public float rearmDelay = 0.5f;
 
         [Tooltip("Fire on every step the wizard is inside it, rather than only on the way in. " +
-                 "Off is right for something you HIT - a Bouncy Trash, a rake, a sign - which happens " +
+                 "Off is right for something you HIT - a Bouncy Hat, a rake, a sign - which happens " +
                  "once and is over. On is right for a PLACE, like a staircase, where breaking " +
                  "into a run half way along should count for as much as arriving at a run. The " +
                  "re-arm delay above is what stops it firing every physics step.")]
@@ -70,7 +70,7 @@ namespace FallingWizard.World
                  "it does nothing to the wizard. Telekinesis is the wizard holding still the " +
                  "things around them that move or act, so untick it on things that just lie " +
                  "there - a wet floor sign, stairs, broken glass - and on a hazard the level " +
-                 "needs to always work, like a Bouncy Trash that is the only way across a gap.")]
+                 "needs to always work, like a Bouncy Hat that is the only way across a gap.")]
         public bool canSleep = true;
 
         [Tooltip("A child object shown while Telekinesis holds this asleep, on top of the hazard's " +

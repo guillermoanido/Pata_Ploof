@@ -37,7 +37,10 @@ MonoBehaviour:
   tiers:
   - maxSwing: 30
     climbSpeed: 0
+    sameHandCooldown: 2
   - maxSwing: 65
     climbSpeed: 0
+    sameHandCooldown: 2
   - maxSwing: 65
     climbSpeed: 4
+    sameHandCooldown: 0
