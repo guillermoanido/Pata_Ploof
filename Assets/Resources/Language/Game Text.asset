@@ -249,19 +249,19 @@ MonoBehaviour:
     spanish: "Las cosas se quedan quietas m\xE1s tiempo."
   - key: ability.slap.name
     english: Star Slap
-    spanish: Manotazo estelar
+    spanish: Golpe estelar
   - key: ability.slap.desc
     english: A magical hand that slaps walls and pushes you away.
     spanish: Una mano estelar que golpea las paredes para empujarte.
   - key: ability.slap.upgrade.0.title
-    english: Steady hand
-    spanish: Mano firme
+    english: Careful
+    spanish: Cuidado
   - key: ability.slap.upgrade.0.desc
     english: Slapping while you tumble slows you down.
     spanish: Golpear mientras caes dando vueltas te frena.
   - key: ability.slap.upgrade.1.title
-    english: Longer arm
-    spanish: "Brazo m\xE1s largo"
+    english: Longer reach
+    spanish: Alcance mayor
   - key: ability.slap.upgrade.1.desc
     english: Your star hand reaches further and slows your tumble even more.
     spanish: "Tu mano estelar llega m\xE1s lejos y te frena a\xFAn m\xE1s."

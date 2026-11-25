@@ -551,6 +551,9 @@ namespace FallingWizard.Player
             if (State != PlayerState.Ragdoll)
                 return;
 
+            if (!ragdoll.IsDiving)
+                movement.CapSpeed(ragdoll.topSpeed, movement.maxFallSpeed);
+
             float steer = Mathf.Abs(input.Move.x) > movement.steerDeadzone ? input.Move.x : 0f;
 
             if (ragdoll.Tick(fixedDeltaTime, movement.IsGrounded, movement.HorizontalSpeed, steer))
@@ -1125,6 +1128,22 @@ namespace FallingWizard.Player
                 isClimbingRamp = false;
 
                 lockout = Mathf.Max(lockout, controlLockout);
+            }
+
+            public void CapSpeed(float topSpeed, float topFallSpeed)
+            {
+                if (body == null)
+                    return;
+
+                Vector2 velocity = body.linearVelocity;
+
+                if (topSpeed > 0f && velocity.sqrMagnitude > topSpeed * topSpeed)
+                    velocity = velocity.normalized * topSpeed;
+
+                if (topFallSpeed > 0f && velocity.y < -topFallSpeed)
+                    velocity.y = -topFallSpeed;
+
+                body.linearVelocity = velocity;
             }
 
             public void RiseAtLeast(float upwardSpeed)
@@ -1966,6 +1985,12 @@ namespace FallingWizard.Player
                      "they ever found the ground. Without it, one trip somewhere the ground check " +
                      "cannot see is a wizard who never moves again.")]
             [Min(MinTumbleSpread)] public float maximumDuration = 3f;
+
+            [Tooltip("Fastest a tumbling wizard can move, in boxes per second, in any direction. " +
+                     "Gusts, bounces and flings stack up during a tumble; this keeps them from " +
+                     "throwing the wizard off the screen. A tumbling fall is also held to the " +
+                     "wizard's Max Fall Speed. 0 for no limit.")]
+            [Min(0f)] public float topSpeed = 18f;
 
             [Tooltip("How fast the skid bleeds off once they are back on the ground, in boxes " +
                      "per second squared. This rather than physics friction, so the same trip " +
@@ -3045,7 +3070,7 @@ namespace FallingWizard.Player
                 public bool HasUsesLeft =>
                     Ability == null || Ability.usesPerLevel <= 0 || UsesLeft > 0;
 
-                public bool IsReady => Ability != null && CooldownLeft <= 0f && HasUsesLeft;
+                public bool IsReady => Ability != null && !IsLit && CooldownLeft <= 0f && HasUsesLeft;
 
                 public float CooldownProgress =>
                     Ability == null || Ability.cooldown <= 0f ? 0f : CooldownLeft / Ability.cooldown;

@@ -183,7 +183,8 @@ MonoBehaviour:
       launchUp: 2
       minimumLaunch: 4
       minimumDuration: 1
-      maximumDuration: 3
+      maximumDuration: 2.5
+      topSpeed: 18
       slideFriction: 9
       recoverSpeed: 1.2
       standUpDuration: 0.35

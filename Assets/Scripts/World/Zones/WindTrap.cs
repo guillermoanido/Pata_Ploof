@@ -238,7 +238,7 @@ namespace FallingWizard.World
 
         protected override void OnPlayerInside(PlayerCharacter wizard, float fixedDeltaTime)
         {
-            if (!CanAffect(wizard))
+            if (!CanBlowOn(wizard))
                 return;
 
             float openness = Openness;
