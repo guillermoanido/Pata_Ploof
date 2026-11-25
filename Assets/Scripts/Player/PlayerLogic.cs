@@ -134,7 +134,7 @@ namespace FallingWizard.Player
             spellbook.Observe(deltaTime);
 
             IsPeeking = (State == PlayerState.OnStaff && !(HasPole && pole.IsClimbing)) ||
-                        (State == PlayerState.Normal && input.IsLookingDown);
+                        ((State == PlayerState.Normal || State == PlayerState.OnVine) && input.IsLookingDown);
         }
 
         public void Simulate(float fixedDeltaTime)
@@ -848,6 +848,13 @@ namespace FallingWizard.Player
                      "takes a moment to catch someone, not for weaker wind.")]
             [Min(0f)] public float windLift = 30f;
 
+            [Tooltip("How hard a sideways wind grips a wizard in the air, in boxes per second " +
+                     "squared. Air control alone is too gentle for wind: falling through a gust " +
+                     "takes a fraction of a second, and at the air control rate the wind barely " +
+                     "moves them. While a wind blows sideways, the air speed changes at least this " +
+                     "fast. On the ground the normal grip and Ground Scale still decide it.")]
+            [Min(0f)] public float windSideGrip = 60f;
+
             [NonSerialized] Rigidbody2D body;
             [NonSerialized] Transform art;
             [NonSerialized] Collider2D hull;
@@ -1316,13 +1323,12 @@ namespace FallingWizard.Player
                 bool steering = IsSteering(steer);
                 float rate = steering ? acceleration : groundFriction;
 
-                if (!IsGrounded)
-                    rate *= airControl *
-                            (steering ? stats.AirControlMultiplier : stats.AirDragMultiplier);
-                else
-                    rate *= grip;
+                if (IsGrounded)
+                    return rate * grip;
 
-                return rate;
+                rate *= airControl * (steering ? stats.AirControlMultiplier : stats.AirDragMultiplier);
+
+                return wind.x != 0f ? Mathf.Max(rate, windSideGrip) : rate;
             }
 
             bool TryRunAlongRamp(float targetSpeed, float topSpeed, float change)

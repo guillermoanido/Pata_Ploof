@@ -14,6 +14,7 @@ namespace FallingWizard.World
 
         const float StreakTravel = 1.5f;
         const float StreaksPerSquareBox = 0.15f;
+        const float StreakHeadroom = 2f;
 
         static readonly Color ZoneColour = new Color(0.55f, 0.85f, 1f, 0.35f);
         static readonly Color ArrowColour = new Color(0.55f, 0.85f, 1f, 0.9f);
@@ -106,8 +107,15 @@ namespace FallingWizard.World
             shape.position = area.offset;
             shape.scale = new Vector3(area.size.x, area.size.y, 0f);
 
+            Vector3 stretch = transform.lossyScale;
+            float squareBoxes = Mathf.Abs(area.size.x * stretch.x * area.size.y * stretch.y);
+            float perSecond = CountStreaksPerSecond(squareBoxes, lifetime);
+
             ParticleSystem.EmissionModule emission = streaks.emission;
-            emission.rateOverTime = CountStreaksPerSecond(area.size.x * area.size.y, lifetime);
+            emission.rateOverTime = perSecond;
+
+            ParticleSystem.MainModule main = streaks.main;
+            main.maxParticles = Mathf.Max(main.maxParticles, Mathf.CeilToInt(perSecond * lifetime * StreakHeadroom));
         }
 
         void OnDrawGizmos()

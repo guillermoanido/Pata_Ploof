@@ -952,8 +952,8 @@ flat colour, so each one is visible the moment it lands and is waiting for a spr
 | `Ice` | Ground that does not hold you. Nothing else changes. | Hazard |
 | `Stairs` | `TripHazard`: lay it over a staircase. Take them fast and you tumble down them. | Hazard |
 | `Bouncy Hat` | `BouncyHat`: bounces you three boxes and sends you tumbling. | Hazard |
-| `Cushion` | A soft landing: drop onto it from any height and take no fall damage, and a tumble ends the moment it lands - the wizard stands up still. A drop or a stopped tumble puffs its **Dust Look** (a Star Sparkles stand-in; swap in your dust). Pass-through, one box wide and half a box tall on the floor; resize its collider for a bigger one. | Hazard |
-| `Wind` | Pushes you the way its arrows point. Rotate it to aim it. | Hazard |
+| `Cushion` | A soft landing: drop onto it from any height and take no fall damage, and a tumble ends the moment it lands - the wizard stands up still. A drop or a stopped tumble puffs its **Dust Look**, a `Dust Puff` (a one-shot burst of the `Dust` sprite; restyle it in `Prefabs/Dust Puff`). Pass-through, one box wide and half a box tall on the floor; resize its collider for a bigger one. | Hazard |
+| `Wind` | Pushes you the way its arrows point. Rotate it to aim it; scale it or resize its collider to make it bigger, and the streaks fill the whole area. | Hazard |
 | `Wind Trap` | The same push, on a timer: a wall mouth that opens and blows left. Shut, Warning and Blowing Looks. It shoves, it never hurts. | Hazard |
 | `Magic Hand` | The knot Mage Hand catches. It only glows once Mage Hand is bought. | Default |
 | `Button Prompt` | A button's picture floating in the level, to teach it. Set to Walk/Run; change its **Action** for any other button. See *Button prompts are pictures*. | Default |

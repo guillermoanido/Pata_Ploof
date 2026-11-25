@@ -4,11 +4,15 @@
     "bonusHearts": 0,
     "loadout": [
         "staff",
+        "glide",
         "vine",
-        "",
         ""
     ],
     "ranks": [
+        {
+            "key": "glide",
+            "rank": 2
+        },
         {
             "key": "staff",
             "rank": 2
