@@ -126,9 +126,17 @@ namespace FallingWizard.Menus
             isTravelling = true;
 
             if (travelDot == null)
-                Game.LoadLevel(level.sceneName);
+                ShopThenPlay(level);
             else
                 StartCoroutine(TravelTo(level));
+        }
+
+        static void ShopThenPlay(Level level)
+        {
+            string scene = level.sceneName;
+
+            if (SkillScreen.Open(() => Game.LoadLevel(scene)) == null)
+                Game.LoadLevel(scene);
         }
 
         IEnumerator TravelTo(Level level)
@@ -145,7 +153,7 @@ namespace FallingWizard.Menus
                 }
             }
 
-            Game.LoadLevel(level.sceneName);
+            ShopThenPlay(level);
         }
 
         void OpenTheLevels()
@@ -172,6 +180,9 @@ namespace FallingWizard.Menus
             bool isOpen = IsUnlocked(sceneBefore) && IsInTheBuild(level);
 
             level.pip.interactable = isOpen;
+
+            if (level.lockedLook != null)
+                level.lockedLook.SetActive(!isOpen);
 
             return isOpen;
         }
@@ -209,6 +220,13 @@ namespace FallingWizard.Menus
 
             [Tooltip("The button on the map that loads it.")]
             public Button pip;
+
+            [Tooltip("A child object shown while this level is locked - not finished, and not " +
+                     "the next one after the last level finished - and hidden once it opens. A " +
+                     "locked level cannot be picked either way; this is what makes that plain " +
+                     "to see. Each pip starts with a dark cover here; swap in a padlock or your " +
+                     "own art. Leave it empty for none.")]
+            public GameObject lockedLook;
         }
     }
 }

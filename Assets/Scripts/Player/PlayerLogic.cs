@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using FallingWizard.Core;
+using FallingWizard.World;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -34,6 +35,12 @@ namespace FallingWizard.Player
                  "full health dies on the eighth.")]
         [Min(0f)] public float damagePerBox = 1f;
 
+        [Tooltip("Seconds the wizard lies flat on the floor after a fall that costs hearts. They " +
+                 "cannot move or cast while the Fall Damage animation plays, so the player sees " +
+                 "the fall hurt. A hurtful landing ends a tumble the same way. 0 lets them get " +
+                 "straight back up.")]
+        [Min(0f)] public float fallStunSeconds = 1f;
+
         [Header("Hits")]
         [Tooltip("Print a line to the console every time the wizard loses hearts, saying what " +
                  "hurt them and how many are left. Editor only. Health only shows on the hat, so " +
@@ -56,6 +63,10 @@ namespace FallingWizard.Player
 
         [NonSerialized] Vector2 pendingPlatformVelocity;
 
+        [NonSerialized] float stunLeft;
+
+        [NonSerialized] float grabHeight;
+
         [NonSerialized] public bool Invulnerable;
 
         public event Action Died;
@@ -74,7 +85,10 @@ namespace FallingWizard.Player
         public PlayerState State { get; private set; }
         public bool IsOnStaff => State == PlayerState.OnStaff;
         public bool IsPeeking { get; private set; }
+        public bool IsInWind { get; private set; }
+        public bool IsDiving => State == PlayerState.Ragdoll && ragdoll.IsDiving;
         public bool IsStaffLookingDown { get; private set; }
+        public bool IsOnStaffPlatform => movement.TryFindPlatformUnderFeet(out _, out _);
 
         public bool CanClimbHere =>
             IsStaffFree && pole.HasHook &&
@@ -82,10 +96,15 @@ namespace FallingWizard.Player
 
         public bool IsOnVine => State == PlayerState.OnVine;
 
+        public bool IsStunned => stunLeft > 0f;
+
         public bool CanGrabVine =>
             health.IsAlive && State == PlayerState.Normal && vine.CanGrab;
 
         public bool CanBeHurt => health.IsAlive && !Invulnerable && !health.IsInvulnerable;
+
+        public bool CanBeFlung =>
+            health.IsAlive && (State == PlayerState.Normal || (State == PlayerState.Ragdoll && !ragdoll.IsDiving));
 
         public void Attach(Rigidbody2D body, Transform art, Collider2D hitbox, Staff[] staffSet)
         {
@@ -107,7 +126,7 @@ namespace FallingWizard.Player
 
         public void Observe(Intent frame, float deltaTime)
         {
-            input = frame;
+            input = IsStunned ? StandStill(frame) : frame;
 
             if (!health.IsAlive)
                 return;
@@ -115,7 +134,7 @@ namespace FallingWizard.Player
             spellbook.Observe(deltaTime);
 
             IsPeeking = (State == PlayerState.OnStaff && !(HasPole && pole.IsClimbing)) ||
-                        (State == PlayerState.Normal && input.IsLookingDown);
+                        ((State == PlayerState.Normal || State == PlayerState.OnVine) && input.IsLookingDown);
         }
 
         public void Simulate(float fixedDeltaTime)
@@ -123,10 +142,12 @@ namespace FallingWizard.Player
             if (!health.IsAlive)
                 return;
 
+            stunLeft = Mathf.Max(0f, stunLeft - fixedDeltaTime);
+
             spellbook.TryCast(fixedDeltaTime);
             spellbook.Rebuild();
             ApplyExternalForce(fixedDeltaTime);
-            TakeLedgeWhileLookingDown();
+            GoDownWhileLookingDown();
 
             UpdateCurrentState(fixedDeltaTime);
 
@@ -142,6 +163,7 @@ namespace FallingWizard.Player
 
             safeFallDistance = Mathf.Max(0f, safeFallDistance);
             damagePerBox = Mathf.Max(0f, damagePerBox);
+            fallStunSeconds = Mathf.Max(0f, fallStunSeconds);
         }
 
         public void DrawGizmos(Vector2 origin)
@@ -168,12 +190,14 @@ namespace FallingWizard.Player
             return true;
         }
 
-        public bool TryBounce(float heightInBoxes, float sideways, bool resetsFall)
+        public bool TryBounce(float heightInBoxes, float sideways, bool resetsFall,
+            bool keepsTheFall = false)
         {
             if (!health.IsAlive || State == PlayerState.OnStaff || State == PlayerState.OnVine)
                 return false;
 
-            movement.Launch(heightInBoxes, sideways, resetsFall);
+            float height = keepsTheFall ? Mathf.Max(heightInBoxes, movement.HeightFallenFrom) : heightInBoxes;
+            movement.Launch(height, sideways, resetsFall);
             return true;
         }
 
@@ -192,6 +216,31 @@ namespace FallingWizard.Player
         {
             if (State != PlayerState.OnStaff && State != PlayerState.OnVine)
                 movement.AddImpulse(velocity, controlLockout);
+        }
+
+        public void Lift(float upwardSpeed)
+        {
+            if (upwardSpeed > 0f && State != PlayerState.OnStaff && State != PlayerState.OnVine)
+                movement.RiseAtLeast(Mathf.Max(0f, movement.Velocity.y) + upwardSpeed);
+        }
+
+        public void RestartFall() => movement.RestartFall();
+
+        public bool TryEndTumble()
+        {
+            if (State != PlayerState.Ragdoll || !health.IsAlive)
+                return false;
+
+            ragdoll.Cancel();
+            State = PlayerState.Normal;
+            movement.Stop();
+            return true;
+        }
+
+        public void SlowTumble(float fraction)
+        {
+            if (fraction > 0f && State == PlayerState.Ragdoll && !ragdoll.IsDiving)
+                ragdoll.SlowDown(fraction);
         }
 
         public void Hurt(int hearts, string cause)
@@ -221,25 +270,34 @@ namespace FallingWizard.Player
             return true;
         }
 
-        public bool WouldFlingThroughHazard(Vector2 launch, Movement.ArcSettings look)
-        {
-            if (State != PlayerState.Normal || !health.IsAlive)
-                return false;
-
-            return movement.WouldTumbleThroughHazard(launch, look);
-        }
+        public bool WouldFlingThroughHazard(Vector2 launch, Movement.ArcSettings look) =>
+            CanBeFlung && movement.WouldTumbleThroughHazard(launch, look);
 
         public bool TryFling(Vector2 velocity)
         {
-            if (State != PlayerState.Normal || !health.IsAlive)
+            if (!CanBeFlung)
                 return false;
+
+            bool wasTumbling = State == PlayerState.Ragdoll;
 
             movement.Stop();
             movement.UseBaseGravity();
-            movement.BeginFallFrom(movement.Position.y);
+
+            if (!wasTumbling)
+                movement.BeginFallFrom(movement.Position.y);
+
             ragdoll.Throw(Movement.GetDirectionOf(velocity.x), velocity);
 
             State = PlayerState.Ragdoll;
+            return true;
+        }
+
+        public bool TryDive(Vector2 velocity, float depth, Ragdoll.Bounce bounce)
+        {
+            if (State != PlayerState.Ragdoll || !health.IsAlive || ragdoll.IsDiving)
+                return false;
+
+            ragdoll.BeginDive(velocity, depth, bounce);
             return true;
         }
 
@@ -315,6 +373,7 @@ namespace FallingWizard.Player
                 return false;
 
             State = PlayerState.OnVine;
+            grabHeight = movement.Position.y;
             return true;
         }
 
@@ -331,8 +390,11 @@ namespace FallingWizard.Player
 
             State = PlayerState.Normal;
 
+            float fallStart = Mathf.Min(hangHeight, grabHeight);
+
             movement.Stop();
-            movement.BeginFallFrom(hangHeight);
+            movement.BeginFallFrom(fallStart);
+            movement.CapFallAt(fallStart);
             movement.AddImpulse(launch, 0f);
         }
 
@@ -343,8 +405,10 @@ namespace FallingWizard.Player
 
             float hangHeight = pole.HangPosition.y;
 
+            float bonus = pole.safeDropBonus;
+
             pole.Release();
-            movement.BeginFallFrom(hangHeight);
+            movement.BeginFallFrom(hangHeight, bonus);
             State = PlayerState.Normal;
         }
 
@@ -353,6 +417,7 @@ namespace FallingWizard.Player
             movement.SetGrip(pendingGrip);
             movement.SetPlatformVelocity(pendingPlatformVelocity);
 
+            IsInWind = pendingWind != Vector2.zero;
             ApplyPendingWind(fixedDeltaTime);
             ClearPendingForces();
         }
@@ -385,14 +450,47 @@ namespace FallingWizard.Player
             pendingPlatformVelocity = Vector2.zero;
         }
 
-        void TakeLedgeWhileLookingDown()
+        void GoDownWhileLookingDown()
         {
-            if (!IsStaffLookingDown || !IsStaffFree || !movement.IsAtEdge)
+            if (!IsStaffLookingDown || !IsStaffFree)
                 return;
 
-            if (TryPlantStaff(StaffMode.Ladder))
+            bool hasGoneDown = TryGoDownThroughPlatform() || TryTakeLedge();
+
+            if (hasGoneDown)
                 AimStaffDown(false);
         }
+
+        bool TryGoDownThroughPlatform()
+        {
+            if (!movement.TryFindPlatformUnderFeet(out float descentX, out float plankBottomY))
+                return false;
+
+            float floorBelowY = movement.FindFloorBelowPlanks(descentX);
+
+            if (!pole.TryPlantThroughFloor(movement.Facing, descentX, plankBottomY, floorBelowY))
+            {
+                GiveUpOnThePlanks(plankBottomY - floorBelowY);
+                return false;
+            }
+
+            State = PlayerState.OnStaff;
+            return true;
+        }
+
+        void GiveUpOnThePlanks(float roomUnderPlanks)
+        {
+            AimStaffDown(false);
+
+#if UNITY_EDITOR
+            Debug.LogWarning("The staff could not take the wizard down through this wooden " +
+                             $"platform: there are only {roomUnderPlanks:0.00} boxes of open " +
+                             "space under the planks, and the wizard has to fit underneath " +
+                             "them. Leave at least one box of open space under a wooden platform.");
+#endif
+        }
+
+        bool TryTakeLedge() => movement.IsAtEdge && TryPlantStaff(StaffMode.Ladder);
 
         void UpdateCurrentState(float fixedDeltaTime)
         {
@@ -441,12 +539,38 @@ namespace FallingWizard.Player
         void UpdateRagdoll(float fixedDeltaTime)
         {
             movement.SenseGround(fixedDeltaTime);
+
+            if (ragdoll.IsDiving && movement.IsGrounded)
+            {
+                BounceOutOfTheDive();
+                return;
+            }
+
             CheckLanding();
+
+            if (State != PlayerState.Ragdoll)
+                return;
+
+            if (!ragdoll.IsDiving)
+                movement.CapSpeed(ragdoll.topSpeed, movement.maxFallSpeed);
 
             float steer = Mathf.Abs(input.Move.x) > movement.steerDeadzone ? input.Move.x : 0f;
 
             if (ragdoll.Tick(fixedDeltaTime, movement.IsGrounded, movement.HorizontalSpeed, steer))
                 State = PlayerState.Normal;
+        }
+
+        void BounceOutOfTheDive()
+        {
+            Ragdoll.Bounce bounce = ragdoll.DiveBounce;
+
+            movement.ForgetLanding();
+            ragdoll.Cancel();
+            State = PlayerState.Normal;
+
+            movement.Stop();
+            movement.Launch(bounce.height, bounce.sideways, true);
+            Impact();
         }
 
         void CheckLanding()
@@ -457,12 +581,33 @@ namespace FallingWizard.Player
 
         void TakeFallDamage(float fallDistance)
         {
-            float excess = fallDistance - safeFallDistance;
+            float excess = fallDistance - Mathf.Max(safeFallDistance, Stats.LeastSafeFall);
             if (excess <= 0f)
                 return;
 
+            int heartsBefore = health.Current;
             Hurt(Mathf.RoundToInt(excess * damagePerBox), $"A fall of {fallDistance:0.0} boxes");
+
+            if (health.IsAlive && health.Current < heartsBefore)
+                KnockFlat();
         }
+
+        void KnockFlat()
+        {
+            if (fallStunSeconds <= 0f)
+                return;
+
+            if (State == PlayerState.Ragdoll)
+            {
+                ragdoll.Cancel();
+                State = PlayerState.Normal;
+            }
+
+            movement.Stop();
+            stunLeft = fallStunSeconds;
+        }
+
+        static Intent StandStill(Intent frame) => new Intent { IsWalking = frame.IsWalking };
 
         void UpdateOnVine(float fixedDeltaTime)
         {
@@ -553,9 +698,13 @@ namespace FallingWizard.Player
             const float NearbyGround = 1f;
 
             const float KineticEnergyFactor = 2f;
+            const float LandingBlip = 0.1f;
 
             const float Half = 0.5f;
             const float BothSides = 2f;
+
+            const float FarthestFloorUnderPlanks = 20f;
+            const float PlankSkin = 0.1f;
 
             static readonly Vector2 MinGroundCheck =
                 new Vector2(MinGroundCheckWidth, MinGroundCheckThickness);
@@ -566,6 +715,7 @@ namespace FallingWizard.Player
 
             static readonly List<Collider2D> Overlaps = new List<Collider2D>();
             static readonly List<RaycastHit2D> Rays = new List<RaycastHit2D>();
+            static readonly List<StaffPlatform> PlatformsUnderFeet = new List<StaffPlatform>();
 
             [Header("Speed")]
             [Tooltip("Top speed at a normal run, in boxes per second. Running off a ledge drops you.")]
@@ -603,7 +753,11 @@ namespace FallingWizard.Player
             [Tooltip("Where the feet probe sits, relative to the wizard's middle.")]
             public Vector2 groundCheckOffset = new Vector2(0f, -0.596875f);
 
-            [Tooltip("Size of the feet probe. Wider is more forgiving on ledges.")]
+            [Tooltip("Size of the feet probe. Wider is more forgiving on ledges, but it is never " +
+                     "allowed wider than Ground Check Width Factor of the wizard's own collider, and " +
+                     "it always sits centred under it - a probe poking out past the body touches " +
+                     "walls, and a wizard sliding down a wall would count as standing all the way " +
+                     "down and never take fall damage.")]
             public Vector2 groundCheckSize = new Vector2(0.703125f, 0.1f);
 
             [Header("Ground Check - Auto Fit")]
@@ -697,6 +851,13 @@ namespace FallingWizard.Player
                      "takes a moment to catch someone, not for weaker wind.")]
             [Min(0f)] public float windLift = 30f;
 
+            [Tooltip("How hard a sideways wind grips a wizard in the air, in boxes per second " +
+                     "squared. Air control alone is too gentle for wind: falling through a gust " +
+                     "takes a fraction of a second, and at the air control rate the wind barely " +
+                     "moves them. While a wind blows sideways, the air speed changes at least this " +
+                     "fast. On the ground the normal grip and Ground Scale still decide it.")]
+            [Min(0f)] public float windSideGrip = 60f;
+
             [NonSerialized] Rigidbody2D body;
             [NonSerialized] Transform art;
             [NonSerialized] Collider2D hull;
@@ -704,6 +865,8 @@ namespace FallingWizard.Player
             [NonSerialized] float baseGravityScale;
             [NonSerialized] float stepAssistTimer;
             [NonSerialized] float highestPoint;
+            [NonSerialized] float fallAllowance;
+            [NonSerialized] float fallCeiling = float.PositiveInfinity;
             [NonSerialized] float pendingFallDistance;
             [NonSerialized] bool hasLanded;
 
@@ -764,14 +927,28 @@ namespace FallingWizard.Player
                 ? new Vector2(hull.bounds.center.x, hull.bounds.min.y)
                 : new Vector2(Position.x, FeetY + groundCheckSkin);
 
+            public Bounds HitboxBounds => hull != null ? hull.bounds : new Bounds(Position, Vector3.zero);
+
             public float HorizontalSpeed => body == null ? 0f : Mathf.Abs(body.linearVelocityX);
             public Vector2 Velocity => body == null ? Vector2.zero : body.linearVelocity;
+
+            public float HeightFallenFrom =>
+                body == null || body.linearVelocityY >= 0f ? 0f : Mathf.Max(0f, highestPoint - body.position.y);
 
             float FeetY => Position.y + groundCheckOffset.y;
 
             Vector2 ArcStart => new Vector2(Position.x, FeetY + ArcClearance);
 
             Vector2 ProbeOrigin => body.position + groundCheckOffset;
+
+            Vector2 FeetProbeCentre => hull != null
+                ? new Vector2(hull.bounds.center.x, ProbeOrigin.y)
+                : ProbeOrigin;
+
+            Vector2 FeetProbeSize => hull != null
+                ? new Vector2(Mathf.Min(groundCheckSize.x, hull.bounds.size.x * groundCheckWidthFactor),
+                              groundCheckSize.y)
+                : groundCheckSize;
 
             ContactFilter2D GroundFilter => Layers.MakeSolidOnlyFilter(groundLayers);
 
@@ -819,6 +996,8 @@ namespace FallingWizard.Player
                 return landedThisStep;
             }
 
+            public void ForgetLanding() => hasLanded = false;
+
             public void Stop()
             {
                 body.linearVelocity = Vector2.zero;
@@ -828,14 +1007,105 @@ namespace FallingWizard.Player
                 isClimbingRamp = false;
             }
 
-            public void BeginFallFrom(float height)
+            public void BeginFallFrom(float height, float safeDropBonus = 0f)
             {
                 highestPoint = height;
+                fallAllowance = safeDropBonus;
                 IsGrounded = false;
                 stepAssistTimer = 0f;
             }
 
+            public void RestartFall()
+            {
+                highestPoint = body.position.y;
+                fallAllowance = 0f;
+                fallCeiling = float.PositiveInfinity;
+            }
+
+            public void CapFallAt(float height) => fallCeiling = height;
+
             public void UseBaseGravity() => body.gravityScale = baseGravityScale;
+
+            public bool TryFindPlatformUnderFeet(out float descentX, out float plankBottomY)
+            {
+                descentX = Position.x;
+                plankBottomY = Position.y;
+
+                List<StaffPlatform> platforms = FindPlatformsUnderFeet();
+
+                if (platforms.Count == 0)
+                    return false;
+
+                float left = platforms[0].Left;
+                float right = platforms[0].Right;
+                plankBottomY = platforms[0].Bottom;
+
+                foreach (StaffPlatform platform in platforms)
+                {
+                    left = Mathf.Min(left, platform.Left);
+                    right = Mathf.Max(right, platform.Right);
+                    plankBottomY = Mathf.Min(plankBottomY, platform.Bottom);
+                }
+
+                descentX = FitOverThePlanks(left, right);
+                return true;
+            }
+
+            public float FindFloorBelowPlanks(float descentX)
+            {
+                Bounds box = hull.bounds;
+                float feetY = box.min.y;
+                float floorY = feetY - FarthestFloorUnderPlanks;
+
+                var from = new Vector2(descentX, box.center.y);
+                var size = new Vector2(box.size.x - StepClearance * BothSides, box.size.y);
+                int hits = Physics2D.BoxCast(from, size, 0f, Vector2.down, GroundFilter, Rays,
+                    FarthestFloorUnderPlanks);
+
+                for (int i = 0; i < hits; i++)
+                {
+                    if (!IsPlankUnderFeet(Rays[i].collider, feetY))
+                        floorY = Mathf.Max(floorY, feetY - Rays[i].distance);
+                }
+
+                return floorY;
+            }
+
+            List<StaffPlatform> FindPlatformsUnderFeet()
+            {
+                PlatformsUnderFeet.Clear();
+
+                if (!IsGrounded || hull == null)
+                    return PlatformsUnderFeet;
+
+                Physics2D.OverlapBox(FeetProbeCentre, FeetProbeSize, 0f, GroundFilter, Overlaps);
+
+                foreach (Collider2D floor in Overlaps)
+                {
+                    var platform = floor.GetComponent<StaffPlatform>();
+
+                    if (platform != null)
+                        PlatformsUnderFeet.Add(platform);
+                }
+
+                return PlatformsUnderFeet;
+            }
+
+            float FitOverThePlanks(float left, float right)
+            {
+                float halfWidth = hull.bounds.extents.x;
+
+                if (right - left <= halfWidth * BothSides)
+                    return (left + right) * Half;
+
+                return Mathf.Clamp(Position.x, left + halfWidth, right - halfWidth);
+            }
+
+            static bool IsPlankUnderFeet(Collider2D other, float feetY)
+            {
+                var platform = other.GetComponent<StaffPlatform>();
+                return platform != null && platform.Top >= feetY - PlankSkin;
+            }
 
             public void ApplyWind(Vector2 target, float rampup, float groundScale, float fixedDeltaTime)
             {
@@ -860,6 +1130,31 @@ namespace FallingWizard.Player
                 lockout = Mathf.Max(lockout, controlLockout);
             }
 
+            public void CapSpeed(float topSpeed, float topFallSpeed)
+            {
+                if (body == null)
+                    return;
+
+                Vector2 velocity = body.linearVelocity;
+
+                if (topSpeed > 0f && velocity.sqrMagnitude > topSpeed * topSpeed)
+                    velocity = velocity.normalized * topSpeed;
+
+                if (topFallSpeed > 0f && velocity.y < -topFallSpeed)
+                    velocity.y = -topFallSpeed;
+
+                body.linearVelocity = velocity;
+            }
+
+            public void RiseAtLeast(float upwardSpeed)
+            {
+                if (body == null)
+                    return;
+
+                body.linearVelocityY = Mathf.Max(body.linearVelocityY, upwardSpeed);
+                isClimbingRamp = false;
+            }
+
             public void NudgeVelocity(Vector2 velocity)
             {
                 if (body != null)
@@ -868,7 +1163,7 @@ namespace FallingWizard.Player
 
             public void Launch(float heightInBoxes, float sideways, bool resetsFall)
             {
-                body.linearVelocityY = GetSpeedToRise(Mathf.Max(0f, heightInBoxes));
+                RiseAtLeast(GetSpeedToRise(Mathf.Max(0f, heightInBoxes)));
 
                 if (sideways != 0f)
                     body.linearVelocityX += sideways;
@@ -879,6 +1174,8 @@ namespace FallingWizard.Player
                     return;
 
                 highestPoint = body.position.y;
+                fallAllowance = 0f;
+                fallCeiling = float.PositiveInfinity;
                 IsGrounded = false;
                 stepAssistTimer = 0f;
             }
@@ -930,7 +1227,7 @@ namespace FallingWizard.Player
                 bool wasGrounded = IsGrounded;
 
                 int count = Physics2D.OverlapBox(
-                    ProbeOrigin, groundCheckSize, 0f, GroundFilter, Overlaps);
+                    FeetProbeCentre, FeetProbeSize, 0f, GroundFilter, Overlaps);
 
                 IsGrounded = count > 0;
                 StandingOn = IsGrounded ? Overlaps[0] : null;
@@ -1045,13 +1342,12 @@ namespace FallingWizard.Player
                 bool steering = IsSteering(steer);
                 float rate = steering ? acceleration : groundFriction;
 
-                if (!IsGrounded)
-                    rate *= airControl *
-                            (steering ? stats.AirControlMultiplier : stats.AirDragMultiplier);
-                else
-                    rate *= grip;
+                if (IsGrounded)
+                    return rate * grip;
 
-                return rate;
+                rate *= airControl * (steering ? stats.AirControlMultiplier : stats.AirDragMultiplier);
+
+                return wind.x != 0f ? Mathf.Max(rate, windSideGrip) : rate;
             }
 
             bool TryRunAlongRamp(float targetSpeed, float topSpeed, float change)
@@ -1371,18 +1667,23 @@ namespace FallingWizard.Player
             {
                 if (!wasGrounded)
                 {
-                    pendingFallDistance = Mathf.Max(0f, highestPoint - body.position.y);
+                    float fallen = highestPoint - body.position.y;
+                    pendingFallDistance = Mathf.Max(0f, fallen - fallAllowance);
                     hasLanded = true;
+
+                    if (fallen > LandingBlip)
+                        fallAllowance = 0f;
                 }
 
                 stepAssistTimer = stepAssistGrace;
                 highestPoint = body.position.y;
+                fallCeiling = float.PositiveInfinity;
             }
 
             void UpdateWhileInTheAir(float fixedDeltaTime)
             {
                 stepAssistTimer -= fixedDeltaTime;
-                highestPoint = Mathf.Max(highestPoint, body.position.y);
+                highestPoint = Mathf.Min(fallCeiling, Mathf.Max(highestPoint, body.position.y));
             }
 
             bool TryStartMeasuringClimb(Bounds hook)
@@ -1553,7 +1854,8 @@ namespace FallingWizard.Player
             void DrawGroundProbe(Vector2 origin)
             {
                 Gizmos.color = Color.cyan;
-                Gizmos.DrawWireCube(origin + groundCheckOffset, groundCheckSize);
+                Gizmos.DrawWireCube(body != null ? FeetProbeCentre : origin + groundCheckOffset,
+                    FeetProbeSize);
             }
 
             void DrawLedgeProbe(Vector2 origin)
@@ -1684,6 +1986,12 @@ namespace FallingWizard.Player
                      "cannot see is a wizard who never moves again.")]
             [Min(MinTumbleSpread)] public float maximumDuration = 3f;
 
+            [Tooltip("Fastest a tumbling wizard can move, in boxes per second, in any direction. " +
+                     "Gusts, bounces and flings stack up during a tumble; this keeps them from " +
+                     "throwing the wizard off the screen. A tumbling fall is also held to the " +
+                     "wizard's Max Fall Speed. 0 for no limit.")]
+            [Min(0f)] public float topSpeed = 18f;
+
             [Tooltip("How fast the skid bleeds off once they are back on the ground, in boxes " +
                      "per second squared. This rather than physics friction, so the same trip " +
                      "always slides the same distance.")]
@@ -1722,8 +2030,15 @@ namespace FallingWizard.Player
             [NonSerialized] Collider2D hull;
             [NonSerialized] LayerMask wallLayers;
             [NonSerialized] float bounceReadyAt;
+            [NonSerialized] Vector2 diveVelocity;
+            [NonSerialized] float diveGivesUpAt;
+            [NonSerialized] float lastDiveHeight;
 
             public event Action<Vector2> BouncedOffAWall;
+
+            public bool IsDiving { get; private set; }
+
+            public Bounce DiveBounce { get; private set; }
 
             bool IsStandingUp => standUpTimer >= 0f;
 
@@ -1761,8 +2076,31 @@ namespace FallingWizard.Player
                 body.linearVelocity = velocity;
             }
 
+            public void SlowDown(float fraction) =>
+                body.linearVelocity *= 1f - Mathf.Clamp01(fraction);
+
+            public void BeginDive(Vector2 velocity, float depth, Bounce bounce)
+            {
+                IsDiving = true;
+                DiveBounce = bounce;
+                diveVelocity = velocity;
+                diveGivesUpAt = body.position.y - depth;
+                lastDiveHeight = float.PositiveInfinity;
+                standUpTimer = NotStandingUp;
+                body.linearVelocity = velocity;
+
+                angle = Vector2.SignedAngle(Vector2.up, velocity);
+                RotateArt();
+            }
+
             public bool Tick(float fixedDeltaTime, bool grounded, float horizontalSpeed, float steer)
             {
+                if (IsDiving)
+                {
+                    Dive();
+                    return false;
+                }
+
                 if (IsStandingUp)
                     return StandUp(fixedDeltaTime);
 
@@ -1787,6 +2125,7 @@ namespace FallingWizard.Player
                 spin = 0f;
                 angle = 0f;
                 standUpTimer = NotStandingUp;
+                IsDiving = false;
                 RotateArt();
             }
 
@@ -1816,6 +2155,20 @@ namespace FallingWizard.Player
                 tumbleTimer = minimumDuration;
                 standUpTimer = NotStandingUp;
                 elapsed = 0f;
+            }
+
+            void Dive()
+            {
+                float height = body.position.y;
+
+                if (height <= diveGivesUpAt || height >= lastDiveHeight)
+                {
+                    IsDiving = false;
+                    return;
+                }
+
+                lastDiveHeight = height;
+                body.linearVelocity = diveVelocity;
             }
 
             bool StandUp(float fixedDeltaTime)
@@ -1892,6 +2245,18 @@ namespace FallingWizard.Player
                 if (grounded && slideFriction > 0f)
                     body.linearVelocityX =
                         Mathf.MoveTowards(body.linearVelocityX, 0f, slideFriction * fixedDeltaTime);
+            }
+
+            public struct Bounce
+            {
+                public float height;
+                public float sideways;
+
+                public Bounce(float heightInBoxes, float sidewaysSpeed)
+                {
+                    height = heightInBoxes;
+                    sideways = sidewaysSpeed;
+                }
             }
         }
 
@@ -2413,13 +2778,13 @@ namespace FallingWizard.Player
 
             public void Observe(float deltaTime)
             {
-                bool paused = Game.IsPaused;
+                bool ignoresButtons = Game.IsPaused || owner.IsStunned;
 
                 for (int i = 0; i < slots.Length; i++)
                 {
                     Slot slot = slots[i];
 
-                    if (paused || slot.Action == null)
+                    if (ignoresButtons || slot.Action == null)
                         ForgetInput(slot);
                     else if (slot.Ability == null)
                         RefuseEmptySlot(i, slot);
@@ -2690,18 +3055,22 @@ namespace FallingWizard.Player
                 public float LitLeft;
                 public float CooldownLeft;
 
+                int usesLeft;
+
                 public Ability Ability { get; private set; }
 
                 public InputAction Action { get; private set; }
 
-                public int UsesLeft { get; private set; }
+                public int MaxUses { get; private set; }
+
+                public int UsesLeft => Cheats.IsActive ? MaxUses : usesLeft;
 
                 public bool IsLit => LitLeft > 0f;
 
                 public bool HasUsesLeft =>
                     Ability == null || Ability.usesPerLevel <= 0 || UsesLeft > 0;
 
-                public bool IsReady => Ability != null && CooldownLeft <= 0f && HasUsesLeft;
+                public bool IsReady => Ability != null && !IsLit && CooldownLeft <= 0f && HasUsesLeft;
 
                 public float CooldownProgress =>
                     Ability == null || Ability.cooldown <= 0f ? 0f : CooldownLeft / Ability.cooldown;
@@ -2717,7 +3086,8 @@ namespace FallingWizard.Player
                     BufferLeft = 0f;
                     LitLeft = 0f;
                     CooldownLeft = 0f;
-                    UsesLeft = spell != null ? spell.usesPerLevel : 0;
+                    MaxUses = spell != null ? spell.UsesPerLevelAt(Rank) : 0;
+                    usesLeft = MaxUses;
 
                     DropCharge();
                 }
@@ -2735,8 +3105,8 @@ namespace FallingWizard.Player
                     HasFired = true;
                     LitLeft = Ability.activeDuration;
 
-                    if (Ability.usesPerLevel > 0)
-                        UsesLeft = Mathf.Max(0, UsesLeft - 1);
+                    if (Ability.usesPerLevel > 0 && !Cheats.IsActive)
+                        usesLeft = Mathf.Max(0, usesLeft - 1);
 
                     if (LitLeft <= 0f)
                         CooldownLeft = Ability.cooldown;
@@ -2753,6 +3123,8 @@ namespace FallingWizard.Player
             public float AirControlMultiplier;
             public float AirDragMultiplier;
 
+            public float LeastSafeFall;
+
             public bool IsRooted;
 
             public Modifiers() => Reset();
@@ -2764,6 +3136,7 @@ namespace FallingWizard.Player
                 AirSpeedMultiplier = 1f;
                 AirControlMultiplier = 1f;
                 AirDragMultiplier = 1f;
+                LeastSafeFall = 0f;
                 IsRooted = false;
             }
         }

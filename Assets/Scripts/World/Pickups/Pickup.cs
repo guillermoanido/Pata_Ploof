@@ -36,21 +36,22 @@ namespace FallingWizard.World
         public GameObject collectedEffect;
 
         [Header("Gift")]
-        [Tooltip("What the wizard gets here. Magical Scrap goes straight into the purse, to be " +
+        [Tooltip("What the wizard gets here. Knowledge goes straight into the purse, to be " +
                  "spent at a shop stop. A Heart is added to their health. Either way the pickup " +
                  "stays taken, even after quitting, until the wizard dies - death wipes " +
                  "everything, and it is back.")]
-        public Gift gives = Gift.Scrap;
+        public Gift gives = Gift.Knowledge;
 
-        [Tooltip("How many. For Magical Scrap, how much goes into the purse. For a Heart, the " +
+        [Tooltip("How many. For Knowledge, how much goes into the purse. For a Heart, the " +
                  "hearts added to the wizard's health, so the hat takes longer to wear down. " +
                  "They are healed on the spot.")]
         [FormerlySerializedAs("hearts")]
         [Min(1)] public int amount = 1;
 
-        [Tooltip("Hearts only. Magical Scrap given instead when the wizard already has as many " +
+        [Tooltip("Hearts only. Knowledge given instead when the wizard already has as many " +
                  "hearts as they can ever get. Never leave a player standing over dead loot.")]
-        [Min(0)] public int scrapIfFull = 3;
+        [FormerlySerializedAs("scrapIfFull")]
+        [Min(0)] public int knowledgeIfFull = 3;
 
         [NonSerialized] string key;
         [NonSerialized] Transform visual;
@@ -144,12 +145,12 @@ namespace FallingWizard.World
         void GiveHeart(PlayerCharacter wizard)
         {
             if (!wizard.Logic.TryGrowHeart(amount))
-                Progress.AddScrap(scrapIfFull);
+                Progress.AddScrap(knowledgeIfFull);
         }
 
         public enum Gift
         {
-            Scrap,
+            Knowledge,
             Heart,
         }
     }

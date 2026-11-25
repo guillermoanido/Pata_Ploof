@@ -14,22 +14,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: fling
   displayName: Fling
-  description: Hold to aim up or down, let go to be thrown into a tumble.
-  icon: {fileID: 0}
-  cost: 2
+  description: Summon a trusty hand to fling you into the air, hold the button to
+    aim.
+  icon: {fileID: -1140953881901911216, guid: a6eef8dc9ca01b04891d8738ca935b7b, type: 3}
+  cost: 4
   locked: 0
   fixedSlot: -1
   passive: 0
+  pressBuffer: 0
+  chargesOnHold: 1
+  activeDuration: 0
+  cooldown: 1.5
+  usesPerLevel: 0
+  usesAddedPerRank: 0
   upgrades:
   - cost: 3
-    title: Harder throw
-    description: Throws you further.
-  chargesOnHold: 1
-  pressBuffer: 0
-  activeDuration: 0
-  usesPerLevel: 0
-  cooldown: 1.5
-  collectedEffect: {fileID: 0}
+    title: Stronger hand
+    description: Your magical hand gets stronger.
+  - cost: 4
+    title: Helping hand
+    description: Your hand catches you mid-tumble, fling yourself even in the air.
   startAngle: 20
   lowestAngle: -45
   highestAngle: 45
@@ -42,4 +46,8 @@ MonoBehaviour:
   lookAhead: 16
   tiers:
   - speed: 9
+    canFlingWhileTumbling: 0
   - speed: 11
+    canFlingWhileTumbling: 0
+  - speed: 11
+    canFlingWhileTumbling: 1

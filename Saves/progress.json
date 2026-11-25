@@ -1,19 +1,31 @@
 {
     "version": 2,
-    "scrap": 0,
+    "scrap": 1,
     "bonusHearts": 0,
     "loadout": [
         "staff",
-        "",
-        "",
+        "glide",
+        "vine",
         ""
     ],
     "ranks": [
         {
+            "key": "glide",
+            "rank": 2
+        },
+        {
             "key": "staff",
+            "rank": 2
+        },
+        {
+            "key": "vine",
             "rank": 1
         }
     ],
-    "taken": [],
-    "completedLevels": []
+    "taken": [
+        "scrap2-2:7,-1530"
+    ],
+    "completedLevels": [
+        "2-2"
+    ]
 }

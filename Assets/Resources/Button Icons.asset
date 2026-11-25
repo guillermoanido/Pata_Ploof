@@ -1,0 +1,103 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e3f5a7c1b2d4e6f8a0b1c2d3e4f5a6b, type: 3}
+  m_Name: Button Icons
+  m_EditorClassIdentifier: Assembly-CSharp::FallingWizard.UI.ButtonIcons
+  icons:
+  - control: '<Keyboard>/q'
+    icon: {fileID: 21300000, guid: 4f6ce6f1fe99409691dcc0d5e4d3a75e, type: 3}
+  - control: '<Keyboard>/e'
+    icon: {fileID: 21300000, guid: ee93da285c214756aee992c0558d352b, type: 3}
+  - control: '<Keyboard>/r'
+    icon: {fileID: 21300000, guid: fae945b7fa664303be47333fe369cca9, type: 3}
+  - control: '<Keyboard>/f'
+    icon: {fileID: 21300000, guid: 1b95a904583a4599853cac75dbeceb8e, type: 3}
+  - control: '<Keyboard>/w'
+    icon: {fileID: 21300000, guid: f6d7f891654b465c86d1aab0904b940f, type: 3}
+  - control: '<Keyboard>/a'
+    icon: {fileID: 21300000, guid: 3f11834d07d847bc81d88d7998144260, type: 3}
+  - control: '<Keyboard>/s'
+    icon: {fileID: 21300000, guid: b3c1fd79067e4b5fb24aa03305439792, type: 3}
+  - control: '<Keyboard>/d'
+    icon: {fileID: 21300000, guid: 893ff3ddc1984d6dbc8657ab21365b23, type: 3}
+  - control: '<Keyboard>/c'
+    icon: {fileID: 21300000, guid: 32ecbb70fb47489a8f4e59f3021633ca, type: 3}
+  - control: '<Keyboard>/1'
+    icon: {fileID: 21300000, guid: e7aefc12f3dc4286bfc39317edebb38e, type: 3}
+  - control: '<Keyboard>/2'
+    icon: {fileID: 21300000, guid: 1e9c5c9e1cd94de6b19c3318f22cc725, type: 3}
+  - control: '<Keyboard>/space'
+    icon: {fileID: 21300000, guid: 3ce09859602e4606a3cea498eb7b5b23, type: 3}
+  - control: '<Keyboard>/enter'
+    icon: {fileID: 21300000, guid: d27d1d620e52462db406d0770ec23f7a, type: 3}
+  - control: '<Keyboard>/escape'
+    icon: {fileID: 21300000, guid: fbc396f8e2ed4239aafb17a58fc753e1, type: 3}
+  - control: '<Keyboard>/tab'
+    icon: {fileID: 21300000, guid: 049b2ef555154ffa88858d016c15cb71, type: 3}
+  - control: '<Keyboard>/leftShift'
+    icon: {fileID: 21300000, guid: 34308d271cec407d80b88ef9b1a3e59c, type: 3}
+  - control: '<Keyboard>/upArrow'
+    icon: {fileID: 21300000, guid: 1fdd24fab7814ab2900df3584618a8fb, type: 3}
+  - control: '<Keyboard>/downArrow'
+    icon: {fileID: 21300000, guid: 888098477189444cbb486f50bd958a2e, type: 3}
+  - control: '<Keyboard>/leftArrow'
+    icon: {fileID: 21300000, guid: c5ff425824ab411f824fe472c5c09a46, type: 3}
+  - control: '<Keyboard>/rightArrow'
+    icon: {fileID: 21300000, guid: 030e0a4ada0f42a68f79b20c8c1d2eb9, type: 3}
+  - control: '<Mouse>/leftButton'
+    icon: {fileID: 21300000, guid: 25d76e2bec96494f86ec8e5792b8d69e, type: 3}
+  - control: 'composite:WASD'
+    icon: {fileID: 21300000, guid: cb2002528f6543d3ae9ccad21dceb4be, type: 3}
+  - control: 'composite:Keyboard'
+    icon: {fileID: 21300000, guid: cb2002528f6543d3ae9ccad21dceb4be, type: 3}
+  - control: 'Keyboard&Mouse */{Submit}'
+    icon: {fileID: 21300000, guid: d27d1d620e52462db406d0770ec23f7a, type: 3}
+  - control: 'Keyboard&Mouse */{Cancel}'
+    icon: {fileID: 21300000, guid: fbc396f8e2ed4239aafb17a58fc753e1, type: 3}
+  - control: '<Gamepad>/buttonSouth'
+    icon: {fileID: 21300000, guid: 0f7c45ecac9f40fdbef9e24e82e4467d, type: 3}
+  - control: '<Gamepad>/buttonEast'
+    icon: {fileID: 21300000, guid: 2e60f0d061824d8095febce52a88c0e5, type: 3}
+  - control: '<Gamepad>/buttonWest'
+    icon: {fileID: 21300000, guid: a9e0735c001c4594b12a0dc50f6c206c, type: 3}
+  - control: '<Gamepad>/buttonNorth'
+    icon: {fileID: 21300000, guid: 43f5e45763f24bcbb15ff65edf891e87, type: 3}
+  - control: '<Gamepad>/leftShoulder'
+    icon: {fileID: 21300000, guid: b4c4d74511f3488b8a4cc699b7801fb7, type: 3}
+  - control: '<Gamepad>/rightShoulder'
+    icon: {fileID: 21300000, guid: 41d494efe4c244bfb949529c9f7583a2, type: 3}
+  - control: '<Gamepad>/leftTrigger'
+    icon: {fileID: 21300000, guid: 9e800764d35e46a49da53f90e5796f34, type: 3}
+  - control: '<Gamepad>/rightTrigger'
+    icon: {fileID: 21300000, guid: deda2cba2c984f229654bf13e1b69e97, type: 3}
+  - control: '<Gamepad>/start'
+    icon: {fileID: 21300000, guid: ed116c21c9b54404858787889ad736be, type: 3}
+  - control: '<Gamepad>/select'
+    icon: {fileID: 21300000, guid: bbabd9ad29c843ac8cd1484bb14e0d7f, type: 3}
+  - control: '<Gamepad>/leftStick'
+    icon: {fileID: 21300000, guid: 2a67dbbc3cc641df8b41c4eaf4af6e7b, type: 3}
+  - control: '<Gamepad>/rightStick'
+    icon: {fileID: 21300000, guid: e5c8ce03ab7d49e18282a6a477264f27, type: 3}
+  - control: '<Gamepad>/leftStickPress'
+    icon: {fileID: 21300000, guid: cf85bd47ebdd4db5a4477d2ac2225c45, type: 3}
+  - control: '<Gamepad>/dpad'
+    icon: {fileID: 21300000, guid: 09826c90ce5542be8783db62f195c434, type: 3}
+  - control: '<Gamepad>/dpad/left'
+    icon: {fileID: 21300000, guid: b43dcfa9e7c845c9bcab437beaa15e25, type: 3}
+  - control: '<Gamepad>/dpad/right'
+    icon: {fileID: 21300000, guid: 01712772418749c7944608b278d33e1e, type: 3}
+  - control: 'composite:Gamepad'
+    icon: {fileID: 21300000, guid: 2a67dbbc3cc641df8b41c4eaf4af6e7b, type: 3}
+  - control: 'Gamepad */{Submit}'
+    icon: {fileID: 21300000, guid: 0f7c45ecac9f40fdbef9e24e82e4467d, type: 3}
+  - control: 'Gamepad */{Cancel}'
+    icon: {fileID: 21300000, guid: 2e60f0d061824d8095febce52a88c0e5, type: 3}

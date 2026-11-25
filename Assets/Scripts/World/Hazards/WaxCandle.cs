@@ -25,8 +25,7 @@ namespace FallingWizard.World
 
         [Tooltip("Seconds from one drop forming to the next. Each drop hangs as a warning and " +
                  "then falls, so the stretch between one drop landing and the next one letting " +
-                 "go is the window to get past underneath. The Haste spell slows the rhythm " +
-                 "along with everything else.")]
+                 "go is the window to get past underneath.")]
         [Min(ShortestGap)] public float secondsBetweenDrops = 2.5f;
 
         [Tooltip("Where in its rhythm this candle starts, as a fraction of the gap between " +
@@ -34,6 +33,12 @@ namespace FallingWizard.World
                  "set them to 0, 0.33 and 0.66 and they drip in turn, which is a corridor you " +
                  "have to time.")]
         [Range(0f, 1f)] public float phase = 0f;
+
+        [Tooltip("Seconds it holds its rhythm back after the level begins, so every drop comes " +
+                 "this much later. Give matching candles different numbers and they drip one " +
+                 "after another instead of together. It adds to Phase, so you can use both. " +
+                 "0 starts at once.")]
+        [Min(0f)] public float startDelaySeconds = 0f;
 
         [Tooltip("Where drops form, relative to the candle - under the lip of the candle or its " +
                  "holder. For a candle standing on a ledge, move it out past the edge: a drop " +
@@ -49,7 +54,7 @@ namespace FallingWizard.World
 
         void Awake()
         {
-            clock = phase * Interval;
+            clock = phase * Interval - startDelaySeconds;
 
             if (dropPrefab == null)
                 Debug.LogWarning($"{name}: WaxCandle has no Drop Prefab, so it never drips. " +
@@ -58,7 +63,7 @@ namespace FallingWizard.World
 
         void Update()
         {
-            clock += Haste.DeltaTime;
+            clock += Time.deltaTime;
 
             if (clock < Interval)
                 return;

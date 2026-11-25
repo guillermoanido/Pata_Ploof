@@ -27,9 +27,17 @@ namespace FallingWizard.World
                  "what makes a rake a launcher rather than a stumble. 0 is a plain trip.")]
         [Min(0f)] public float extraKick = 0f;
 
-        [Tooltip("Extra lift on top of the trip's own, in boxes per second. Raise it for a rake " +
-                 "that should pop the wizard up and over something rather than skim them along.")]
+        [Tooltip("Lift, in boxes per second. Raise it for a rake that should pop the wizard up " +
+                 "and over something rather than skim them along. Lift wins over a fall: the " +
+                 "wizard leaves at least this fast upward however fast they came down, and a " +
+                 "tumbling wizard gets it too when Affects Ragdolled is on.")]
         [Min(0f)] public float extraLift = 0f;
+
+        [Tooltip("Land on it from any height and take no fall damage: the drop above it is " +
+                 "forgiven, and only what comes after it counts - here, the hop its lift gives. " +
+                 "Right for a rake, which catches a falling wizard and throws them. Leave it off " +
+                 "for a wet floor or stairs, which should save nobody from a long drop.")]
+        public bool breaksFalls = false;
 
         protected override void Reset()
         {
@@ -41,12 +49,15 @@ namespace FallingWizard.World
 
         protected override void Affect(PlayerLogic wizard)
         {
+            if (breaksFalls)
+                wizard.RestartFall();
+
             int way = ChooseTheWay(wizard);
 
             if (wizard.TryTrip(way))
                 KickOnward(wizard, way);
-            else if (aim != Aim.WayTheyRun && wizard.State == PlayerState.Ragdoll)
-                TurnTheTumbleAround(wizard, way);
+            else if (wizard.State == PlayerState.Ragdoll)
+                CatchTheTumble(wizard, way);
         }
 
         int ChooseTheWay(PlayerLogic wizard)
@@ -88,8 +99,18 @@ namespace FallingWizard.World
 
         void KickOnward(PlayerLogic wizard, int way)
         {
-            if (extraKick > 0f || extraLift > 0f)
-                wizard.Shove(new Vector2(way * extraKick, extraLift), 0f);
+            if (extraKick > 0f)
+                wizard.Shove(new Vector2(way * extraKick, 0f), 0f);
+
+            wizard.Lift(extraLift);
+        }
+
+        void CatchTheTumble(PlayerLogic wizard, int way)
+        {
+            if (aim != Aim.WayTheyRun)
+                TurnTheTumbleAround(wizard, way);
+
+            wizard.Lift(extraLift);
         }
 
         void TurnTheTumbleAround(PlayerLogic wizard, int way)
@@ -97,7 +118,7 @@ namespace FallingWizard.World
             float carried = wizard.movement.Velocity.x;
             float target = way * Mathf.Max(extraKick, ReversalKick);
 
-            wizard.Shove(new Vector2(target - carried, extraLift), 0f);
+            wizard.Shove(new Vector2(target - carried, 0f), 0f);
         }
 
         public enum Aim

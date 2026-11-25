@@ -7,7 +7,7 @@ namespace FallingWizard.World
 {
     [RequireComponent(typeof(Rigidbody2D))]
     [DefaultExecutionOrder(RunBeforeTheWizard)]
-    public class MovingPlatform : MonoBehaviour
+    public class MovingPlatform : MonoBehaviour, ISleepable
     {
         const int RunBeforeTheWizard = -50;
 
@@ -27,13 +27,12 @@ namespace FallingWizard.World
 
         [Tooltip("How fast it travels along the path, in boxes per second. A wizard stood on it " +
                  "rides along at this speed and runs on top of it, so running the way it is going " +
-                 "is quicker than a run on solid ground. The Haste spell slows it down with the " +
-                 "rest of the world. 0 holds it still.")]
+                 "is quicker than a run on solid ground. 0 holds it still.")]
         [Min(0f)] public float speed = 2f;
 
         [Tooltip("Seconds it waits at each end before heading back. This is the calm moment to " +
                  "step on or off, so be generous on a platform the player has to board from a " +
-                 "ledge. The Haste spell stretches the wait as well.")]
+                 "ledge.")]
         [Min(0f)] public float pauseSeconds = 0.5f;
 
         [Tooltip("How far along the path it starts when the level begins, from 0 (where you " +
@@ -43,11 +42,33 @@ namespace FallingWizard.World
                  "always heads in opposite directions.")]
         [Range(0f, 1f)] public float startAlong = 0f;
 
+        [Tooltip("Seconds it waits where it starts before moving for the first time, after the " +
+                 "level begins. Give matching platforms different numbers and they set off one " +
+                 "after another, so they never move together. After that first wait it keeps its " +
+                 "usual rhythm. 0 sets off at once.")]
+        [Min(0f)] public float startDelaySeconds = 0f;
+
+        [Header("Telekinesis")]
+        [Tooltip("Telekinesis can hold this platform still for a few seconds, wherever it is on " +
+                 "its path, and it carries on from there when it wakes. Untick for a platform " +
+                 "the level needs to always move.")]
+        public bool canSleep = true;
+
+        [Tooltip("A child object shown while Telekinesis holds the platform still, on top of its " +
+                 "own art. A copy of the Star Sparkles prefab fits here. Leave it empty and the " +
+                 "platform looks the same asleep or awake.")]
+        public GameObject asleepLook;
+
         [NonSerialized] Rigidbody2D body;
         [NonSerialized] Vector2 start;
         [NonSerialized] float along;
         [NonSerialized] bool isHeadingOut = true;
         [NonSerialized] float pauseLeft;
+        [NonSerialized] float asleepUntil;
+
+        public bool IsAsleep => Time.time < asleepUntil;
+
+        public bool CanSleepNow => canSleep && !IsAsleep;
 
         float PathLength => Mathf.Max(ShortestPath, travel.magnitude);
 
@@ -73,13 +94,18 @@ namespace FallingWizard.World
 
             along = startAlong;
             isHeadingOut = along < 1f;
+            pauseLeft = startDelaySeconds;
 
             PlaceAt(PointAlong(along));
+            ShowLook(asleepLook, false);
             WarnIfNotOnGround();
         }
 
         void FixedUpdate()
         {
+            if (IsAsleep)
+                return;
+
             MoveAlongThePath();
 
             Vector2 next = PointAlong(along);
@@ -89,16 +115,29 @@ namespace FallingWizard.World
             CarryTheWizard(velocity);
         }
 
+        public bool TrySleep(float seconds)
+        {
+            if (!canSleep || seconds <= 0f)
+                return false;
+
+            asleepUntil = Time.time + seconds;
+
+            ShowLook(asleepLook, true);
+            CancelInvoke(nameof(WakeUp));
+            Invoke(nameof(WakeUp), seconds);
+            return true;
+        }
+
         void MoveAlongThePath()
         {
             if (pauseLeft > 0f)
             {
-                pauseLeft -= Haste.FixedDeltaTime;
+                pauseLeft -= Time.fixedDeltaTime;
                 return;
             }
 
             float end = isHeadingOut ? 1f : 0f;
-            along = Mathf.MoveTowards(along, end, speed * Haste.FixedDeltaTime / PathLength);
+            along = Mathf.MoveTowards(along, end, speed * Time.fixedDeltaTime / PathLength);
 
             if (Mathf.Approximately(along, end))
                 TurnAround();
@@ -140,6 +179,14 @@ namespace FallingWizard.World
             Debug.LogWarning($"{name} is a Moving Platform but is not on the Ground layer, so the " +
                              "wizard never counts as standing on it: it will not carry them, and " +
                              "they steer on it as if they were in mid-air. Put it on Ground.", this);
+        }
+
+        void WakeUp() => ShowLook(asleepLook, false);
+
+        static void ShowLook(GameObject look, bool isShown)
+        {
+            if (look != null)
+                look.SetActive(isShown);
         }
 
         void OnDrawGizmos()

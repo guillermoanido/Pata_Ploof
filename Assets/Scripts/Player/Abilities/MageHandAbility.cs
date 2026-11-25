@@ -35,7 +35,7 @@ namespace FallingWizard.Player
             if (!wizard.CanGrabVine)
                 return false;
 
-            VineAnchor vine = VineAnchor.Nearest(wizard.movement.Position);
+            MagicHand vine = NearestFreeHand(wizard);
 
             return vine != null &&
                    wizard.GrabSnapDistance(DescribeHold(wizard, vine)) <= graspRange;
@@ -63,7 +63,7 @@ namespace FallingWizard.Player
                 return true;
             }
 
-            VineAnchor vine = VineAnchor.Nearest(wizard.movement.Position);
+            MagicHand vine = NearestFreeHand(wizard);
 
             if (vine == null || !wizard.TryGrabVine(DescribeHold(wizard, vine)))
                 return false;
@@ -83,7 +83,7 @@ namespace FallingWizard.Player
 
         protected override void CleanUp(PlayerLogic wizard) => LetGo(wizard);
 
-        PlayerLogic.Vine.Hold DescribeHold(PlayerLogic wizard, VineAnchor vine)
+        PlayerLogic.Vine.Hold DescribeHold(PlayerLogic wizard, MagicHand vine)
         {
             Tier tier = PickTier(tiers, wizard);
 
@@ -100,12 +100,12 @@ namespace FallingWizard.Player
 
         string WhyNoVineIsInReach(PlayerLogic wizard)
         {
-            VineAnchor vine = VineAnchor.Nearest(wizard.movement.Position);
+            MagicHand vine = NearestFreeHand(wizard);
 
             if (vine == null)
-                return VineAnchor.All.Count == 0
-                    ? "there is not a single Vine in this scene"
-                    : "no vine is close enough - look for a knot that has started glowing";
+                return MagicHand.All.Count == 0
+                    ? "there is not a single Magic Hand in this scene"
+                    : "no Magic Hand is close enough that you did not just let go of - look for one that has started glowing";
 
             float snap = wizard.GrabSnapDistance(DescribeHold(wizard, vine));
 
@@ -116,6 +116,14 @@ namespace FallingWizard.Player
             return null;
         }
 
+        MagicHand NearestFreeHand(PlayerLogic wizard)
+        {
+            Grip grip = wizard.spellbook.StateOf<Grip>(this);
+            MagicHand resting = Time.time < grip.freeAgainAt ? grip.letGoOf : null;
+
+            return MagicHand.Nearest(wizard.movement.Position, resting);
+        }
+
         void LetGo(PlayerLogic wizard)
         {
             Grip grip = wizard.spellbook.StateOf<Grip>(this);
@@ -123,6 +131,8 @@ namespace FallingWizard.Player
             if (grip.held != null)
             {
                 grip.held.RollUp();
+                grip.letGoOf = grip.held;
+                grip.freeAgainAt = Time.time + PickTier(tiers, wizard).sameHandCooldown;
                 grip.held = null;
             }
 
@@ -141,16 +151,24 @@ namespace FallingWizard.Player
                      "rank 1, and unlocking it is the upgrade.")]
             [Min(0f)] public float climbSpeed = 0f;
 
+            [Tooltip("Seconds after letting go of a Magic Hand before the spell can grab that same " +
+                     "hand again. Any other Magic Hand in reach can be grabbed at once. 0 lets " +
+                     "you catch the same one straight back, which is the last rank's reward.")]
+            [Min(0f)] public float sameHandCooldown = 2f;
+
             public void Validate()
             {
                 maxSwing = Mathf.Clamp(maxSwing, 0f, WidestSwing);
                 climbSpeed = Mathf.Max(0f, climbSpeed);
+                sameHandCooldown = Mathf.Max(0f, sameHandCooldown);
             }
         }
 
         class Grip
         {
-            public VineAnchor held;
+            public MagicHand held;
+            public MagicHand letGoOf;
+            public float freeAgainAt;
         }
     }
 }

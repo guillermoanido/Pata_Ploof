@@ -19,11 +19,14 @@ namespace FallingWizard.Player
                  "Once a save exists, changing it forgets the spell.")]
         public string id = "";
 
-        [Tooltip("Name shown to the player.")]
+        [Tooltip("Name shown to the player. The 'ability.<id>.name' line in " +
+                 "Resources/Language/Game Text wins over this and holds the Spanish too.")]
         public string displayName = "Spell";
 
         [TextArea]
-        [Tooltip("What it does, in the player's words.")]
+        [Tooltip("What it does, in the player's words, shown on its skill card. The " +
+                 "'ability.<id>.desc' line in Resources/Language/Game Text wins over this and " +
+                 "holds the Spanish too.")]
         public string description = "";
 
         [Tooltip("HUD icon. Same import settings as the rest of the art: 32 pixels per unit, " +
@@ -31,7 +34,7 @@ namespace FallingWizard.Player
         public Sprite icon;
 
         [Header("Learning")]
-        [Tooltip("Magical Scrap spent to learn this at the skill screen.")]
+        [Tooltip("Knowledge spent to learn this at the skill screen.")]
         [Min(0)] public int cost = 1;
 
         [Tooltip("Cannot be moved out of its slot at the skill screen. Only the Staff wants this.")]
@@ -71,6 +74,11 @@ namespace FallingWizard.Player
         [FormerlySerializedAs("usesPerRun")]
         [Min(0)] public int usesPerLevel = 0;
 
+        [Tooltip("Extra casts per level that each upgrade adds on top of Uses Per Level, so 2 here " +
+                 "and 1 there is two casts at rank 1 and three at rank 2. Ignored when Uses Per " +
+                 "Level is 0.")]
+        [Min(0)] public int usesAddedPerRank = 0;
+
         [Header("Upgrades")]
         [Tooltip("One entry per rank past the first. Element 0 is what rank 2 costs and what it " +
                  "buys, in the player's words. Leave it empty for a spell that never upgrades. " +
@@ -102,6 +110,9 @@ namespace FallingWizard.Player
 
             Validate();
         }
+
+        public int UsesPerLevelAt(int rank) =>
+            usesPerLevel <= 0 ? 0 : usesPerLevel + usesAddedPerRank * Mathf.Max(0, rank - 1);
 
         public Upgrade NextUpgrade(int rank) =>
             upgrades != null && rank >= 1 && rank <= upgrades.Length ? upgrades[rank - 1] : null;
@@ -199,14 +210,18 @@ namespace FallingWizard.Player
         [Serializable]
         public class Upgrade
         {
-            [Tooltip("Magical Scrap to raise the spell to this rank.")]
+            [Tooltip("Knowledge to raise the spell to this rank.")]
             [Min(0)] public int cost = 1;
 
-            [Tooltip("Short name for the rank: 'Longer staff', 'Up and down', 'Wider stone'.")]
+            [Tooltip("Short name for the rank, shown on the upgrade button: 'Longer staff', " +
+                     "'Wider swing'. The 'ability.<id>.upgrade.<n>.title' line in " +
+                     "Resources/Language/Game Text wins over this.")]
             public string title = "";
 
             [TextArea]
-            [Tooltip("What it buys, in the player's words. One sentence.")]
+            [Tooltip("What it buys, in the player's words, shown on the skill card as the " +
+                     "'Next level' line. One sentence. The 'ability.<id>.upgrade.<n>.desc' line " +
+                     "in Resources/Language/Game Text wins over this.")]
             public string description = "";
 
             public void Validate() => cost = Mathf.Max(0, cost);

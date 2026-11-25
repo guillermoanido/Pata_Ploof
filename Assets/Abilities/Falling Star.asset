@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 941a0626012843c591464b31601d1c94, type: 3}
+  m_Name: Falling Star
+  m_EditorClassIdentifier: 
+  id: star
+  displayName: Falling Star
+  description: While tumbling, dive into the ground like a falling star and bounce
+    back up. Once per level.
+  icon: {fileID: -5505784301242206033, guid: a6eef8dc9ca01b04891d8738ca935b7b, type: 3}
+  cost: 6
+  locked: 0
+  fixedSlot: -1
+  passive: 0
+  pressBuffer: 0.12
+  chargesOnHold: 0
+  activeDuration: 1
+  cooldown: 0
+  usesPerLevel: 1
+  usesAddedPerRank: 1
+  upgrades:
+  - cost: 3
+    title: Second star
+    description: Dive twice per level.
+  - cost: 4
+    title: Third star
+    description: Dive three times per level.
+  diveAngle: 45
+  diveSpeed: 12
+  diveDepth: 1.25
+  bounceHeight: 2
+  bounceOnward: 2

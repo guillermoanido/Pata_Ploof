@@ -1,11 +1,10 @@
 using System;
-using FallingWizard.Core;
 using FallingWizard.Player;
 using UnityEngine;
 
 namespace FallingWizard.World
 {
-    public class WindTrap : WindZone2D
+    public class WindTrap : WindZone2D, ISleepable
     {
         const float ShortestCycle = 0.1f;
 
@@ -21,6 +20,8 @@ namespace FallingWizard.World
 
         const float TurbineRampup = 60f;
         const float TurbineGroundScale = 0.6f;
+
+        const float StreaksAlivePerSquareBox = 1.5f;
 
         static readonly Vector2 TurbinePush = new Vector2(12f, 0f);
 
@@ -50,13 +51,6 @@ namespace FallingWizard.World
                  "a corridor. It is a fraction rather than seconds so that retuning the timings " +
                  "later keeps the stagger.")]
         [Range(0f, 1f)] public float phase = 0f;
-
-        [Tooltip("Let the Haste spell slow this turbine down along with everything else. Leave " +
-                 "it on: the spell exists to buy you time to get through something, and a vent " +
-                 "that kept its normal rhythm while the whole world waded would be the one " +
-                 "thing in the level the spell does not help with. It also keeps the total " +
-                 "shove per blast the same - gentler for longer, not weaker.")]
-        public bool hasteSlowsCycle = true;
 
         [Header("Blast")]
         [Tooltip("The punch, in boxes per second, landed once on the step the trap reaches full " +
@@ -112,12 +106,28 @@ namespace FallingWizard.World
                  "Travel. Leave it empty and nothing shows.")]
         public GameObject blowingLook;
 
+        [Header("Telekinesis")]
+        [Tooltip("Telekinesis can hold this trap shut for a few seconds. It stays shut and calm " +
+                 "while it sleeps, and when it wakes it starts winding up again from shut, so the " +
+                 "warning always comes first. Untick for a trap the level needs to always blow.")]
+        public bool canSleep = true;
+
+        [Tooltip("A child object shown while Telekinesis holds the trap shut, on top of its own " +
+                 "art. A copy of the Star Sparkles prefab fits here. Leave it empty and the trap " +
+                 "looks the same asleep or awake.")]
+        public GameObject asleepLook;
+
         [NonSerialized] float clock;
         [NonSerialized] float armedUntil = NotArmed;
         [NonSerialized] bool wasOpen;
+        [NonSerialized] float asleepUntil;
 
         [NonSerialized] bool isShowingWarning;
         [NonSerialized] bool isShowingBlowing;
+
+        public bool IsAsleep => Time.time < asleepUntil;
+
+        public bool CanSleepNow => canSleep && !IsAsleep;
 
         float CycleLength =>
             Mathf.Max(ShortestCycle, Mathf.Max(0f, shutSeconds) + Mathf.Max(0f, openSeconds));
@@ -204,6 +214,7 @@ namespace FallingWizard.World
             base.Awake();
             Validate();
             SwitchLooks(IsWindingUp, IsOpen);
+            ShowLook(asleepLook, false);
         }
 
         void Update()
@@ -212,9 +223,22 @@ namespace FallingWizard.World
             ShowTheRightLook();
         }
 
+        public bool TrySleep(float seconds)
+        {
+            if (!canSleep || seconds <= 0f)
+                return false;
+
+            asleepUntil = Time.time + seconds;
+
+            ShowLook(asleepLook, true);
+            CancelInvoke(nameof(WakeUp));
+            Invoke(nameof(WakeUp), seconds);
+            return true;
+        }
+
         protected override void OnPlayerInside(PlayerCharacter wizard, float fixedDeltaTime)
         {
-            if (!CanAffect(wizard))
+            if (!CanBlowOn(wizard))
                 return;
 
             float openness = Openness;
@@ -227,7 +251,7 @@ namespace FallingWizard.World
 
             float strength = openness * (tumbling ? tumbleScale : 1f);
 
-            logic.Push(WorldPush * strength * Haste.WorldScale, rampup, groundScale);
+            logic.Push(WorldPush * strength, rampup, groundScale);
 
             if (openness < 1f || tumbling || clock > armedUntil)
                 return;
@@ -235,6 +259,9 @@ namespace FallingWizard.World
             armedUntil = NotArmed;
             Blast(logic);
         }
+
+        protected override float CountStreaksPerSecond(float squareBoxes, float lifetime) =>
+            squareBoxes * StreaksAlivePerSquareBox / lifetime;
 
         void Validate()
         {
@@ -298,7 +325,10 @@ namespace FallingWizard.World
 
         void AdvanceTheCycle()
         {
-            clock += hasteSlowsCycle ? Haste.DeltaTime : Time.deltaTime;
+            if (IsAsleep)
+                HoldShut();
+            else
+                clock += Time.deltaTime;
 
             bool isOpenNow = IsOpen;
 
@@ -307,6 +337,8 @@ namespace FallingWizard.World
 
             wasOpen = isOpenNow;
         }
+
+        void HoldShut() => clock = Travel + CycleLength * (1f - phase);
 
         void ShowTheRightLook()
         {
@@ -325,6 +357,18 @@ namespace FallingWizard.World
             ShowLook(shutLook, !warning && !blowing);
             ShowLook(warningLook, warning);
             ShowLook(blowingLook, blowing);
+            ShowStreaks(blowing);
+        }
+
+        void ShowStreaks(bool blowing)
+        {
+            if (streaks == null)
+                return;
+
+            if (blowing)
+                streaks.Play();
+            else
+                streaks.Stop(true, ParticleSystemStopBehavior.StopEmitting);
         }
 
         void Blast(PlayerLogic wizard)
@@ -337,5 +381,7 @@ namespace FallingWizard.World
 
             wizard.Shove(TurnWithThisObject(kick), kickLockout);
         }
+
+        void WakeUp() => ShowLook(asleepLook, false);
     }
 }

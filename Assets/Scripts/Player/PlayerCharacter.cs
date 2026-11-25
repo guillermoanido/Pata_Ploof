@@ -8,7 +8,7 @@ using UnityEngine.InputSystem;
 namespace FallingWizard.Player
 {
     [RequireComponent(typeof(Rigidbody2D))]
-    public class PlayerCharacter : SingletonBehaviour<PlayerCharacter>
+    public class PlayerCharacter : MonoBehaviour
     {
         const string ArtObjectName = "Visual";
 
@@ -31,7 +31,7 @@ namespace FallingWizard.Player
         [Header("Death")]
         [Tooltip("Seconds to wait once the wizard runs out of hearts, so the death can be seen, " +
                  "before the message saying so comes up. The message offers to start again or " +
-                 "go back to the main menu. Dying wipes everything: Magical Scrap, spells, " +
+                 "go back to the main menu. Dying wipes everything: Knowledge, spells, " +
                  "upgrades, the loadout, bonus hearts, finished levels and taken pickups. " +
                  "Settings are kept.")]
         [Min(0f)] public float secondsBeforeDeathMessage = 2.5f;
@@ -59,7 +59,11 @@ namespace FallingWizard.Player
         [Header("Behaviour")]
         public PlayerLogic logic = new PlayerLogic();
 
+        static PlayerCharacter instance;
+
         Controls controls;
+
+        public static PlayerCharacter Instance => instance;
 
         public PlayerLogic Logic => logic;
 
@@ -83,8 +87,11 @@ namespace FallingWizard.Player
 
         void OnValidate() => logic.Validate();
 
-        protected override void OnAwake()
+        void Awake()
         {
+            if (!TryBecomeTheOnlyWizard())
+                return;
+
             Hitbox = GetComponent<Collider2D>();
             Hurtbox = FindHurtbox();
 
@@ -103,10 +110,25 @@ namespace FallingWizard.Player
         void Update() =>
             logic.Observe(controls.Read(lookThreshold, lookHoldSeconds, Time.deltaTime), Time.deltaTime);
 
-        protected override void OnDestroy()
+        void OnDestroy()
         {
-            base.OnDestroy();
+            if (instance == this)
+                instance = null;
+
             logic.Died -= OnDied;
+        }
+
+        bool TryBecomeTheOnlyWizard()
+        {
+            if (instance != null && instance != this)
+            {
+                Debug.LogWarning($"A second wizard woke up in this scene. Destroying '{name}'.", this);
+                Destroy(gameObject);
+                return false;
+            }
+
+            instance = this;
+            return true;
         }
 
         Collider2D FindHurtbox()
@@ -137,7 +159,7 @@ namespace FallingWizard.Player
 
         void OnDied()
         {
-            Progress.StartOver();
+            Progress.ResetSave();
             StartCoroutine(HopOffTheScreen());
             Invoke(nameof(ShowDeathMessage), secondsBeforeDeathMessage);
         }
@@ -161,6 +183,9 @@ namespace FallingWizard.Player
         {
             ChoiceScreen screen = ChoiceScreen.Open(Loc.Get(Loc.Keys.DeathTitle),
                 Loc.Get(Loc.Keys.DeathBlurb));
+
+            if (screen == null)
+                return;
 
             screen.Choice(Loc.Get(Loc.Keys.DeathStartAgain), () => screen.CloseThen(StartAgain));
             screen.Choice(Loc.Get(Loc.Keys.DeathMainMenu), () => screen.CloseThen(Game.LoadMainMenu));

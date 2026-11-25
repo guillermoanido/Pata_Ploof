@@ -11,8 +11,7 @@ namespace FallingWizard.World
         [Tooltip("Seconds from the moment the level starts. Until then the rewards can be taken " +
                  "and the timer counts up. When it gets here the timer stops and turns red, and " +
                  "the rewards fade and stay out of reach until the level is played again. The " +
-                 "clock stops while the game is paused or a menu is open, but not for the Haste " +
-                 "spell.")]
+                 "clock stops while the game is paused or a menu is open.")]
         [Min(1f)] public float secondsAllowed = 60f;
 
         [Tooltip("Each pickup, with the faded copy that replaces it when time runs out. A pickup " +

@@ -14,26 +14,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: hand
   displayName: Telekinesis
-  description: Take a hazard with you, and set it down where you want it.
-  icon: {fileID: 0}
-  cost: 4
+  description: A wave of magic that opens magic doors and holds still the moving
+    things around you.
+  icon: {fileID: 8685077388864575728, guid: a6eef8dc9ca01b04891d8738ca935b7b, type: 3}
+  cost: 5
   locked: 0
   fixedSlot: -1
   passive: 0
   pressBuffer: 0.12
   chargesOnHold: 0
   activeDuration: 0
-  cooldown: 0.4
+  cooldown: 5
   usesPerLevel: 0
-  collectedEffect: {fileID: 0}
+  usesAddedPerRank: 0
   upgrades:
   - cost: 2
-    title: Longer reach
-    description: Takes hold of things half again as far away.
-  reach: 6
-  placeInTiles: 3
-  liftInTiles: 0
-  needsAFloor: 0
+    title: Deeper sleep
+    description: Things stay still for longer.
+  reach: 4
   tiers:
-  - reach: 6
-  - reach: 9
+  - sleepSeconds: 3
+  - sleepSeconds: 5

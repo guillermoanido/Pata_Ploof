@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 834a3dacfb21437cb154e6906fa03197, type: 3}
+  m_Name: Star Slap
+  m_EditorClassIdentifier: 
+  id: slap
+  displayName: Star Slap
+  description: A magical star hand that slaps walls to push you away, it can also
+    shove furniture around.
+  icon: {fileID: -6246062721824389004, guid: a6eef8dc9ca01b04891d8738ca935b7b, type: 3}
+  cost: 4
+  locked: 0
+  fixedSlot: -1
+  passive: 0
+  pressBuffer: 0.12
+  chargesOnHold: 0
+  activeDuration: 0
+  cooldown: 0.75
+  usesPerLevel: 0
+  usesAddedPerRank: 0
+  upgrades:
+  - cost: 2
+    title: Steady hand
+    description: Slapping while you tumble slows you down.
+  - cost: 3
+    title: Longer arm
+    description: Your star hand reaches further and slows your tumble even more.
+  sidewaysShove: 9
+  downwardShove: 6
+  steeringLockout: 0.2
+  furnitureKnock: 6
+  handPrefab: {fileID: 1960000001, guid: a54b5e86a66f4fa386ec3c1b6627d9a4, type: 3}
+  handSeconds: 0.35
+  tiers:
+  - reach: 2
+    tumbleSlowdown: 0
+  - reach: 2
+    tumbleSlowdown: 0.25
+  - reach: 4
+    tumbleSlowdown: 0.5

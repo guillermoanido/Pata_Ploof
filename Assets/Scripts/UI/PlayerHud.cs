@@ -1,8 +1,6 @@
 using System.Collections.Generic;
 using FallingWizard.Core;
-using FallingWizard.Localization;
 using FallingWizard.Player;
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -10,12 +8,7 @@ namespace FallingWizard.UI
 {
     public class PlayerHud : MonoBehaviour
     {
-        const float ScrapFontSize = 26f;
-
         const int NotBuilt = -1;
-
-        static readonly Vector2 ScrapCorner = new Vector2(-24f, -20f);
-        static readonly Vector2 ScrapSize = new Vector2(360f, 40f);
 
         [Header("Rig")]
         [Tooltip("Spell slots are laid out under here, in spellbook order.")]
@@ -26,29 +19,24 @@ namespace FallingWizard.UI
                  "the template - like the bar's right end - stays at the end as the bar grows.")]
         public HudSlot slotTemplate;
 
-        [Tooltip("Reads out how much Magical Scrap is in the purse. Leave it empty and one is " +
-                 "built in the top right corner on its own, so a scene needs no wiring to show " +
-                 "the number that matters most.")]
-        public TextMeshProUGUI scrapLabel;
+        [Header("Knowledge")]
+        [Tooltip("The Knowledge counter: the book icon and the digits beside it, under one " +
+                 "object. It is switched off while there is no wizard. Leave it empty for no " +
+                 "counter.")]
+        public GameObject knowledgeCounter;
 
-        [Tooltip("Do not build that corner label. For a scene that shows the count some other " +
-                 "way, or one that would rather not show it at all.")]
-        public bool hideScrapCount = false;
-
-        [Header("Magical Scrap")]
-        [Tooltip("How the counter reads, for a scene that wants its own wording. {0} is the " +
-                 "Magical Scrap in the purse. LEAVE IT EMPTY, which is what you want almost " +
-                 "always: the counter then uses the translated line and follows the player's " +
-                 "language. Anything typed here is used exactly as typed, in every language.")]
-        public string scrapFormat = "";
+        [Tooltip("The digits that read out how much Knowledge is in the purse, drawn with the " +
+                 "same digit art as the timed reward clock.")]
+        public DigitRow knowledgeDigits = new DigitRow();
 
         [Header("Spells")]
         [Tooltip("Draw a dimmed slot for an empty button, so the bar never shifts around and the " +
                  "player can see there is room for more.")]
         public bool showEmptySlots = true;
 
-        [Tooltip("Print the button under each spell. It follows whichever device is in use, so it " +
-                 "reads E on a keyboard and X on a pad without anyone touching a setting.")]
+        [Tooltip("Show the button under each spell, as a picture from Resources/Button Icons. It " +
+                 "follows whichever device is in use, so it shows the E key on a keyboard and the " +
+                 "pad button on a controller without anyone touching a setting.")]
         public bool showButtons = true;
 
         public Color emptyTint = new Color(1f, 1f, 1f, 0.18f);
@@ -87,15 +75,10 @@ namespace FallingWizard.UI
             if (blipTemplate != null)
                 blipTemplate.gameObject.SetActive(false);
 
-            if (scrapLabel == null && !hideScrapCount)
-                scrapLabel = BuildScrapLabel();
-
             if (spellBar == null || slotTemplate == null)
                 Debug.LogError("The HUD is missing part of its rig. It wants a spell bar with one " +
                                "HudSlot to copy, which stays switched off.", this);
         }
-
-        void OnEnable() => Core.Controls.SchemeChanged += RefreshButtons;
 
         void LateUpdate()
         {
@@ -106,7 +89,7 @@ namespace FallingWizard.UI
             if (spellBar != null)
                 spellBar.gameObject.SetActive(showing);
 
-            ShowScrapCount(showing);
+            ShowKnowledge(showing);
             ShowHealthBar(showing);
 
             if (!showing)
@@ -115,32 +98,6 @@ namespace FallingWizard.UI
             RebuildSpellBarIfChanged();
             RefreshSpells();
             ShowHealth(boundWizard.Logic.health);
-        }
-
-        void OnDisable() => Core.Controls.SchemeChanged -= RefreshButtons;
-
-        TextMeshProUGUI BuildScrapLabel()
-        {
-            var canvas = GetComponentInParent<Canvas>();
-
-            if (canvas == null)
-                return null;
-
-            var labelObject = new GameObject("Scrap Count", typeof(RectTransform));
-            labelObject.transform.SetParent(canvas.transform, false);
-
-            var rectTransform = (RectTransform)labelObject.transform;
-            rectTransform.anchorMin = rectTransform.anchorMax = rectTransform.pivot = Vector2.one;
-            rectTransform.anchoredPosition = ScrapCorner;
-            rectTransform.sizeDelta = ScrapSize;
-
-            var label = labelObject.AddComponent<TextMeshProUGUI>();
-            label.fontSize = ScrapFontSize;
-            label.color = Ui.Accent;
-            label.alignment = TextAlignmentOptions.Right;
-            label.raycastTarget = false;
-
-            return label;
         }
 
         void BindToCurrentWizard()
@@ -154,17 +111,13 @@ namespace FallingWizard.UI
             builtVersion = NotBuilt;
         }
 
-        void ShowScrapCount(bool showing)
+        void ShowKnowledge(bool showing)
         {
-            if (scrapLabel == null)
-                return;
-
-            scrapLabel.enabled = showing;
+            if (knowledgeCounter != null)
+                knowledgeCounter.SetActive(showing);
 
             if (showing)
-                scrapLabel.text = string.IsNullOrEmpty(scrapFormat)
-                    ? Loc.Format(Loc.Keys.HudScrap, Progress.Scrap)
-                    : string.Format(scrapFormat, Progress.Scrap);
+                knowledgeDigits.Show(Progress.Scrap);
         }
 
         void ShowHealthBar(bool showing)
@@ -180,7 +133,6 @@ namespace FallingWizard.UI
 
             builtVersion = boundWizard.Logic.spellbook.Version;
             BuildSpellBar();
-            RefreshButtons();
         }
 
         void BuildSpellBar()
@@ -248,18 +200,6 @@ namespace FallingWizard.UI
                 blip.gameObject.SetActive(true);
                 blips.Add(blip);
             }
-        }
-
-        void RefreshButtons()
-        {
-            if (boundWizard == null)
-                return;
-
-            IReadOnlyList<PlayerLogic.Spellbook.Slot> spellbookSlots =
-                boundWizard.Logic.spellbook.Slots;
-
-            for (int i = 0; i < slots.Count && i < spellbookSlots.Count; i++)
-                slots[i].ShowButton(spellbookSlots[i], showButtons);
         }
     }
 }

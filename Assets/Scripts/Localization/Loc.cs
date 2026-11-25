@@ -162,19 +162,19 @@ namespace FallingWizard.Localization
             public const string SkillHintPick = "skill.hint.pick";
             public const string SkillHintMove = "skill.hint.move";
             public const string SkillHintLocked = "skill.hint.locked";
-            public const string SkillOn = "skill.on";
-            public const string SkillBench = "skill.bench";
             public const string SkillNext = "skill.next";
             public const string SkillLearn = "skill.learn";
             public const string SkillMastered = "skill.mastered";
             public const string SkillLearned = "skill.learned";
 
-            public const string HudScrap = "hud.scrap";
-
             public const string DeathTitle = "death.title";
             public const string DeathBlurb = "death.blurb";
             public const string DeathStartAgain = "death.startAgain";
             public const string DeathMainMenu = "death.mainMenu";
+
+            public const string EndTitle = "end.title";
+            public const string EndBlurb = "end.blurb";
+            public const string EndMainMenu = "end.mainMenu";
         }
     }
 }

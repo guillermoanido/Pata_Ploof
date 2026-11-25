@@ -133,6 +133,8 @@ namespace FallingWizard.Player
 
             const float CarrierProbe = 0.05f;
 
+            const float PlankClearance = 0.05f;
+
             const float Half = 0.5f;
 
             const float NotMounting = -1f;
@@ -185,6 +187,11 @@ namespace FallingWizard.Player
                      "until that grip reaches the very end of the pole, so the last stretch is a " +
                      "hand hang with the body dangling past the tip. Higher grip, lower hang.")]
             public float gripHeight = 0.25f;
+
+            [Tooltip("Extra boxes a drop off the bottom of this staff can fall before it hurts, on " +
+                     "top of the wizard's usual safe fall. This is what makes a better staff " +
+                     "take the wizard safely further down without making the pole any longer.")]
+            [Min(0f)] public float safeDropBonus = 0f;
 
             [Tooltip("Which layers the staff can find footing on, so it never lowers into solid " +
                      "ground. Defaults to Ground.")]
@@ -264,6 +271,8 @@ namespace FallingWizard.Player
                 wielder != null && wielderHitbox != null
                     ? wielder.position.y - wielderHitbox.bounds.min.y
                     : 0f;
+
+            float WielderHeight => wielderHitbox != null ? wielderHitbox.bounds.size.y : 0f;
 
             float HangBelowTip => WielderFeetOffset + gripHeight;
 
@@ -360,6 +369,22 @@ namespace FallingWizard.Player
                 SetUpTheClimb(landing);
                 HangWielderOnTheLadder();
                 return true;
+            }
+
+            public bool TryPlantThroughFloor(int wielderFacing, float poleX, float plankBottomY,
+                float floorBelowY)
+            {
+                if (!HasPole || !HasWielder)
+                    return false;
+
+                Face(wielderFacing);
+                StartHangingAt(poleX);
+
+                float surfaceY = anchor.y - WielderFeetOffset;
+                reach = Mathf.Min(MeasureReach() + HangBelowTip, surfaceY - floorBelowY);
+
+                float clearOfThePlanks = surfaceY - plankBottomY + WielderHeight + PlankClearance;
+                return TryFinishHanging(new Vector2(poleX, surfaceY - CarrierProbe), clearOfThePlanks);
             }
 
             public StaffHold Slide(float lean, float fixedDeltaTime)
@@ -581,25 +606,39 @@ namespace FallingWizard.Player
 
                 Face(wielderFacing);
 
+                float surfaceY = wielder.position.y - WielderFeetOffset;
+
+                return TryHangLadder(edgeX + facing * lipClearance, surfaceY,
+                    new Vector2(edgeX - facing * CarrierProbe, surfaceY - CarrierProbe), Epsilon);
+            }
+
+            bool TryHangLadder(float poleX, float clearBelowY, Vector2 groundPoint, float leastReach)
+            {
+                StartHangingAt(poleX);
+                reach = FindReachThatFits(MeasureReach() + HangBelowTip, clearBelowY);
+                return TryFinishHanging(groundPoint, leastReach);
+            }
+
+            void StartHangingAt(float poleX)
+            {
                 anchor = wielder.position;
                 depth = 0f;
                 dropTimer = 0f;
 
                 float surfaceY = anchor.y - WielderFeetOffset;
-                float topAboveOrigin = MeasureTopAboveOrigin();
 
-                PlantPoleAt(edgeX + facing * lipClearance, surfaceY - topAboveOrigin,
-                    Quaternion.identity);
+                PlantPoleAt(poleX, surfaceY - MeasureTopAboveOrigin(), Quaternion.identity);
+            }
 
-                reach = FindReachThatFits(MeasureReach() + HangBelowTip);
-
-                if (reach <= Epsilon)
+            bool TryFinishHanging(Vector2 groundPoint, float leastReach)
+            {
+                if (reach <= leastReach)
                 {
                     ShoulderPole();
                     return false;
                 }
 
-                RideOn(new Vector2(edgeX - facing * CarrierProbe, surfaceY - CarrierProbe));
+                RideOn(groundPoint);
                 HangWielderOnTheLadder();
                 return true;
             }
@@ -628,15 +667,17 @@ namespace FallingWizard.Player
                 return size.y * Mathf.Abs(poleTransform.lossyScale.y);
             }
 
-            float FindReachThatFits(float rawReach)
+            float FindReachThatFits(float rawReach, float clearBelowY)
             {
                 if (rawReach <= Epsilon)
                     return 0f;
 
                 float surfaceY = anchor.y - WielderFeetOffset;
-                var origin = new Vector2(plantedPosition.x, surfaceY);
+                var origin = new Vector2(plantedPosition.x, clearBelowY);
+                float rayLength = rawReach - (surfaceY - clearBelowY);
 
-                if (Physics2D.Raycast(origin, Vector2.down, GroundFilter, Rays, rawReach) == 0)
+                if (rayLength <= 0f ||
+                    Physics2D.Raycast(origin, Vector2.down, GroundFilter, Rays, rayLength) == 0)
                     return rawReach;
 
                 return Mathf.Clamp(surfaceY - Rays[0].point.y, 0f, rawReach);

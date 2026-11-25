@@ -46,8 +46,20 @@ namespace FallingWizard.Player
         [Tooltip("One block per rank. Element 0 is what learning it gives you.")]
         public Tier[] tiers = { new Tier() };
 
-        public override string WhyNot(PlayerLogic wizard) =>
-            wizard.State == PlayerState.Normal ? null : $"you are {wizard.State}";
+        public override bool CanCast(PlayerLogic wizard) => IsFreeToFling(wizard);
+
+        public override string WhyNot(PlayerLogic wizard)
+        {
+            if (IsFreeToFling(wizard))
+                return null;
+
+            if (wizard.IsDiving)
+                return "you are diving";
+
+            return wizard.State == PlayerState.Ragdoll
+                ? "you are tumbling, and flinging while tumbling only comes at a higher rank"
+                : $"you are {wizard.State}";
+        }
 
         public override void ModifyStats(PlayerLogic wizard, PlayerLogic.Modifiers stats)
         {
@@ -57,7 +69,7 @@ namespace FallingWizard.Player
 
         public override void OnHeld(PlayerLogic wizard, float heldSeconds, float fixedDeltaTime)
         {
-            if (wizard.State != PlayerState.Normal)
+            if (!IsFreeToFling(wizard))
             {
                 StopAiming(wizard);
                 return;
@@ -83,7 +95,7 @@ namespace FallingWizard.Player
 
             StopAiming(wizard);
 
-            if (wizard.State != PlayerState.Normal || !wizard.spellbook.TryFire(this))
+            if (!IsFreeToFling(wizard) || !wizard.spellbook.TryFire(this))
                 return;
 
             wizard.TryFling(CalculateLaunch(wizard, aiming));
@@ -101,6 +113,15 @@ namespace FallingWizard.Player
         }
 
         protected override void CleanUp(PlayerLogic wizard) => StopAiming(wizard);
+
+        bool IsFreeToFling(PlayerLogic wizard)
+        {
+            if (!wizard.CanBeFlung)
+                return false;
+
+            return wizard.State == PlayerState.Normal ||
+                   PickTier(tiers, wizard).canFlingWhileTumbling;
+        }
 
         void StartAiming(Aiming aiming)
         {
@@ -188,6 +209,11 @@ namespace FallingWizard.Player
             [Tooltip("How fast the throw sends the wizard at this rank, in boxes per second. A " +
                      "run is about 4, for scale.")]
             [Min(0f)] public float speed = 9f;
+
+            [Tooltip("Lets the wizard aim and throw while already tumbling, even in mid-air. The " +
+                     "throw changes where the tumble goes but never saves them: the fall is still " +
+                     "counted from the highest point before it, so a long drop still hurts.")]
+            public bool canFlingWhileTumbling = false;
 
             public void Validate() => speed = Mathf.Max(0f, speed);
         }

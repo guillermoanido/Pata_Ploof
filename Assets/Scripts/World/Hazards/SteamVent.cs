@@ -1,5 +1,4 @@
 using System;
-using FallingWizard.Core;
 using FallingWizard.Player;
 using UnityEngine;
 
@@ -16,6 +15,12 @@ namespace FallingWizard.World
         const float SteamRampup = 40f;
 
         const float FullStrengthOnTheGround = 1f;
+
+        const float PuffSpeed = 4f;
+
+        const float PuffTravel = 1f;
+
+        const float PuffsPerSquareBox = 20f;
 
         static readonly Color SteamColour = new Color(1f, 0.8f, 0.6f, 0.9f);
 
@@ -51,6 +56,15 @@ namespace FallingWizard.World
                  "they drop again when the blast stops, and a fall of more than 3 boxes hurts.")]
         public Vector2 push = Vector2.zero;
 
+        [Tooltip("The puffs that show the steam, the same idea as the Streaks on a Wind zone: a " +
+                 "particle system on a child of this vent. Its look is yours - sprite, colour, " +
+                 "size, fade - but when the level starts the vent aims it out of its top, sets " +
+                 "its speed and fills the trigger collider with it, and it only plays while the " +
+                 "steam blasts. So the puffs always show exactly where the steam burns: make the " +
+                 "collider taller for a longer blast and the puffs follow. Leave it empty for " +
+                 "no puffs.")]
+        public ParticleSystem steam;
+
         [Header("Look")]
         [Tooltip("A child object switched on while the vent sits silent, and off the rest of " +
                  "the time: the vent shut. Fill it with your own art or animation. Never put the " +
@@ -65,7 +79,8 @@ namespace FallingWizard.World
 
         [Tooltip("A child object switched on only while the steam blasts: the vent fully open. " +
                  "This is the only time it burns, and it burns anyone inside the trigger " +
-                 "collider on this object, so keep that collider the size of this art.")]
+                 "collider on this object - the column the Steam puffs fill - so size that " +
+                 "collider to how far the blast should reach.")]
         public GameObject steamLook;
 
         [NonSerialized] float clock;
@@ -109,23 +124,58 @@ namespace FallingWizard.World
         protected override void Awake()
         {
             base.Awake();
+            AimTheSteam();
             SwitchLooks(IsWarning, IsBursting);
         }
 
         void Update()
         {
-            clock += Haste.DeltaTime;
+            if (IsAsleep)
+                HoldQuiet();
+            else
+                clock += Time.deltaTime;
+
             ShowTheRightLook();
         }
 
-        protected override void Affect(PlayerLogic wizard) => Disarm(rearmDelay / Haste.WorldScale);
+        protected override void Affect(PlayerLogic wizard) => Disarm(rearmDelay);
 
         protected override void OnPlayerInside(PlayerCharacter wizard, float fixedDeltaTime)
         {
             base.OnPlayerInside(wizard, fixedDeltaTime);
 
             if (IsBursting && push != Vector2.zero && CanAffect(wizard))
-                wizard.Logic.Push(push * Haste.WorldScale, SteamRampup, FullStrengthOnTheGround);
+                wizard.Logic.Push(push, SteamRampup, FullStrengthOnTheGround);
+        }
+
+        void AimTheSteam()
+        {
+            var column = GetComponent<BoxCollider2D>();
+
+            if (steam == null || column == null)
+                return;
+
+            Vector2 way = transform.up;
+
+            ParticleSystem.MainModule main = steam.main;
+            main.startLifetime = PuffTravel / PuffSpeed;
+
+            ParticleSystem.VelocityOverLifetimeModule velocity = steam.velocityOverLifetime;
+            velocity.x = way.x * PuffSpeed;
+            velocity.y = way.y * PuffSpeed;
+            velocity.z = 0f;
+
+            FillTheColumn(column);
+        }
+
+        void FillTheColumn(BoxCollider2D column)
+        {
+            ParticleSystem.ShapeModule shape = steam.shape;
+            shape.position = column.offset;
+            shape.scale = new Vector3(column.size.x, column.size.y, 0f);
+
+            ParticleSystem.EmissionModule emission = steam.emission;
+            emission.rateOverTime = column.size.x * column.size.y * PuffsPerSquareBox;
         }
 
         bool IsTimeBetween(float start, float end)
@@ -133,6 +183,8 @@ namespace FallingWizard.World
             float now = TimeIntoCycle;
             return now >= start && now < end;
         }
+
+        void HoldQuiet() => clock = CycleLength * (1f - phase);
 
         void ShowTheRightLook()
         {
@@ -151,7 +203,26 @@ namespace FallingWizard.World
             ShowLook(quietLook, !warning && !bursting);
             ShowLook(warningLook, warning);
             ShowLook(steamLook, bursting);
+            ShowSteam(bursting);
         }
+
+        void ShowSteam(bool bursting)
+        {
+            if (steam == null)
+                return;
+
+            if (!bursting)
+            {
+                steam.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+                return;
+            }
+
+            steam.Play();
+            steam.Emit(CountPuffsInAFullColumn());
+        }
+
+        int CountPuffsInAFullColumn() =>
+            Mathf.RoundToInt(steam.emission.rateOverTime.constant * steam.main.startLifetime.constant);
 
         void OnDrawGizmos()
         {

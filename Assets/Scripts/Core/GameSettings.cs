@@ -19,10 +19,13 @@ namespace FallingWizard.Core
         static bool isFullscreen = true;
         static int resolutionIndex;
         static string language = string.Empty;
+        static bool usesPixelFont = true;
         static List<Resolution> resolutions;
 
         static bool isSettingsFileUnreadable;
         static bool hasWarnedAboutUnreadable;
+
+        public static event Action FontChanged;
 
         public static bool IsLoaded { get; private set; }
 
@@ -77,6 +80,19 @@ namespace FallingWizard.Core
             set => language = value ?? string.Empty;
         }
 
+        public static bool UsesPixelFont
+        {
+            get => usesPixelFont;
+            set
+            {
+                if (usesPixelFont == value)
+                    return;
+
+                usesPixelFont = value;
+                FontChanged?.Invoke();
+            }
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         public static void Load()
         {
@@ -111,6 +127,7 @@ namespace FallingWizard.Core
                 resolutionWidth = chosen.width,
                 resolutionHeight = chosen.height,
                 language = language,
+                pixelFont = usesPixelFont,
             });
         }
 
@@ -188,6 +205,7 @@ namespace FallingWizard.Core
             Volume = data.volume;
             isFullscreen = data.fullscreen;
             Language = data.language;
+            usesPixelFont = data.pixelFont;
 
             resolutionIndex = FindResolutionIndex(
                 data.resolutionWidth > 0 ? data.resolutionWidth : Screen.width,
@@ -268,6 +286,7 @@ namespace FallingWizard.Core
             public int resolutionWidth;
             public int resolutionHeight;
             public string language = string.Empty;
+            public bool pixelFont = true;
         }
     }
 }

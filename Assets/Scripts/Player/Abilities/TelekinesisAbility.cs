@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using FallingWizard.World;
 using UnityEngine;
 
@@ -6,161 +7,107 @@ namespace FallingWizard.Player
     [CreateAssetMenu(menuName = "Falling Wizard/Abilities/Telekinesis", fileName = "Telekinesis")]
     public class TelekinesisAbility : Ability
     {
+        const float ShortestReach = 1f;
+        const float ShortestSleep = 0.5f;
+
+        static readonly List<Collider2D> InReach = new List<Collider2D>();
+
         [Header("Reach")]
-        [Tooltip("How many tiles ahead it will look for somewhere to set it down. It takes the " +
-                 "first one that will have it.")]
-        [Range(1, 6)] public int placeInTiles = 3;
-
-        [Tooltip("Which ROW, counted from the one your body is in. 0 is the row you are stood " +
-                 "in, so it goes down on the same floor you are walking on. 1 is head height, " +
-                 "-1 puts it in the floor and is only useful over a drop.")]
-        [Range(-2, 2)] public int liftInTiles = 0;
-
-        [Tooltip("Insist on a floor underneath. ON, it refuses any column with no ground in " +
-                 "reach. OFF, such a column still takes the thing, hung at your own height - " +
-                 "over a drop that is a Bouncy Trash you put exactly where you wanted it. Either way " +
-                 "a column that DOES have ground puts it down on that ground, as low as it goes.")]
-        public bool needsAFloor = false;
+        [Tooltip("How far the push of magic reaches, in boxes, all round the wizard. A mage is " +
+                 "one box. It is the same at every rank: upgrades make things stay stopped " +
+                 "longer, never reach further.")]
+        [Min(ShortestReach)] public float reach = 4f;
 
         [Header("Ranks")]
         [Tooltip("One block per rank. Element 0 is what learning it gives you.")]
         public Tier[] tiers = { new Tier() };
 
-        public override bool CanCast(PlayerLogic wizard)
-        {
-            if (wizard.State != PlayerState.Normal)
-                return false;
-
-            Hands hands = wizard.spellbook.StateOf<Hands>(this);
-
-            return hands.carried != null
-                ? TryFindShelf(wizard, out _)
-                : FindCarryableInReach(wizard) != null;
-        }
+        public override bool CanCast(PlayerLogic wizard) =>
+            wizard.State == PlayerState.Normal && CountThingsToMove(wizard) > 0;
 
         public override string WhyNot(PlayerLogic wizard)
         {
             if (wizard.State != PlayerState.Normal)
                 return $"you are {wizard.State} and cannot reach for anything";
 
-            Hands hands = wizard.spellbook.StateOf<Hands>(this);
-
-            if (hands.carried != null)
-                return WhyItCannotBePutDown(wizard);
-
-            if (FindCarryableInReach(wizard) == null)
-                return Carryable.All.Count == 0
-                    ? "there is nothing carryable in this scene - put a Carryable on a Bouncy Trash"
-                    : $"nothing within {PickTier(tiers, wizard).reach} boxes of you to take";
+            if (CountThingsToMove(wizard) == 0)
+                return $"nothing within {reach} boxes of you to open or stop: no shut Magic Door, " +
+                       "and no moving platform, trap or hazard with Can Sleep ticked that is awake";
 
             return null;
         }
 
         public override bool OnCast(PlayerLogic wizard)
         {
-            Hands hands = wizard.spellbook.StateOf<Hands>(this);
+            float seconds = PickTier(tiers, wizard).sleepSeconds;
+            int moved = 0;
 
-            if (hands.carried != null)
-                return TryPutDown(wizard, hands);
-
-            return TryPickUp(wizard, hands);
-        }
-
-        public override Sprite IconFor(PlayerLogic wizard)
-        {
-            Carryable held = wizard.spellbook.StateOf<Hands>(this).carried;
-
-            return held != null && held.Icon != null ? held.Icon : icon;
-        }
-
-        public override void OnRunReset(PlayerLogic wizard) =>
-            wizard.spellbook.StateOf<Hands>(this).carried = null;
-
-        public override void OnUnequipped(PlayerLogic wizard)
-        {
-            Hands hands = wizard.spellbook.StateOf<Hands>(this);
-
-            if (hands.carried != null)
-                hands.carried.GoHome();
-
-            hands.carried = null;
-        }
-
-        protected override void Validate() => ValidateTiers(tiers);
-
-        bool TryFindShelf(PlayerLogic wizard, out Vector2Int cell)
-        {
-            PlayerLogic.Movement movement = wizard.movement;
-            Vector2Int standingCell = TileGrid.StandingCell(movement);
-
-            for (int step = 1; step <= placeInTiles; step++)
+            foreach (Collider2D thing in FindEverythingInReach(wizard))
             {
-                if (TileGrid.TryFindRestingCell(standingCell.x + movement.Facing * step,
-                        standingCell.y + liftInTiles, movement.groundLayers, needsAFloor,
-                        out cell))
-                    return true;
+                if (TryOpenDoor(thing) || TryPutToSleep(thing, seconds))
+                    moved++;
             }
 
-            cell = default;
-            return false;
+            return moved > 0;
         }
 
-        Carryable FindCarryableInReach(PlayerLogic wizard) =>
-            Carryable.Nearest(wizard.movement.Position, PickTier(tiers, wizard).reach);
-
-        string WhyItCannotBePutDown(PlayerLogic wizard)
+        protected override void Validate()
         {
-            if (TryFindShelf(wizard, out _))
-                return null;
-
-            if (needsAFloor)
-                return $"nothing within {placeInTiles} tiles ahead of you has a floor to " +
-                       "rest it on. Turn off needs-a-floor to set it down over a drop";
-
-            return $"every column within {placeInTiles} ahead of you is walled in higher " +
-                   "than this can lift";
+            reach = Mathf.Max(ShortestReach, reach);
+            ValidateTiers(tiers);
         }
 
-        bool TryPutDown(PlayerLogic wizard, Hands hands)
+        int CountThingsToMove(PlayerLogic wizard)
         {
-            if (!TryFindShelf(wizard, out Vector2Int cell))
-                return false;
+            int count = 0;
 
-            float height = wizard.movement.Footing.y;
+            foreach (Collider2D thing in FindEverythingInReach(wizard))
+                if (IsShutDoor(thing) || IsAwake(thing))
+                    count++;
 
-            if (TileGrid.TryFindSurfaceUnder(cell, wizard.movement.groundLayers, out float top))
-                height = top;
-
-            hands.carried.PutDownOn(TileGrid.CentreOf(cell).x, height);
-            hands.carried = null;
-            return true;
+            return count;
         }
 
-        bool TryPickUp(PlayerLogic wizard, Hands hands)
+        List<Collider2D> FindEverythingInReach(PlayerLogic wizard)
         {
-            Carryable found = FindCarryableInReach(wizard);
+            Physics2D.OverlapCircle(wizard.movement.Position, reach, ContactFilter2D.noFilter,
+                InReach);
 
-            if (found == null)
-                return false;
+            return InReach;
+        }
 
-            found.Stow();
-            hands.carried = found;
-            return true;
+        static bool IsShutDoor(Collider2D thing)
+        {
+            var door = thing.GetComponent<MagicDoor>();
+            return door != null && !door.IsOpen;
+        }
+
+        static bool IsAwake(Collider2D thing)
+        {
+            var sleeper = thing.GetComponentInParent<ISleepable>();
+            return sleeper != null && sleeper.CanSleepNow;
+        }
+
+        static bool TryOpenDoor(Collider2D thing)
+        {
+            var door = thing.GetComponent<MagicDoor>();
+            return door != null && door.TryOpen();
+        }
+
+        static bool TryPutToSleep(Collider2D thing, float seconds)
+        {
+            var sleeper = thing.GetComponentInParent<ISleepable>();
+            return sleeper != null && sleeper.CanSleepNow && sleeper.TrySleep(seconds);
         }
 
         [System.Serializable]
         public class Tier : ITier
         {
-            [Tooltip("How far the wizard can take hold of something at this rank, in boxes. A " +
-                     "mage is one box.")]
-            [Min(1f)] public float reach = 6f;
+            [Tooltip("Seconds a platform, trap or hazard caught in it stays stopped at this rank. " +
+                     "Doors stay open for good.")]
+            [Min(ShortestSleep)] public float sleepSeconds = 3f;
 
-            public void Validate() => reach = Mathf.Max(1f, reach);
-        }
-
-        class Hands
-        {
-            public Carryable carried;
+            public void Validate() => sleepSeconds = Mathf.Max(ShortestSleep, sleepSeconds);
         }
     }
 }

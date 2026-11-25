@@ -11,7 +11,14 @@ namespace FallingWizard.Player
 
         const float LeastAirControl = 0.5f;
 
-        [Header("Reach")]
+        [Header("Steering")]
+        [Tooltip("Top sideways speed in the air with the canopy out, against a run. The same at " +
+                 "every rank: the better control is what learning Glide gives you.")]
+        [Min(1f)] public float airSpeed = 1.9f;
+
+        [Tooltip("How hard the stick bites in the air with the canopy out. The same at every rank.")]
+        [Min(LeastAirControl)] public float airControl = 1.6f;
+
         [Tooltip("How fast you slow down in the air with NO stick held, against normal. Below 1 " +
                  "you coast, which is the point of a wing: a canopy that braked harder than bare " +
                  "air would drop you straight down the moment you stopped steering, which is the " +
@@ -23,7 +30,9 @@ namespace FallingWizard.Player
         public bool foldsOnLanding = true;
 
         [Header("Ranks")]
-        [Tooltip("One block per rank. Element 0 is what learning it gives you.")]
+        [Tooltip("One block per rank. Element 0 is what learning it gives you. At every rank, a " +
+                 "wind catching the open canopy starts the fall over from that height, so the " +
+                 "drop is measured from where the wizard leaves the wind.")]
         public Tier[] tiers = { new Tier() };
 
         public override bool CanCast(PlayerLogic wizard) => wizard.State == PlayerState.Normal;
@@ -40,17 +49,18 @@ namespace FallingWizard.Player
 
         public override void ModifyStatsWhileLit(PlayerLogic wizard, PlayerLogic.Modifiers stats)
         {
-            Tier tier = PickTier(tiers, wizard);
-
-            stats.FallSpeedMultiplier *= tier.fallSpeed;
-            stats.AirSpeedMultiplier *= tier.airSpeed;
-            stats.AirControlMultiplier *= tier.airControl;
+            stats.FallSpeedMultiplier *= PickTier(tiers, wizard).fallSpeed;
+            stats.AirSpeedMultiplier *= airSpeed;
+            stats.AirControlMultiplier *= airControl;
             stats.AirDragMultiplier *= drag;
         }
 
         public override void OnLit(PlayerLogic wizard, float fixedDeltaTime)
         {
             Wing wing = wizard.spellbook.StateOf<Wing>(this);
+
+            if (wizard.IsInWind)
+                wizard.RestartFall();
 
             if (!wizard.movement.IsGrounded)
             {
@@ -66,7 +76,12 @@ namespace FallingWizard.Player
 
         public override void OnEquipped(PlayerLogic wizard) => ShowCanopy(wizard, false);
 
-        protected override void Validate() => ValidateTiers(tiers);
+        protected override void Validate()
+        {
+            airSpeed = Mathf.Max(1f, airSpeed);
+            airControl = Mathf.Max(LeastAirControl, airControl);
+            ValidateTiers(tiers);
+        }
 
         protected override void CleanUp(PlayerLogic wizard) => ShowCanopy(wizard, false);
 
@@ -76,21 +91,13 @@ namespace FallingWizard.Player
         [System.Serializable]
         public class Tier : ITier
         {
-            [Tooltip("Fall speed with the canopy out at this rank, as a fraction of normal.")]
-            [Range(SlowestFallSpeed, 1f)] public float fallSpeed = 0.5f;
+            [Tooltip("Fall speed with the canopy out at this rank, as a fraction of normal. It " +
+                     "slows both how fast the fall picks up speed and how fast it can get: 1 does " +
+                     "not slow the fall at all, 0.2 is a slow, steady sink. The fall is still " +
+                     "measured by height, so a long drop hurts however slowly it is taken.")]
+            [Range(SlowestFallSpeed, 1f)] public float fallSpeed = 1f;
 
-            [Tooltip("Top sideways speed in the air at this rank, against a run.")]
-            [Min(1f)] public float airSpeed = 1.9f;
-
-            [Tooltip("How hard the stick bites in the air at this rank.")]
-            [Min(LeastAirControl)] public float airControl = 1.6f;
-
-            public void Validate()
-            {
-                fallSpeed = Mathf.Clamp(fallSpeed, SlowestFallSpeed, 1f);
-                airSpeed = Mathf.Max(1f, airSpeed);
-                airControl = Mathf.Max(LeastAirControl, airControl);
-            }
+            public void Validate() => fallSpeed = Mathf.Clamp(fallSpeed, SlowestFallSpeed, 1f);
         }
 
         class Wing

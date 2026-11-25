@@ -22,6 +22,7 @@ namespace FallingWizard.Player
         static readonly int ClimbDownId = Animator.StringToHash("ClimbDown");
         static readonly int RagdollVariantId = Animator.StringToHash("RagdollVariant");
         static readonly int HurtId = Animator.StringToHash("Hurt");
+        static readonly int StunnedId = Animator.StringToHash("Stunned");
 
         [Header("Ragdoll")]
         [Tooltip("How many ragdoll reactions to build and cycle through. Rebuild after changing.")]
@@ -39,6 +40,13 @@ namespace FallingWizard.Player
                  "off on impact. A particle system on a child of the wizard, set up entirely in " +
                  "its own Inspector. Leave it empty for no effect.")]
         public ParticleSystem impactStars;
+
+        [Header("Looks")]
+        [Tooltip("A child object of the wizard switched on while walk mode is on and off while " +
+                 "running, so the player can always see which one they are in. Fill it with " +
+                 "your own sign or symbol, for example above the wizard's head. Leave it empty " +
+                 "for none.")]
+        public GameObject walkingLook;
 
         PlayerCharacter character;
         Animator animator;
@@ -72,15 +80,16 @@ namespace FallingWizard.Player
 
         void Update()
         {
+            PlayerLogic wizard = character.Logic;
+
+            ShowWalkingLook(wizard);
+
             if (animator == null)
                 return;
 
-            PlayerLogic wizard = character.Logic;
-
-            WatchForAHit(wizard.health);
-
             int mode = ChooseMode(wizard);
 
+            WatchForAHit(wizard, mode);
             SetAnimatorParameters(wizard, mode);
             WatchForAClimbStarting(wizard, mode);
             WatchForATumble(mode, wizard.movement);
@@ -92,13 +101,22 @@ namespace FallingWizard.Player
                 character.Logic.Impacted -= PlayImpactStars;
         }
 
-        void WatchForAHit(PlayerLogic.Health health)
+        void ShowWalkingLook(PlayerLogic wizard)
         {
+            bool isShown = wizard.Steering.IsWalking && wizard.health.IsAlive;
+
+            if (walkingLook != null && walkingLook.activeSelf != isShown)
+                walkingLook.SetActive(isShown);
+        }
+
+        void WatchForAHit(PlayerLogic wizard, int mode)
+        {
+            PlayerLogic.Health health = wizard.health;
             bool tookAHit = health.Current < lastHealth && health.IsInvulnerable && health.IsAlive;
 
             lastHealth = health.Current;
 
-            if (tookAHit)
+            if (tookAHit && mode == ModeGround && !wizard.IsStunned)
                 animator.SetTrigger(HurtId);
         }
 
@@ -129,6 +147,7 @@ namespace FallingWizard.Player
             animator.SetBool(GroundedId, grounded);
             animator.SetBool(MovingId, moving);
             animator.SetBool(WalkingId, walking);
+            animator.SetBool(StunnedId, wizard.IsStunned);
             animator.SetFloat(SpeedId, CalculateCycleRate(wizard, movement, walking));
             animator.SetFloat(ClimbRateId, CalculateClimbRate(wizard, mode));
         }

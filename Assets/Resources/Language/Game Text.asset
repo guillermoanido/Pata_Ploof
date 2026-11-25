@@ -1,0 +1,342 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5d8e1fa6c7b94e2da0c6e3f5b7a9c1de, type: 3}
+  m_Name: Game Text
+  m_EditorClassIdentifier: Assembly-CSharp::FallingWizard.Localization.GameText
+  lines:
+  - key: menu.title
+    english: Pataploof
+    spanish: Pataploof
+  - key: menu.play
+    english: Play
+    spanish: Jugar
+  - key: menu.settings
+    english: Settings
+    spanish: Opciones
+  - key: menu.exit
+    english: Exit
+    spanish: Salir
+  - key: pause.title
+    english: Paused
+    spanish: En pausa
+  - key: pause.resume
+    english: Resume
+    spanish: Continuar
+  - key: pause.mainMenu
+    english: Main Menu
+    spanish: "Men\xFA principal"
+  - key: pause.quit
+    english: Quit
+    spanish: Salir
+  - key: settings.title
+    english: Settings
+    spanish: Opciones
+  - key: settings.resolution
+    english: Resolution
+    spanish: "Resoluci\xF3n"
+  - key: settings.fullscreen
+    english: Fullscreen
+    spanish: Pantalla completa
+  - key: settings.volume
+    english: Volume
+    spanish: Volumen
+  - key: settings.language
+    english: Language
+    spanish: Idioma
+  - key: settings.pixelFont
+    english: Pixel font
+    spanish: Fuente
+  - key: settings.back
+    english: Back
+    spanish: Volver
+  - key: settings.resetSave
+    english: Reset Save
+    spanish: Borrar partida
+  - key: settings.resetSave.title
+    english: Reset save?
+    spanish: "\xBFBorrar la partida?"
+  - key: settings.resetSave.blurb
+    english: Every spell, all the Knowledge and every heart you have earned is erased,
+      and the run starts again from the beginning. This cannot be undone.
+    spanish: Se borran todos los hechizos, todo el conocimiento y todos los corazones
+      que has ganado, y la bajada empieza otra vez desde el principio. Esto no se
+      puede deshacer.
+  - key: settings.resetSave.status
+    english: You have {0} Knowledge.
+    spanish: Tienes {0} de Conocimiento.
+  - key: settings.resetSave.confirm
+    english: Erase everything
+    spanish: Borrarlo todo
+  - key: settings.resetSave.cancel
+    english: Keep my save
+    spanish: Conservar mi partida
+  - key: language.english
+    english: English
+    spanish: English
+  - key: language.spanish
+    english: "Espa\xF1ol"
+    spanish: "Espa\xF1ol"
+  - key: skill.title
+    english: SPELLBOOK
+    spanish: GRIMORIO
+  - key: skill.purse
+    english: '{0} Knowledge'
+    spanish: '{0} de Conocimiento'
+  - key: skill.price
+    english: '{0} Knowledge'
+    spanish: '{0} de Conocimiento'
+  - key: skill.noBook
+    english: No spellbook found at Assets/Resources/Spellbook.asset.
+    spanish: No hay grimorio en Assets/Resources/Spellbook.asset.
+  - key: skill.dive
+    english: Descend
+    spanish: Bajar
+  - key: skill.back
+    english: Back to the tower
+    spanish: De vuelta a la torre
+  - key: skill.hint.pick
+    english: Pick a spell, then press the button you want it on.
+    spanish: "Elige un hechizo y presiona el bot\xF3n donde lo quieres."
+  - key: skill.hint.move
+    english: '{0}: press a spell button to put it there.'
+    spanish: "{0}: presiona un bot\xF3n de hechizo para ponerlo ah\xED."
+  - key: skill.hint.locked
+    english: '{0} is not learned yet.'
+    spanish: "A\xFAn no lo aprendiste {0}."
+  - key: skill.next
+    english: 'Next level: {0}'
+    spanish: 'Siguiente nivel: {0}'
+  - key: skill.learn
+    english: Learn - {0}
+    spanish: Aprender - {0}
+  - key: skill.mastered
+    english: Mastered
+    spanish: Perfeccionado
+  - key: skill.learned
+    english: Learned
+    spanish: Aprendido
+  - key: death.title
+    english: You fell
+    spanish: "Te ca\xEDste"
+  - key: death.blurb
+    english: 'Everything you carried down is gone: your Knowledge, your spells and
+      your hearts.'
+    spanish: "Todo lo que llevabas se perdi\xF3: tu Conocimiento, tus hechizos y
+      tus corazones."
+  - key: death.startAgain
+    english: Start again
+    spanish: Empezar de nuevo
+  - key: death.mainMenu
+    english: Main menu
+    spanish: "Men\xFA principal"
+  - key: ability.fling.name
+    english: Fling
+    spanish: Impulso
+  - key: ability.fling.desc
+    english: Summon a hand to fling you into the air, hold the button to aim.
+    spanish: "Invoca una mano que te lanza por los aires, mant\xE9n presionado el
+      bot\xF3n para apuntar."
+  - key: ability.fling.upgrade.0.title
+    english: Stronger hand
+    spanish: "Mano m\xE1s fuerte"
+  - key: ability.fling.upgrade.0.desc
+    english: Your magical hand gets stronger.
+    spanish: "Tu mano m\xE1gica se hace m\xE1s fuerte."
+  - key: ability.fling.upgrade.1.title
+    english: Helping hand
+    spanish: Mano amiga
+  - key: ability.fling.upgrade.1.desc
+    english: Your hand catches you mid-tumble, fling yourself even in the air.
+    spanish: "Tu mano te atrapa mientras caes, l\xE1nzate incluso en el aire."
+  - key: ability.glide.name
+    english: Glide
+    spanish: Planeo
+  - key: ability.glide.desc
+    english: Use your magical hat to steer your fall, catch the wind to start your
+      fall over.
+    spanish: "Abre tu sombrero para guiar tu ca\xEDda, usa el viento para demorar
+      la ca\xEDda."
+  - key: ability.glide.upgrade.0.title
+    english: Wider hat
+    spanish: "Sombrero m\xE1s ancho"
+  - key: ability.glide.upgrade.0.desc
+    english: Your hat catches more air, so you fall slower.
+    spanish: "Tu sombrero atrapa m\xE1s aire, as\xED caes m\xE1s despacio."
+  - key: ability.glide.upgrade.1.title
+    english: Feather hat
+    spanish: Sombrero de pluma
+  - key: ability.glide.upgrade.1.desc
+    english: You float down at a slow, steady pace.
+    spanish: Bajas flotando a un ritmo lento y constante.
+  - key: ability.star.name
+    english: Falling Star
+    spanish: "Ca\xEDda fugaz"
+  - key: ability.star.desc
+    english: While tumbling, dive into the ground and bounce back up. Once per level.
+    spanish: "Mientras tambaleas, l\xE1nzate al suelo y rebota. Una vez por nivel."
+  - key: ability.star.upgrade.0.title
+    english: Second star
+    spanish: Segunda estrella
+  - key: ability.star.upgrade.0.desc
+    english: Dive twice per level.
+    spanish: "L\xE1nzate dos veces por nivel."
+  - key: ability.star.upgrade.1.title
+    english: Third star
+    spanish: Tercera estrella
+  - key: ability.star.upgrade.1.desc
+    english: Dive three times per level.
+    spanish: "L\xE1nzate tres veces por nivel."
+  - key: ability.vine.name
+    english: Mage Hand
+    spanish: Mano de mago
+  - key: ability.vine.desc
+    english: Call down a spectral hand to swing on, press the button again to let
+      go.
+    spanish: "Haz bajar una mano espectral para columpiarte, presiona otra vez el
+      bot\xF3n para soltarte."
+  - key: ability.vine.upgrade.0.title
+    english: Wider swing
+    spanish: "Vaiv\xE9n m\xE1s amplio"
+  - key: ability.vine.upgrade.0.desc
+    english: Your spectral hand swings wider.
+    spanish: "Tu mano espectral se balancea m\xE1s."
+  - key: ability.vine.upgrade.1.title
+    english: Climbing hand
+    spanish: Mano trepadora
+  - key: ability.vine.upgrade.1.desc
+    english: Climb up and down your spectral hand.
+    spanish: Sube y baja por tu mano espectral.
+  - key: ability.staff.name
+    english: Staff
+    spanish: "Bast\xF3n"
+  - key: ability.staff.desc
+    english: A magical wooden staff that allows you to climb up or down.
+    spanish: "Un bast\xF3n m\xE1gico que te permite trepar o descender por las superficies."
+  - key: ability.staff.upgrade.0.title
+    english: Longer staff
+    spanish: "Bast\xF3n m\xE1s largo"
+  - key: ability.staff.upgrade.0.desc
+    english: Get a longer staff.
+    spanish: "Consigue un bast\xF3n m\xE1s largo."
+  - key: ability.staff.upgrade.1.title
+    english: Longest staff
+    spanish: "El bast\xF3n m\xE1s largo"
+  - key: ability.staff.upgrade.1.desc
+    english: An even longer staff, to climb further up and down.
+    spanish: "Un bast\xF3n a\xFAn m\xE1s largo, para trepar y descender m\xE1s lejos."
+  - key: ability.hand.name
+    english: Telekinesis
+    spanish: Telequinesis
+  - key: ability.hand.desc
+    english: A wave of magic that opens magic doors and holds still the moving things
+      around you.
+    spanish: "Una onda de magia que abre las puertas m\xE1gicas y detiene las cosas
+      que se mueven a tu alrededor."
+  - key: ability.hand.upgrade.0.title
+    english: Deeper sleep
+    spanish: "Sue\xF1o profundo"
+  - key: ability.hand.upgrade.0.desc
+    english: Things stay still for longer.
+    spanish: "Las cosas se quedan quietas m\xE1s tiempo."
+  - key: ability.slap.name
+    english: Star Slap
+    spanish: Golpe estelar
+  - key: ability.slap.desc
+    english: A magical hand that slaps walls and pushes you away.
+    spanish: Una mano estelar que golpea las paredes para empujarte.
+  - key: ability.slap.upgrade.0.title
+    english: Careful
+    spanish: Cuidado
+  - key: ability.slap.upgrade.0.desc
+    english: Slapping while you tumble slows you down.
+    spanish: Golpear mientras caes dando vueltas te frena.
+  - key: ability.slap.upgrade.1.title
+    english: Longer reach
+    spanish: Alcance mayor
+  - key: ability.slap.upgrade.1.desc
+    english: Your star hand reaches further and slows your tumble even more.
+    spanish: "Tu mano estelar llega m\xE1s lejos y te frena a\xFAn m\xE1s."
+  - key: settings.controls
+    english: Controls
+    spanish: Controles
+  - key: controls.title
+    english: Controls
+    spanish: Controles
+  - key: controls.keyboard
+    english: Keyboard
+    spanish: Teclado
+  - key: controls.controller
+    english: Controller
+    spanish: Mando
+  - key: controls.playing
+    english: Playing
+    spanish: En el juego
+  - key: controls.menus
+    english: Menus
+    spanish: "Men\xFAs"
+  - key: controls.move
+    english: Move
+    spanish: Moverse
+  - key: controls.walk
+    english: Walk (toggle)
+    spanish: Caminar (alterna)
+  - key: controls.spell
+    english: Spell {0}
+    spanish: Hechizo {0}
+  - key: controls.loadout
+    english: Spellbook
+    spanish: Grimorio
+  - key: controls.pause
+    english: Pause
+    spanish: Pausa
+  - key: controls.skip
+    english: Skip cutscene
+    spanish: Saltar escena
+  - key: controls.menuMove
+    english: Navigate
+    spanish: Moverse
+  - key: controls.menuPick
+    english: Select
+    spanish: Elegir
+  - key: controls.menuBack
+    english: Back
+    spanish: "Atr\xE1s"
+  - key: controls.close
+    english: Back
+    spanish: Volver
+  - key: levels.top
+    english: Top level
+    spanish: Nivel superior
+  - key: levels.mid
+    english: Mid section
+    spanish: "Secci\xF3n media"
+  - key: levels.bottom
+    english: Bottom
+    spanish: El fondo
+  - key: levels.level1
+    english: Level 1
+    spanish: Nivel 1
+  - key: levels.level2
+    english: Level 2
+    spanish: Nivel 2
+  - key: levels.level3
+    english: Level 3
+    spanish: Nivel 3
+  - key: end.title
+    english: You managed to descend the tower!
+    spanish: "\xA1Lograste descender la torre!"
+  - key: end.blurb
+    english: More to come...
+    spanish: "Pronto habr\xE1 m\xE1s..."
+  - key: end.mainMenu
+    english: Main menu
+    spanish: "Men\xFA principal"

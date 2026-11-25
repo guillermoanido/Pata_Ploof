@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: vine
   displayName: Mage Hand
-  description: Reach out a spectral hand and swing from it. Jump to let go.
-  icon: {fileID: 0}
+  description: Call down a spectral hand to swing on, press the button again to let go.
+  icon: {fileID: 1752313724658198474, guid: a6eef8dc9ca01b04891d8738ca935b7b, type: 3}
   cost: 1
   locked: 0
   fixedSlot: -1
@@ -23,10 +23,10 @@ MonoBehaviour:
   upgrades:
   - cost: 2
     title: Wider swing
-    description: The hand leans much further either side before it stops.
+    description: Your spectral hand swings wider.
   - cost: 3
-    title: Up and down
-    description: Climb the hand as well as swing on it.
+    title: Climbing hand
+    description: Climb up and down your spectral hand.
   pressBuffer: 0.12
   activeDuration: 0
   usesPerRun: 0
@@ -37,7 +37,10 @@ MonoBehaviour:
   tiers:
   - maxSwing: 30
     climbSpeed: 0
+    sameHandCooldown: 2
   - maxSwing: 65
     climbSpeed: 0
+    sameHandCooldown: 2
   - maxSwing: 65
     climbSpeed: 4
+    sameHandCooldown: 0

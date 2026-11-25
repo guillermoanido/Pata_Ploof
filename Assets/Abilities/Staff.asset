@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: staff
   displayName: Staff
-  description: Hold it up against a wall and climb, as high as the staff is long. At a ledge it goes over the lip and you climb down instead.
-  icon: {fileID: 0}
+  description: A magical wooden staff that allows you to climb up or climb down surfaces.
+  icon: {fileID: -1388515766092869844, guid: a6eef8dc9ca01b04891d8738ca935b7b, type: 3}
   cost: 0
   locked: 1
   fixedSlot: 0
@@ -29,7 +29,7 @@ MonoBehaviour:
   upgrades:
   - cost: 1
     title: Longer staff
-    description: Half again as long, so it climbs walls that used to be too tall and reaches drops that used to be too deep.
-  lengthByRank:
-  - 1
-  - 1.5
+    description: Get a longer staff.
+  - cost: 2
+    title: Longest staff
+    description: An even longer staff, to climb further up and down.
