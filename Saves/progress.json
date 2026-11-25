@@ -1,17 +1,21 @@
 {
     "version": 2,
-    "scrap": 1,
-    "bonusHearts": 0,
+    "scrap": 2,
+    "bonusHearts": 1,
     "loadout": [
         "staff",
         "glide",
         "vine",
-        ""
+        "hand"
     ],
     "ranks": [
         {
             "key": "glide",
             "rank": 2
+        },
+        {
+            "key": "hand",
+            "rank": 1
         },
         {
             "key": "staff",
@@ -23,9 +27,12 @@
         }
     ],
     "taken": [
+        "heart1-3:-17,-252",
+        "scrap1-3:-21,-252",
         "scrap2-2:7,-1530"
     ],
     "completedLevels": [
+        "1-3",
         "2-2"
     ]
 }

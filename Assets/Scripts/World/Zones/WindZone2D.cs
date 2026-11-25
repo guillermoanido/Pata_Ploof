@@ -15,6 +15,10 @@ namespace FallingWizard.World
         const int ArrowRows = 1;
         const float Half = 0.5f;
 
+        const float WallSampleSpacing = 0.25f;
+        const float IntoTheWall = 0.05f;
+        const float StreakHitRadius = 0.1f;
+
         const float StreakTravel = 1.5f;
         const float StreaksPerSquareBox = 0.15f;
         const float StreakHeadroom = 2f;
@@ -23,6 +27,7 @@ namespace FallingWizard.World
         static readonly Color ArrowColour = new Color(0.55f, 0.85f, 1f, 0.9f);
 
         static readonly List<RaycastHit2D> Hits = new List<RaycastHit2D>();
+        static readonly List<Collider2D> Overlaps = new List<Collider2D>();
 
         [Header("Wind")]
         [Tooltip("Which way this blows, and how hard, as the SPEED in boxes per second it wants " +
@@ -45,16 +50,11 @@ namespace FallingWizard.World
         [Range(0f, 1f)] public float groundScale = 0.35f;
 
         [Header("Shelter")]
-        [Tooltip("Walls and floors stop this wind: a wizard with solid ground between them and " +
+        [Tooltip("Walls and floors stop this wind: a wizard with a separate wall between them and " +
                  "the side it blows from is sheltered and not pushed, and the streaks stop at " +
-                 "that ground too. Off blows straight through walls.")]
+                 "walls too. The wall or floor the wind comes OUT of never counts, however deep " +
+                 "the zone reaches into it. Off blows straight through walls.")]
         public bool blockedByWalls = true;
-
-        [Tooltip("Ground this close to the side the wind blows from, in boxes, does not count " +
-                 "as a wall. A gust that starts inside the wall or floor it comes out of - a " +
-                 "trap's mouth, an updraft rising out of the floor - still blows. Raise it if " +
-                 "a wind stops working near its own source.")]
-        [Min(0f)] public float sourceDepth = 1f;
 
         [Header("Streaks")]
         [Tooltip("The white streaks that show the wind: a particle system on a child of this " +
@@ -148,6 +148,7 @@ namespace FallingWizard.World
             collision.mode = ParticleSystemCollisionMode.Collision2D;
             collision.collidesWith = Layers.GroundMask;
             collision.lifetimeLoss = 1f;
+            collision.radiusScale = StreakHitRadius;
         }
 
         bool IsSheltered(PlayerCharacter wizard)
@@ -158,10 +159,34 @@ namespace FallingWizard.World
                 return false;
 
             Vector2 from = wizard.Logic.movement.Position;
-            Vector2 toSource = FindTheSourceEdge(area, from) - from;
-            float reach = toSource.magnitude - sourceDepth;
+            Vector2 source = FindTheSourceEdge(area, from);
+            Vector2 toSource = source - from;
+            float distance = toSource.magnitude;
 
-            return reach > 0f && Physics2D.Raycast(from, toSource.normalized, SolidGround, Hits, reach) > 0;
+            if (distance < Epsilon)
+                return false;
+
+            Vector2 upwind = toSource / distance;
+
+            if (Physics2D.Raycast(from, upwind, SolidGround, Hits, distance) == 0)
+                return false;
+
+            return HasOpenAirBetween(Hits[0].point + upwind * IntoTheWall, source);
+        }
+
+        bool HasOpenAirBetween(Vector2 wallSide, Vector2 source)
+        {
+            int steps = Mathf.CeilToInt(Vector2.Distance(wallSide, source) / WallSampleSpacing);
+
+            for (int i = 0; i <= steps; i++)
+            {
+                Vector2 point = steps == 0 ? source : Vector2.Lerp(wallSide, source, (float)i / steps);
+
+                if (Physics2D.OverlapPoint(point, SolidGround, Overlaps) == 0)
+                    return true;
+            }
+
+            return false;
         }
 
         Vector2 FindTheSourceEdge(BoxCollider2D area, Vector2 worldPoint)
