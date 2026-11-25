@@ -1,0 +1,23 @@
+{
+    "version": 2,
+    "scrap": 0,
+    "bonusHearts": 0,
+    "loadout": [
+        "staff",
+        "vine",
+        "",
+        ""
+    ],
+    "ranks": [
+        {
+            "key": "staff",
+            "rank": 2
+        },
+        {
+            "key": "vine",
+            "rank": 1
+        }
+    ],
+    "taken": [],
+    "completedLevels": []
+}
