@@ -19,7 +19,7 @@ Every number in the game is expressed in boxes or boxes per second:
 | Free fall | 3 boxes |
 | Fall damage | 1 heart per box past that — so 8 boxes kills a full-health wizard |
 | Fall stun | 1 second flat on the floor after a fall that costs hearts (`fallStunSeconds`) |
-| Staff reach | 2 boxes above the feet, authored on the staff - the pole is stretched to match |
+| Staff length | 1, 1.5 and 2 boxes for staff levels 1 to 3: each upgrade is one tile longer, so it goes one tile further down and climbs one tile higher |
 
 The climb being under the damage floor is deliberate: going up something the staff can reach and
 coming back down it can never hurt you.
@@ -952,6 +952,7 @@ flat colour, so each one is visible the moment it lands and is waiting for a spr
 | `Ice` | Ground that does not hold you. Nothing else changes. | Hazard |
 | `Stairs` | `TripHazard`: lay it over a staircase. Take them fast and you tumble down them. | Hazard |
 | `Bouncy Hat` | `BouncyHat`: bounces you three boxes and sends you tumbling. | Hazard |
+| `Cushion` | A soft landing: drop onto it from any height and take no fall damage, and a tumble ends the moment it lands - the wizard stands up still. A drop or a stopped tumble puffs its **Dust Look** (a Star Sparkles stand-in; swap in your dust). Pass-through, one box wide and half a box tall on the floor; resize its collider for a bigger one. | Hazard |
 | `Wind` | Pushes you the way its arrows point. Rotate it to aim it. | Hazard |
 | `Wind Trap` | The same push, on a timer: a wall mouth that opens and blows left. Shut, Warning and Blowing Looks. It shoves, it never hurts. | Hazard |
 | `Magic Hand` | The knot Mage Hand catches. It only glows once Mage Hand is bought. | Default |

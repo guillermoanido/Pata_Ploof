@@ -65,6 +65,8 @@ namespace FallingWizard.Player
 
         [NonSerialized] float stunLeft;
 
+        [NonSerialized] float grabHeight;
+
         [NonSerialized] public bool Invulnerable;
 
         public event Action Died;
@@ -224,6 +226,17 @@ namespace FallingWizard.Player
 
         public void RestartFall() => movement.RestartFall();
 
+        public bool TryEndTumble()
+        {
+            if (State != PlayerState.Ragdoll || !health.IsAlive)
+                return false;
+
+            ragdoll.Cancel();
+            State = PlayerState.Normal;
+            movement.Stop();
+            return true;
+        }
+
         public void SlowTumble(float fraction)
         {
             if (fraction > 0f && State == PlayerState.Ragdoll && !ragdoll.IsDiving)
@@ -360,6 +373,7 @@ namespace FallingWizard.Player
                 return false;
 
             State = PlayerState.OnVine;
+            grabHeight = movement.Position.y;
             return true;
         }
 
@@ -376,8 +390,11 @@ namespace FallingWizard.Player
 
             State = PlayerState.Normal;
 
+            float fallStart = Mathf.Min(hangHeight, grabHeight);
+
             movement.Stop();
-            movement.BeginFallFrom(hangHeight);
+            movement.BeginFallFrom(fallStart);
+            movement.CapFallAt(fallStart);
             movement.AddImpulse(launch, 0f);
         }
 
@@ -839,6 +856,7 @@ namespace FallingWizard.Player
             [NonSerialized] float stepAssistTimer;
             [NonSerialized] float highestPoint;
             [NonSerialized] float fallAllowance;
+            [NonSerialized] float fallCeiling = float.PositiveInfinity;
             [NonSerialized] float pendingFallDistance;
             [NonSerialized] bool hasLanded;
 
@@ -991,7 +1009,10 @@ namespace FallingWizard.Player
             {
                 highestPoint = body.position.y;
                 fallAllowance = 0f;
+                fallCeiling = float.PositiveInfinity;
             }
+
+            public void CapFallAt(float height) => fallCeiling = height;
 
             public void UseBaseGravity() => body.gravityScale = baseGravityScale;
 
@@ -1128,6 +1149,7 @@ namespace FallingWizard.Player
 
                 highestPoint = body.position.y;
                 fallAllowance = 0f;
+                fallCeiling = float.PositiveInfinity;
                 IsGrounded = false;
                 stepAssistTimer = 0f;
             }
@@ -1630,12 +1652,13 @@ namespace FallingWizard.Player
 
                 stepAssistTimer = stepAssistGrace;
                 highestPoint = body.position.y;
+                fallCeiling = float.PositiveInfinity;
             }
 
             void UpdateWhileInTheAir(float fixedDeltaTime)
             {
                 stepAssistTimer -= fixedDeltaTime;
-                highestPoint = Mathf.Max(highestPoint, body.position.y);
+                highestPoint = Mathf.Min(fallCeiling, Mathf.Max(highestPoint, body.position.y));
             }
 
             bool TryStartMeasuringClimb(Bounds hook)

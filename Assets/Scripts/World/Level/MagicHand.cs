@@ -98,6 +98,15 @@ namespace FallingWizard.World
             }
         }
 
+        bool IsTheOneToGrab
+        {
+            get
+            {
+                PlayerCharacter wizard = PlayerCharacter.Instance;
+                return wizard != null && Nearest(wizard.Logic.movement.Position) == this;
+            }
+        }
+
         bool HasLearnedTheSpell =>
             shownOnceLearned == null || Progress.Owns(shownOnceLearned.Key);
 
@@ -179,7 +188,7 @@ namespace FallingWizard.World
 
         void ShowGlowLookWhenNear()
         {
-            bool near = IsWizardNear && HasLearnedTheSpell;
+            bool near = IsWizardNear && IsTheOneToGrab && HasLearnedTheSpell;
 
             if (near != isShowingGlow)
                 ShowGlowLook(near);
